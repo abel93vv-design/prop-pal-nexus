@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Layout } from "@/components/Layout";
-import { tasks, users, clients, properties } from "@/data/mockData";
+import { useData } from "@/context/DataContext";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,6 +18,7 @@ const statusColors: Record<TaskStatus, string> = {
 };
 
 const Tasks = () => {
+  const { tasks, users, clients, properties } = useData();
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
   const filtered = tasks.filter(t => statusFilter === "all" || t.status === statusFilter);
@@ -50,7 +51,7 @@ const Tasks = () => {
             return (
               <Card key={t.id} className="hover:shadow-sm transition-shadow">
                 <CardContent className="p-4 flex items-center gap-4">
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-muted`}>
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-muted">
                     <TypeIcon className="w-5 h-5 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
