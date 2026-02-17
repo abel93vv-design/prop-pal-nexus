@@ -1,13 +1,156 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { Building2, Users, ClipboardList, TrendingUp, AlertCircle, Home } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { properties, clients, tasks, users, monthlyData } from "@/data/mockData";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { Layout } from "@/components/Layout";
+
+const statusLabels: Record<string, string> = {
+  disponible: 'Disponible', reservado: 'Reservado', vendido_alquilado: 'Vendido/Alquilado',
+  nuevo: 'Nuevo', contactado: 'Contactado', en_negociacion: 'En negociación', cerrado: 'Cerrado',
+  pendiente: 'Pendiente', en_progreso: 'En progreso', completada: 'Completada',
+};
 
 const Index = () => {
+  const availableProperties = properties.filter(p => p.status === 'disponible').length;
+  const newLeads = clients.filter(c => c.leadStatus === 'nuevo').length;
+  const pendingTasks = tasks.filter(t => t.status === 'pendiente').length;
+  const urgentClients = clients.filter(c => c.leadStatus === 'en_negociacion');
+
+  const stats = [
+    { label: 'Propiedades Disponibles', value: availableProperties, icon: Building2, color: 'text-info' },
+    { label: 'Leads Nuevos', value: newLeads, icon: Users, color: 'text-success' },
+    { label: 'Tareas Pendientes', value: pendingTasks, icon: ClipboardList, color: 'text-warning' },
+    { label: 'En Negociación', value: urgentClients.length, icon: TrendingUp, color: 'text-destructive' },
+  ];
+
+  const quickLinks = [
+    { label: 'Propiedades', to: '/propiedades', icon: Building2 },
+    { label: 'Clientes', to: '/clientes', icon: Users },
+    { label: 'Tareas', to: '/tareas', icon: ClipboardList },
+    { label: 'Web Pública', to: '/publica', icon: Home },
+  ];
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <Layout>
+      <div className="space-y-6 animate-fade-in">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+          <p className="text-sm text-muted-foreground mt-1">Resumen general de tu inmobiliaria</p>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {stats.map(s => (
+            <div key={s.label} className="stat-card">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{s.label}</p>
+                  <p className="text-3xl font-bold text-foreground mt-1">{s.value}</p>
+                </div>
+                <s.icon className={`w-10 h-10 ${s.color} opacity-70`} />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Charts + Quick Links */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Card className="lg:col-span-2">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base font-semibold">Ventas y Alquileres por Mes</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={monthlyData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
+                  <YAxis tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px',
+                      fontSize: 12,
+                    }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                  <Bar dataKey="ventas" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} name="Ventas" />
+                  <Bar dataKey="alquileres" fill="hsl(var(--secondary))" radius={[4, 4, 0, 0]} name="Alquileres" />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          <div className="space-y-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base font-semibold">Accesos Rápidos</CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-2 gap-2">
+                {quickLinks.map(l => (
+                  <Link
+                    key={l.to}
+                    to={l.to}
+                    className="flex flex-col items-center gap-2 p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-center"
+                  >
+                    <l.icon className="w-6 h-6 text-primary" />
+                    <span className="text-xs font-medium text-foreground">{l.label}</span>
+                  </Link>
+                ))}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-destructive" />
+                  Seguimiento Urgente
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {urgentClients.map(c => (
+                  <div key={c.id} className="flex items-center justify-between p-2 rounded-md bg-muted/30">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{c.name}</p>
+                      <p className="text-xs text-muted-foreground">{c.notes.slice(0, 40)}...</p>
+                    </div>
+                    <Badge variant="outline" className="text-[10px] border-destructive/30 text-destructive">Urgente</Badge>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Pending Tasks */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-semibold">Tareas Pendientes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {tasks.filter(t => t.status !== 'completada').slice(0, 5).map(t => {
+                const agent = users.find(u => u.id === t.agentId);
+                return (
+                  <div key={t.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-2 h-2 rounded-full ${t.status === 'pendiente' ? 'bg-warning' : 'bg-info'}`} />
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{t.title}</p>
+                        <p className="text-xs text-muted-foreground">{agent?.name} · {new Date(t.dueDate).toLocaleDateString('es-ES')}</p>
+                      </div>
+                    </div>
+                    <Badge variant="secondary" className="text-[10px]">{t.type}</Badge>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
       </div>
-    </div>
+    </Layout>
   );
 };
 
