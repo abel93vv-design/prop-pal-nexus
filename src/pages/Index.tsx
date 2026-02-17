@@ -2,7 +2,7 @@ import { Building2, Users, ClipboardList, TrendingUp, AlertCircle, Home } from "
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { properties, clients, tasks, users, monthlyData } from "@/data/mockData";
+import { useData } from "@/context/DataContext";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { Layout } from "@/components/Layout";
 
@@ -13,6 +13,7 @@ const statusLabels: Record<string, string> = {
 };
 
 const Index = () => {
+  const { properties, clients, tasks, users, monthlyData } = useData();
   const availableProperties = properties.filter(p => p.status === 'disponible').length;
   const newLeads = clients.filter(c => c.leadStatus === 'nuevo').length;
   const pendingTasks = tasks.filter(t => t.status === 'pendiente').length;
@@ -40,7 +41,6 @@ const Index = () => {
           <p className="text-sm text-muted-foreground mt-1">Resumen general de tu inmobiliaria</p>
         </div>
 
-        {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {stats.map(s => (
             <div key={s.label} className="stat-card">
@@ -55,7 +55,6 @@ const Index = () => {
           ))}
         </div>
 
-        {/* Charts + Quick Links */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <Card className="lg:col-span-2">
             <CardHeader className="pb-2">
@@ -67,14 +66,7 @@ const Index = () => {
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
                   <YAxis tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px',
-                      fontSize: 12,
-                    }}
-                  />
+                  <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: 12 }} />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
                   <Bar dataKey="ventas" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} name="Ventas" />
                   <Bar dataKey="alquileres" fill="hsl(var(--secondary))" radius={[4, 4, 0, 0]} name="Alquileres" />
@@ -85,29 +77,19 @@ const Index = () => {
 
           <div className="space-y-4">
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base font-semibold">Accesos Rápidos</CardTitle>
-              </CardHeader>
+              <CardHeader className="pb-2"><CardTitle className="text-base font-semibold">Accesos Rápidos</CardTitle></CardHeader>
               <CardContent className="grid grid-cols-2 gap-2">
                 {quickLinks.map(l => (
-                  <Link
-                    key={l.to}
-                    to={l.to}
-                    className="flex flex-col items-center gap-2 p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-center"
-                  >
+                  <Link key={l.to} to={l.to} className="flex flex-col items-center gap-2 p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-center">
                     <l.icon className="w-6 h-6 text-primary" />
                     <span className="text-xs font-medium text-foreground">{l.label}</span>
                   </Link>
                 ))}
               </CardContent>
             </Card>
-
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-base font-semibold flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-destructive" />
-                  Seguimiento Urgente
-                </CardTitle>
+                <CardTitle className="text-base font-semibold flex items-center gap-2"><AlertCircle className="w-4 h-4 text-destructive" />Seguimiento Urgente</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
                 {urgentClients.map(c => (
@@ -124,11 +106,8 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Pending Tasks */}
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-semibold">Tareas Pendientes</CardTitle>
-          </CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="text-base font-semibold">Tareas Pendientes</CardTitle></CardHeader>
           <CardContent>
             <div className="space-y-2">
               {tasks.filter(t => t.status !== 'completada').slice(0, 5).map(t => {
