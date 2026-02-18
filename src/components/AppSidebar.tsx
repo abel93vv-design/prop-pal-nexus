@@ -1,4 +1,4 @@
-import { Building2, Users, ClipboardList, LayoutDashboard, Globe, UserCog } from "lucide-react";
+import { Building2, Users, ClipboardList, LayoutDashboard, Globe, UserCog, Landmark } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
   Sidebar,
@@ -18,6 +18,7 @@ const mainItems = [
   { title: "Clientes", url: "/clientes", icon: Users },
   { title: "Tareas", url: "/tareas", icon: ClipboardList },
   { title: "Equipo", url: "/equipo", icon: UserCog },
+  { title: "Inmobiliarias", url: "/inmobiliarias", icon: Landmark },
 ];
 
 const publicItems = [

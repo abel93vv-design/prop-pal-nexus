@@ -1,19 +1,26 @@
 import { createContext, useContext, useState, ReactNode } from "react";
-import { Client, Property, User, Task } from "@/types/crm";
+import { Agency, Client, Document, Property, User, Task } from "@/types/crm";
 import {
+  agencies as initialAgencies,
   clients as initialClients,
   properties as initialProperties,
   users as initialUsers,
   tasks as initialTasks,
+  documents as initialDocuments,
   monthlyData,
 } from "@/data/mockData";
 
 interface DataContextType {
+  agencies: Agency[];
   clients: Client[];
   properties: Property[];
   users: User[];
   tasks: Task[];
+  documents: Document[];
   monthlyData: typeof monthlyData;
+  addAgency: (a: Omit<Agency, "id">) => void;
+  updateAgency: (a: Agency) => void;
+  deleteAgency: (id: string) => void;
   addClient: (c: Omit<Client, "id">) => void;
   updateClient: (c: Client) => void;
   deleteClient: (id: string) => void;
@@ -26,6 +33,9 @@ interface DataContextType {
   addTask: (t: Omit<Task, "id">) => void;
   updateTask: (t: Task) => void;
   deleteTask: (id: string) => void;
+  addDocument: (d: Omit<Document, "id">) => void;
+  updateDocument: (d: Document) => void;
+  deleteDocument: (id: string) => void;
 }
 
 const DataContext = createContext<DataContextType | null>(null);
@@ -34,19 +44,26 @@ let idCounter = 100;
 const genId = (prefix: string) => `${prefix}${++idCounter}`;
 
 export const DataProvider = ({ children }: { children: ReactNode }) => {
+  const [agencies, setAgencies] = useState<Agency[]>(initialAgencies);
   const [clients, setClients] = useState<Client[]>(initialClients);
   const [properties, setProperties] = useState<Property[]>(initialProperties);
   const [users, setUsers] = useState<User[]>(initialUsers);
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const [documents, setDocuments] = useState<Document[]>(initialDocuments);
 
   return (
     <DataContext.Provider
       value={{
+        agencies,
         clients,
         properties,
         users,
         tasks,
+        documents,
         monthlyData,
+        addAgency: (a) => setAgencies((prev) => [...prev, { ...a, id: genId("a") }]),
+        updateAgency: (a) => setAgencies((prev) => prev.map((x) => (x.id === a.id ? a : x))),
+        deleteAgency: (id) => setAgencies((prev) => prev.filter((x) => x.id !== id)),
         addClient: (c) => setClients((prev) => [...prev, { ...c, id: genId("c") }]),
         updateClient: (c) => setClients((prev) => prev.map((x) => (x.id === c.id ? c : x))),
         deleteClient: (id) => setClients((prev) => prev.filter((x) => x.id !== id)),
@@ -59,6 +76,9 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         addTask: (t) => setTasks((prev) => [...prev, { ...t, id: genId("t") }]),
         updateTask: (t) => setTasks((prev) => prev.map((x) => (x.id === t.id ? t : x))),
         deleteTask: (id) => setTasks((prev) => prev.filter((x) => x.id !== id)),
+        addDocument: (d) => setDocuments((prev) => [...prev, { ...d, id: genId("d") }]),
+        updateDocument: (d) => setDocuments((prev) => prev.map((x) => (x.id === d.id ? d : x))),
+        deleteDocument: (id) => setDocuments((prev) => prev.filter((x) => x.id !== id)),
       }}
     >
       {children}

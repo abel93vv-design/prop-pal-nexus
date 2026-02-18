@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Search, Mail, Phone, Plus, Pencil, Trash2 } from "lucide-react";
 import { Client, ClientType, LeadStatus } from "@/types/crm";
 import { useToast } from "@/hooks/use-toast";
@@ -22,15 +23,20 @@ const statusColors: Record<LeadStatus, string> = {
   cerrado: 'bg-success/10 text-success border-success/20',
 };
 
+const CATEGORIES = ['premium', 'estandar', 'comercial', 'inversor', 'otro'];
+
 const emptyClient: Omit<Client, "id"> = {
-  name: "", email: "", phone: "", address: "", type: "comprador", leadStatus: "nuevo", propertyIds: [], registeredAt: new Date().toISOString().split("T")[0], notes: "",
+  name: "", email: "", phone: "", address: "", type: "comprador", leadStatus: "nuevo",
+  propertyIds: [], registeredAt: new Date().toISOString().split("T")[0], notes: "",
+  agencyId: "", category: "estandar",
 };
 
 const Clients = () => {
-  const { clients, addClient, updateClient, deleteClient } = useData();
+  const { clients, agencies, addClient, updateClient, deleteClient } = useData();
   const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Client | null>(null);
   const [form, setForm] = useState<Omit<Client, "id">>(emptyClient);
@@ -39,21 +45,21 @@ const Clients = () => {
   const filtered = clients.filter(c => {
     const matchSearch = c.name.toLowerCase().includes(search.toLowerCase()) || c.email.toLowerCase().includes(search.toLowerCase());
     const matchType = typeFilter === "all" || c.type === typeFilter;
-    return matchSearch && matchType;
+    const matchCat = categoryFilter === "all" || c.category === categoryFilter;
+    return matchSearch && matchType && matchCat;
   });
 
   const openCreate = () => { setEditing(null); setForm(emptyClient); setDialogOpen(true); };
-  const openEdit = (c: Client) => { setEditing(c); setForm({ name: c.name, email: c.email, phone: c.phone, address: c.address, type: c.type, leadStatus: c.leadStatus, propertyIds: c.propertyIds, registeredAt: c.registeredAt, notes: c.notes }); setDialogOpen(true); };
+  const openEdit = (c: Client) => {
+    setEditing(c);
+    setForm({ name: c.name, email: c.email, phone: c.phone, address: c.address, type: c.type, leadStatus: c.leadStatus, propertyIds: c.propertyIds, registeredAt: c.registeredAt, notes: c.notes, agencyId: c.agencyId, category: c.category });
+    setDialogOpen(true);
+  };
 
   const handleSave = () => {
     if (!form.name.trim() || !form.email.trim()) { toast({ title: "Error", description: "Nombre y email son obligatorios", variant: "destructive" }); return; }
-    if (editing) {
-      updateClient({ ...editing, ...form });
-      toast({ title: "Cliente actualizado" });
-    } else {
-      addClient(form);
-      toast({ title: "Cliente creado" });
-    }
+    if (editing) { updateClient({ ...editing, ...form }); toast({ title: "Cliente actualizado" }); }
+    else { addClient(form); toast({ title: "Cliente creado" }); }
     setDialogOpen(false);
   };
 
@@ -78,10 +84,17 @@ const Clients = () => {
             <Input placeholder="Buscar por nombre o email..." className="pl-9" value={search} onChange={e => setSearch(e.target.value)} />
           </div>
           <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-[180px]"><SelectValue placeholder="Tipo" /></SelectTrigger>
+            <SelectTrigger className="w-[160px]"><SelectValue placeholder="Tipo" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos los tipos</SelectItem>
               {Object.entries(typeLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="w-[160px]"><SelectValue placeholder="Categoría" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas las categorías</SelectItem>
+              {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
@@ -93,6 +106,7 @@ const Clients = () => {
                 <TableHead className="font-semibold text-xs">Nombre</TableHead>
                 <TableHead className="font-semibold text-xs">Contacto</TableHead>
                 <TableHead className="font-semibold text-xs">Tipo</TableHead>
+                <TableHead className="font-semibold text-xs">Categoría</TableHead>
                 <TableHead className="font-semibold text-xs">Estado</TableHead>
                 <TableHead className="font-semibold text-xs">Registro</TableHead>
                 <TableHead className="font-semibold text-xs text-right">Acciones</TableHead>
@@ -112,6 +126,7 @@ const Clients = () => {
                     </div>
                   </TableCell>
                   <TableCell><Badge variant="outline" className="text-[10px]">{typeLabels[c.type]}</Badge></TableCell>
+                  <TableCell><Badge variant="outline" className="text-[10px] capitalize">{c.category}</Badge></TableCell>
                   <TableCell>
                     <Badge variant="outline" className={`text-[10px] ${statusColors[c.leadStatus]}`}>{statusLabels[c.leadStatus]}</Badge>
                   </TableCell>
@@ -129,9 +144,8 @@ const Clients = () => {
         </div>
       </div>
 
-      {/* Create / Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editing ? "Editar Cliente" : "Nuevo Cliente"}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div><Label className="text-xs">Nombre *</Label><Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></div>
@@ -149,10 +163,29 @@ const Clients = () => {
                 </Select>
               </div>
               <div>
-                <Label className="text-xs">Estado</Label>
+                <Label className="text-xs">Estado lead</Label>
                 <Select value={form.leadStatus} onValueChange={(v) => setForm({ ...form, leadStatus: v as LeadStatus })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>{Object.entries(statusLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Categoría</Label>
+                <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{CATEGORIES.map(c => <SelectItem key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs">Inmobiliaria</Label>
+                <Select value={form.agencyId} onValueChange={(v) => setForm({ ...form, agencyId: v })}>
+                  <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Sin asignar</SelectItem>
+                    {agencies.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
+                  </SelectContent>
                 </Select>
               </div>
             </div>
@@ -165,7 +198,6 @@ const Clients = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirm */}
       <Dialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle>¿Eliminar cliente?</DialogTitle></DialogHeader>
