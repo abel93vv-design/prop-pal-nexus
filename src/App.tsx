@@ -9,6 +9,7 @@ import Properties from "./pages/Properties";
 import Clients from "./pages/Clients";
 import Tasks from "./pages/Tasks";
 import Team from "./pages/Team";
+import Agencies from "./pages/Agencies";
 import PublicProperties from "./pages/PublicProperties";
 import NotFound from "./pages/NotFound";
 
@@ -27,6 +28,7 @@ const App = () => (
             <Route path="/clientes" element={<Clients />} />
             <Route path="/tareas" element={<Tasks />} />
             <Route path="/equipo" element={<Team />} />
+            <Route path="/inmobiliarias" element={<Agencies />} />
             <Route path="/publica" element={<PublicProperties />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
@@ -37,3 +39,4 @@ const App = () => (
 );
 
 export default App;
+

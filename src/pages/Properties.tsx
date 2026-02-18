@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Layout } from "@/components/Layout";
 import { useData } from "@/context/DataContext";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,44 +8,58 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Building2, MapPin, Bed, Bath, Ruler, Search, Plus, Pencil, Trash2 } from "lucide-react";
-import { Property, PropertyType, PropertyStatus } from "@/types/crm";
+import { Building2, MapPin, Bed, Bath, Ruler, Search, Plus, Pencil, Trash2, FileText, Upload, X } from "lucide-react";
+import { Property, PropertyType, PropertyStatus, Document, DocumentType } from "@/types/crm";
 import { useToast } from "@/hooks/use-toast";
 
 const typeLabels: Record<PropertyType, string> = { piso: 'Piso', casa: 'Casa', local: 'Local', terreno: 'Terreno' };
 const statusLabels: Record<PropertyStatus, string> = { disponible: 'Disponible', reservado: 'Reservado', vendido_alquilado: 'Vendido/Alquilado' };
+const docTypeLabels: Record<DocumentType, string> = { nota_simple: 'Nota Simple', contrato: 'Contrato', fotos: 'Fotos', otros: 'Otros' };
 const statusColors: Record<PropertyStatus, string> = {
   disponible: 'bg-success/10 text-success border-success/20',
   reservado: 'bg-warning/10 text-warning border-warning/20',
   vendido_alquilado: 'bg-muted text-muted-foreground border-border',
 };
 
+const PROP_CATEGORIES = ['residencial', 'comercial', 'lujo', 'suelo', 'industrial', 'otro'];
+
 const emptyProperty: Omit<Property, "id"> = {
-  title: "", address: "", type: "piso", status: "disponible", price: 0, surface: 0, bedrooms: 0, bathrooms: 0, photos: [], agentId: "", interestedClientIds: [], publishedAt: new Date().toISOString().split("T")[0], description: "",
+  title: "", address: "", type: "piso", status: "disponible", price: 0, surface: 0,
+  bedrooms: 0, bathrooms: 0, photos: [], agentId: "", interestedClientIds: [],
+  publishedAt: new Date().toISOString().split("T")[0], description: "",
+  agencyId: "", category: "residencial",
+};
+
+const emptyDoc: Omit<Document, "id"> = {
+  name: "", type: "nota_simple", file: "", uploadedAt: new Date().toISOString().split("T")[0], propertyId: "",
 };
 
 const Properties = () => {
-  const { properties, users, addProperty, updateProperty, deleteProperty } = useData();
+  const { properties, users, agencies, documents, addProperty, updateProperty, deleteProperty, addDocument, deleteDocument } = useData();
   const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Property | null>(null);
   const [form, setForm] = useState<Omit<Property, "id">>(emptyProperty);
   const [deleteTarget, setDeleteTarget] = useState<Property | null>(null);
+  const [docsProperty, setDocsProperty] = useState<Property | null>(null);
+  const [docForm, setDocForm] = useState<Omit<Document, "id">>(emptyDoc);
 
   const filtered = properties.filter(p => {
     const matchSearch = p.title.toLowerCase().includes(search.toLowerCase()) || p.address.toLowerCase().includes(search.toLowerCase());
     const matchType = typeFilter === "all" || p.type === typeFilter;
     const matchStatus = statusFilter === "all" || p.status === statusFilter;
-    return matchSearch && matchType && matchStatus;
+    const matchCat = categoryFilter === "all" || p.category === categoryFilter;
+    return matchSearch && matchType && matchStatus && matchCat;
   });
 
   const openCreate = () => { setEditing(null); setForm(emptyProperty); setDialogOpen(true); };
   const openEdit = (p: Property) => {
     setEditing(p);
-    setForm({ title: p.title, address: p.address, type: p.type, status: p.status, price: p.price, surface: p.surface, bedrooms: p.bedrooms, bathrooms: p.bathrooms, photos: p.photos, agentId: p.agentId, interestedClientIds: p.interestedClientIds, publishedAt: p.publishedAt, description: p.description });
+    setForm({ title: p.title, address: p.address, type: p.type, status: p.status, price: p.price, surface: p.surface, bedrooms: p.bedrooms, bathrooms: p.bathrooms, photos: p.photos, agentId: p.agentId, interestedClientIds: p.interestedClientIds, publishedAt: p.publishedAt, description: p.description, agencyId: p.agencyId, category: p.category });
     setDialogOpen(true);
   };
 
@@ -61,6 +74,20 @@ const Properties = () => {
     if (deleteTarget) { deleteProperty(deleteTarget.id); toast({ title: "Propiedad eliminada" }); setDeleteTarget(null); }
   };
 
+  const openDocs = (p: Property) => {
+    setDocsProperty(p);
+    setDocForm({ ...emptyDoc, propertyId: p.id });
+  };
+
+  const handleAddDoc = () => {
+    if (!docForm.name.trim()) { toast({ title: "Error", description: "El nombre del documento es obligatorio", variant: "destructive" }); return; }
+    addDocument(docForm);
+    toast({ title: "Documento añadido" });
+    setDocForm({ ...emptyDoc, propertyId: docsProperty?.id ?? "" });
+  };
+
+  const propertyDocs = docsProperty ? documents.filter(d => d.propertyId === docsProperty.id) : [];
+
   return (
     <Layout>
       <div className="space-y-6 animate-fade-in">
@@ -72,23 +99,30 @@ const Properties = () => {
           <Button onClick={openCreate} size="sm"><Plus className="w-4 h-4 mr-1" />Nueva Propiedad</Button>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
+        <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
+          <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input placeholder="Buscar por título o dirección..." className="pl-9" value={search} onChange={e => setSearch(e.target.value)} />
           </div>
           <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-[160px]"><SelectValue placeholder="Tipo" /></SelectTrigger>
+            <SelectTrigger className="w-[140px]"><SelectValue placeholder="Tipo" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos los tipos</SelectItem>
               {Object.entries(typeLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[160px]"><SelectValue placeholder="Estado" /></SelectTrigger>
+            <SelectTrigger className="w-[140px]"><SelectValue placeholder="Estado" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos</SelectItem>
               {Object.entries(statusLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="w-[140px]"><SelectValue placeholder="Categoría" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas</SelectItem>
+              {PROP_CATEGORIES.map(c => <SelectItem key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
@@ -96,37 +130,44 @@ const Properties = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {filtered.map(p => {
             const agent = users.find(u => u.id === p.agentId);
+            const docCount = documents.filter(d => d.propertyId === p.id).length;
             return (
-              <Card key={p.id} className="overflow-hidden hover:shadow-md transition-shadow relative group">
+              <div key={p.id} className="rounded-xl border border-border bg-card overflow-hidden hover:shadow-md transition-shadow relative group">
                 <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                  <Button variant="secondary" size="icon" className="h-7 w-7" title="Documentos" onClick={() => openDocs(p)}><FileText className="w-3 h-3" /></Button>
                   <Button variant="secondary" size="icon" className="h-7 w-7" onClick={() => openEdit(p)}><Pencil className="w-3 h-3" /></Button>
                   <Button variant="secondary" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(p)}><Trash2 className="w-3 h-3" /></Button>
                 </div>
                 <div className="h-40 bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center">
                   <Building2 className="w-12 h-12 text-primary/30" />
                 </div>
-                <CardContent className="p-4 space-y-3">
+                <div className="p-4 space-y-3">
                   <div className="flex items-start justify-between gap-2">
                     <h3 className="font-semibold text-sm text-foreground leading-tight">{p.title}</h3>
-                    <Badge variant="outline" className={`text-[10px] shrink-0 ${statusColors[p.status]}`}>{statusLabels[p.status]}</Badge>
+                    <div className="flex flex-col gap-1 items-end shrink-0">
+                      <Badge variant="outline" className={`text-[10px] ${statusColors[p.status]}`}>{statusLabels[p.status]}</Badge>
+                      <Badge variant="outline" className="text-[10px] capitalize">{p.category}</Badge>
+                    </div>
                   </div>
                   <div className="flex items-center gap-1 text-xs text-muted-foreground"><MapPin className="w-3 h-3" />{p.address}</div>
                   <div className="flex items-center gap-4 text-xs text-muted-foreground">
                     {p.bedrooms > 0 && <span className="flex items-center gap-1"><Bed className="w-3 h-3" />{p.bedrooms}</span>}
                     {p.bathrooms > 0 && <span className="flex items-center gap-1"><Bath className="w-3 h-3" />{p.bathrooms}</span>}
                     <span className="flex items-center gap-1"><Ruler className="w-3 h-3" />{p.surface}m²</span>
+                    {docCount > 0 && <span className="flex items-center gap-1"><FileText className="w-3 h-3" />{docCount} doc.</span>}
                   </div>
                   <div className="flex items-center justify-between pt-2 border-t border-border">
                     <span className="text-lg font-bold text-foreground">{p.price.toLocaleString('es-ES')} €</span>
                     <span className="text-xs text-muted-foreground">{agent?.name}</span>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             );
           })}
         </div>
       </div>
 
+      {/* Create / Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editing ? "Editar Propiedad" : "Nueva Propiedad"}</DialogTitle></DialogHeader>
@@ -146,6 +187,25 @@ const Properties = () => {
                 <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v as PropertyStatus })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>{Object.entries(statusLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Categoría</Label>
+                <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{PROP_CATEGORIES.map(c => <SelectItem key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs">Inmobiliaria</Label>
+                <Select value={form.agencyId} onValueChange={(v) => setForm({ ...form, agencyId: v })}>
+                  <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Sin asignar</SelectItem>
+                    {agencies.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
+                  </SelectContent>
                 </Select>
               </div>
             </div>
@@ -173,6 +233,7 @@ const Properties = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Delete Confirm */}
       <Dialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle>¿Eliminar propiedad?</DialogTitle></DialogHeader>
@@ -180,6 +241,53 @@ const Properties = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteTarget(null)}>Cancelar</Button>
             <Button variant="destructive" onClick={handleDelete}>Eliminar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Documents Manager */}
+      <Dialog open={!!docsProperty} onOpenChange={() => setDocsProperty(null)}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Documentos — {docsProperty?.title}</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            {/* Add doc form */}
+            <div className="p-3 rounded-lg bg-muted/40 border border-border space-y-3">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Añadir documento</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label className="text-xs">Nombre *</Label><Input value={docForm.name} onChange={e => setDocForm({ ...docForm, name: e.target.value })} placeholder="Nombre del documento" /></div>
+                <div>
+                  <Label className="text-xs">Tipo</Label>
+                  <Select value={docForm.type} onValueChange={(v) => setDocForm({ ...docForm, type: v as DocumentType })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{Object.entries(docTypeLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <Button size="sm" onClick={handleAddDoc} className="w-full"><Upload className="w-3.5 h-3.5 mr-1" />Añadir documento</Button>
+            </div>
+            {/* Doc list */}
+            {propertyDocs.length === 0
+              ? <p className="text-sm text-muted-foreground text-center py-4">No hay documentos para esta propiedad.</p>
+              : <div className="space-y-2">
+                  {propertyDocs.map(d => (
+                    <div key={d.id} className="flex items-center justify-between p-3 rounded-lg border border-border bg-card">
+                      <div className="flex items-center gap-3">
+                        <FileText className="w-4 h-4 text-primary shrink-0" />
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{d.name}</p>
+                          <p className="text-xs text-muted-foreground">{docTypeLabels[d.type]} · {new Date(d.uploadedAt).toLocaleDateString('es-ES')}</p>
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => { deleteDocument(d.id); toast({ title: "Documento eliminado" }); }}>
+                        <X className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+            }
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDocsProperty(null)}>Cerrar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
