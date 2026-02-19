@@ -13,12 +13,13 @@ import { Property, PropertyType, PropertyStatus, Document, DocumentType } from "
 import { useToast } from "@/hooks/use-toast";
 
 const typeLabels: Record<PropertyType, string> = { piso: 'Piso', casa: 'Casa', local: 'Local', terreno: 'Terreno' };
-const statusLabels: Record<PropertyStatus, string> = { disponible: 'Disponible', reservado: 'Reservado', vendido_alquilado: 'Vendido/Alquilado' };
+const statusLabels: Record<PropertyStatus, string> = { disponible: 'Disponible', reservado: 'Reservado', vendido_alquilado: 'Vendido/Alquilado', no_disponible: 'No Disponible' };
 const docTypeLabels: Record<DocumentType, string> = { nota_simple: 'Nota Simple', contrato: 'Contrato', fotos: 'Fotos', otros: 'Otros' };
 const statusColors: Record<PropertyStatus, string> = {
   disponible: 'bg-success/10 text-success border-success/20',
   reservado: 'bg-warning/10 text-warning border-warning/20',
   vendido_alquilado: 'bg-muted text-muted-foreground border-border',
+  no_disponible: 'bg-destructive/10 text-destructive border-destructive/20',
 };
 
 const PROP_CATEGORIES = ['residencial', 'comercial', 'lujo', 'suelo', 'industrial', 'otro'];
@@ -138,8 +139,12 @@ const Properties = () => {
                   <Button variant="secondary" size="icon" className="h-7 w-7" onClick={() => openEdit(p)}><Pencil className="w-3 h-3" /></Button>
                   <Button variant="secondary" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(p)}><Trash2 className="w-3 h-3" /></Button>
                 </div>
-                <div className="h-40 bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center">
-                  <Building2 className="w-12 h-12 text-primary/30" />
+                <div className="h-40 bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center overflow-hidden">
+                  {p.photos.length > 0 ? (
+                    <img src={p.photos[0]} alt={p.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <Building2 className="w-12 h-12 text-primary/30" />
+                  )}
                 </div>
                 <div className="p-4 space-y-3">
                   <div className="flex items-start justify-between gap-2">
@@ -225,6 +230,49 @@ const Properties = () => {
               <div><Label className="text-xs">Baños</Label><Input type="number" value={form.bathrooms || ""} onChange={e => setForm({ ...form, bathrooms: Number(e.target.value) })} /></div>
             </div>
             <div><Label className="text-xs">Descripción</Label><Textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={3} /></div>
+            {/* Image upload */}
+            <div>
+              <Label className="text-xs">Fotos</Label>
+              <div className="mt-1 space-y-2">
+                <div className="flex flex-wrap gap-2">
+                  {form.photos.map((photo, i) => (
+                    <div key={i} className="relative w-20 h-20 rounded-md overflow-hidden border border-border group/photo">
+                      <img src={photo} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        className="absolute top-0.5 right-0.5 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover/photo:opacity-100 transition-opacity"
+                        onClick={() => setForm({ ...form, photos: form.photos.filter((_, idx) => idx !== i) })}
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <label className="flex items-center gap-2 cursor-pointer text-xs text-primary hover:underline">
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>Añadir imagen</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      const files = e.target.files;
+                      if (!files) return;
+                      Array.from(files).forEach(file => {
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                          const result = ev.target?.result as string;
+                          setForm(prev => ({ ...prev, photos: [...prev.photos, result] }));
+                        };
+                        reader.readAsDataURL(file);
+                      });
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
