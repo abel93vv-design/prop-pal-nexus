@@ -27,7 +27,7 @@ const CATEGORIES = ['premium', 'estandar', 'comercial', 'inversor', 'otro'];
 const emptyClient: Omit<Client, "id"> = {
   name: "", email: "", phone: "", address: "", type: "comprador", leadStatus: "nuevo",
   propertyIds: [], registeredAt: new Date().toISOString().split("T")[0], notes: "",
-  agencyId: "", category: "estandar", lastContactedAt: "",
+  agencyId: "", category: "estandar", lastContactedAt: "", contactCount: 0,
 };
 
 const Clients = () => {
@@ -59,7 +59,7 @@ const Clients = () => {
   const openCreate = () => { setEditing(null); setForm(emptyClient); setDialogOpen(true); };
   const openEdit = (c: Client) => {
     setEditing(c);
-    setForm({ name: c.name, email: c.email, phone: c.phone, address: c.address, type: c.type, leadStatus: c.leadStatus, propertyIds: c.propertyIds, registeredAt: c.registeredAt, notes: c.notes, agencyId: c.agencyId, category: c.category, lastContactedAt: c.lastContactedAt });
+    setForm({ name: c.name, email: c.email, phone: c.phone, address: c.address, type: c.type, leadStatus: c.leadStatus, propertyIds: c.propertyIds, registeredAt: c.registeredAt, notes: c.notes, agencyId: c.agencyId, category: c.category, lastContactedAt: c.lastContactedAt, contactCount: c.contactCount });
     setDialogOpen(true);
   };
 
@@ -76,7 +76,7 @@ const Clients = () => {
 
   const markContacted = (c: Client) => {
     const now = new Date().toISOString().split("T")[0];
-    updateClient({ ...c, lastContactedAt: now, leadStatus: c.leadStatus === 'nuevo' ? 'contactado' : c.leadStatus });
+    updateClient({ ...c, lastContactedAt: now, contactCount: (c.contactCount || 0) + 1, leadStatus: c.leadStatus === 'nuevo' ? 'contactado' : c.leadStatus });
     toast({ title: "Contacto registrado", description: `${c.name} marcado como contactado hoy.` });
   };
 
@@ -132,6 +132,7 @@ const Clients = () => {
                 <TableHead className="font-semibold text-xs">Categoría</TableHead>
                 <TableHead className="font-semibold text-xs">Estado</TableHead>
                 <TableHead className="font-semibold text-xs">Últ. contacto</TableHead>
+                <TableHead className="font-semibold text-xs text-center">Nº contactos</TableHead>
                 <TableHead className="font-semibold text-xs text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
@@ -158,6 +159,9 @@ const Clients = () => {
                       ? <span className="text-xs text-muted-foreground">{new Date(c.lastContactedAt).toLocaleDateString('es-ES')}</span>
                       : <span className="text-xs text-muted-foreground italic">Sin contactar</span>
                     }
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Badge variant="outline" className="text-[10px]">{c.contactCount || 0}</Badge>
                   </TableCell>
                   <TableCell>
                     <div className="flex justify-end gap-1">
