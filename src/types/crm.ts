@@ -1,7 +1,7 @@
 export type ClientType = 'comprador' | 'vendedor' | 'arrendador' | 'arrendatario';
 export type LeadStatus = 'nuevo' | 'contactado' | 'en_negociacion' | 'cerrado';
 export type PropertyType = 'piso' | 'casa' | 'local' | 'terreno';
-export type PropertyStatus = 'disponible' | 'reservado' | 'vendido_alquilado';
+export type PropertyStatus = 'disponible' | 'reservado' | 'vendido_alquilado' | 'no_disponible';
 export type UserRole = 'admin_global' | 'admin_inmobiliaria' | 'agente' | 'personalizado';
 export type TaskType = 'llamada' | 'email' | 'visita' | 'recordatorio';
 export type TaskStatus = 'pendiente' | 'en_progreso' | 'completada';
