@@ -44,6 +44,7 @@ export interface Client {
   agencyId: string;
   category: string;
   lastContactedAt: string;
+  contactCount: number;
 }
 
 export interface Property {
