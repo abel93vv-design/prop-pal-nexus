@@ -132,7 +132,6 @@ const Clients = () => {
                 <TableHead className="font-semibold text-xs">Categoría</TableHead>
                 <TableHead className="font-semibold text-xs">Estado</TableHead>
                 <TableHead className="font-semibold text-xs">Últ. contacto</TableHead>
-                <TableHead className="font-semibold text-xs">Fecha registro</TableHead>
                 <TableHead className="font-semibold text-xs text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
@@ -142,9 +141,6 @@ const Clients = () => {
                   <TableCell>
                     <p className="font-medium text-sm text-foreground">{c.name}</p>
                     <p className="text-xs text-muted-foreground">{c.address}</p>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-xs text-muted-foreground">{new Date(c.registeredAt).toLocaleDateString('es-ES')}</span>
                   </TableCell>
                   <TableCell>
                     <div className="space-y-1">
