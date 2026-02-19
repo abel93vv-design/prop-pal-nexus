@@ -43,6 +43,7 @@ export interface Client {
   notes: string;
   agencyId: string;
   category: string;
+  lastContactedAt: string;
 }
 
 export interface Property {
