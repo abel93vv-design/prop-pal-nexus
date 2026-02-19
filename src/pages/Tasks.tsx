@@ -217,20 +217,20 @@ const Tasks = () => {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs">Agente responsable</Label>
-                <Select value={form.agentId} onValueChange={(v) => setForm({ ...form, agentId: v })}>
+                <Select value={form.agentId || "none"} onValueChange={(v) => setForm({ ...form, agentId: v === "none" ? "" : v })}>
                   <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Sin asignar</SelectItem>
+                    <SelectItem value="none">Sin asignar</SelectItem>
                     {users.map(u => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
               <div>
                 <Label className="text-xs">Inmobiliaria</Label>
-                <Select value={form.agencyId} onValueChange={(v) => setForm({ ...form, agencyId: v })}>
+                <Select value={form.agencyId || "none"} onValueChange={(v) => setForm({ ...form, agencyId: v === "none" ? "" : v })}>
                   <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Sin asignar</SelectItem>
+                    <SelectItem value="none">Sin asignar</SelectItem>
                     {agencies.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
@@ -239,20 +239,20 @@ const Tasks = () => {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs">Cliente relacionado</Label>
-                <Select value={form.clientId} onValueChange={(v) => setForm({ ...form, clientId: v })}>
+                <Select value={form.clientId || "none"} onValueChange={(v) => setForm({ ...form, clientId: v === "none" ? "" : v })}>
                   <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Sin cliente</SelectItem>
+                    <SelectItem value="none">Sin cliente</SelectItem>
                     {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
               <div>
                 <Label className="text-xs">Propiedad relacionada</Label>
-                <Select value={form.propertyId} onValueChange={(v) => setForm({ ...form, propertyId: v })}>
+                <Select value={form.propertyId || "none"} onValueChange={(v) => setForm({ ...form, propertyId: v === "none" ? "" : v })}>
                   <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Sin propiedad</SelectItem>
+                    <SelectItem value="none">Sin propiedad</SelectItem>
                     {properties.map(p => <SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>)}
                   </SelectContent>
                 </Select>

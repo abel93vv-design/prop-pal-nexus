@@ -180,10 +180,10 @@ const Clients = () => {
               </div>
               <div>
                 <Label className="text-xs">Inmobiliaria</Label>
-                <Select value={form.agencyId} onValueChange={(v) => setForm({ ...form, agencyId: v })}>
+                <Select value={form.agencyId || "none"} onValueChange={(v) => setForm({ ...form, agencyId: v === "none" ? "" : v })}>
                   <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Sin asignar</SelectItem>
+                    <SelectItem value="none">Sin asignar</SelectItem>
                     {agencies.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
