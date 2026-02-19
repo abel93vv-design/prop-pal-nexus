@@ -9,8 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Search, Mail, Phone, Plus, Pencil, Trash2 } from "lucide-react";
+import { Search, Mail, Phone, Plus, Pencil, Trash2, PhoneCall, ArrowUpDown } from "lucide-react";
 import { Client, ClientType, LeadStatus } from "@/types/crm";
 import { useToast } from "@/hooks/use-toast";
 
@@ -28,7 +27,7 @@ const CATEGORIES = ['premium', 'estandar', 'comercial', 'inversor', 'otro'];
 const emptyClient: Omit<Client, "id"> = {
   name: "", email: "", phone: "", address: "", type: "comprador", leadStatus: "nuevo",
   propertyIds: [], registeredAt: new Date().toISOString().split("T")[0], notes: "",
-  agencyId: "", category: "estandar",
+  agencyId: "", category: "estandar", lastContactedAt: "",
 };
 
 const Clients = () => {
@@ -37,22 +36,30 @@ const Clients = () => {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [contactSort, setContactSort] = useState<string>("none"); // "asc" | "desc" | "none"
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Client | null>(null);
   const [form, setForm] = useState<Omit<Client, "id">>(emptyClient);
   const [deleteTarget, setDeleteTarget] = useState<Client | null>(null);
 
-  const filtered = clients.filter(c => {
-    const matchSearch = c.name.toLowerCase().includes(search.toLowerCase()) || c.email.toLowerCase().includes(search.toLowerCase());
-    const matchType = typeFilter === "all" || c.type === typeFilter;
-    const matchCat = categoryFilter === "all" || c.category === categoryFilter;
-    return matchSearch && matchType && matchCat;
-  });
+  const filtered = clients
+    .filter(c => {
+      const matchSearch = c.name.toLowerCase().includes(search.toLowerCase()) || c.email.toLowerCase().includes(search.toLowerCase());
+      const matchType = typeFilter === "all" || c.type === typeFilter;
+      const matchCat = categoryFilter === "all" || c.category === categoryFilter;
+      return matchSearch && matchType && matchCat;
+    })
+    .sort((a, b) => {
+      if (contactSort === "none") return 0;
+      const dateA = a.lastContactedAt ? new Date(a.lastContactedAt).getTime() : 0;
+      const dateB = b.lastContactedAt ? new Date(b.lastContactedAt).getTime() : 0;
+      return contactSort === "desc" ? dateB - dateA : dateA - dateB;
+    });
 
   const openCreate = () => { setEditing(null); setForm(emptyClient); setDialogOpen(true); };
   const openEdit = (c: Client) => {
     setEditing(c);
-    setForm({ name: c.name, email: c.email, phone: c.phone, address: c.address, type: c.type, leadStatus: c.leadStatus, propertyIds: c.propertyIds, registeredAt: c.registeredAt, notes: c.notes, agencyId: c.agencyId, category: c.category });
+    setForm({ name: c.name, email: c.email, phone: c.phone, address: c.address, type: c.type, leadStatus: c.leadStatus, propertyIds: c.propertyIds, registeredAt: c.registeredAt, notes: c.notes, agencyId: c.agencyId, category: c.category, lastContactedAt: c.lastContactedAt });
     setDialogOpen(true);
   };
 
@@ -67,6 +74,18 @@ const Clients = () => {
     if (deleteTarget) { deleteClient(deleteTarget.id); toast({ title: "Cliente eliminado" }); setDeleteTarget(null); }
   };
 
+  const markContacted = (c: Client) => {
+    const now = new Date().toISOString().split("T")[0];
+    updateClient({ ...c, lastContactedAt: now, leadStatus: c.leadStatus === 'nuevo' ? 'contactado' : c.leadStatus });
+    toast({ title: "Contacto registrado", description: `${c.name} marcado como contactado hoy.` });
+  };
+
+  const cycleContactSort = () => {
+    setContactSort(prev => prev === "none" ? "desc" : prev === "desc" ? "asc" : "none");
+  };
+
+  const sortLabel = contactSort === "desc" ? "↓ Reciente" : contactSort === "asc" ? "↑ Antiguo" : "";
+
   return (
     <Layout>
       <div className="space-y-6 animate-fade-in">
@@ -78,8 +97,8 @@ const Clients = () => {
           <Button onClick={openCreate} size="sm"><Plus className="w-4 h-4 mr-1" />Nuevo Cliente</Button>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
+        <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
+          <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input placeholder="Buscar por nombre o email..." className="pl-9" value={search} onChange={e => setSearch(e.target.value)} />
           </div>
@@ -97,6 +116,10 @@ const Clients = () => {
               {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</SelectItem>)}
             </SelectContent>
           </Select>
+          <Button variant={contactSort !== "none" ? "secondary" : "outline"} size="sm" onClick={cycleContactSort} className="gap-1.5">
+            <ArrowUpDown className="w-3.5 h-3.5" />
+            Últ. contacto {sortLabel}
+          </Button>
         </div>
 
         <div className="rounded-xl border border-border bg-card overflow-hidden">
@@ -108,7 +131,7 @@ const Clients = () => {
                 <TableHead className="font-semibold text-xs">Tipo</TableHead>
                 <TableHead className="font-semibold text-xs">Categoría</TableHead>
                 <TableHead className="font-semibold text-xs">Estado</TableHead>
-                <TableHead className="font-semibold text-xs">Registro</TableHead>
+                <TableHead className="font-semibold text-xs">Últ. contacto</TableHead>
                 <TableHead className="font-semibold text-xs text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
@@ -130,9 +153,15 @@ const Clients = () => {
                   <TableCell>
                     <Badge variant="outline" className={`text-[10px] ${statusColors[c.leadStatus]}`}>{statusLabels[c.leadStatus]}</Badge>
                   </TableCell>
-                  <TableCell><span className="text-xs text-muted-foreground">{new Date(c.registeredAt).toLocaleDateString('es-ES')}</span></TableCell>
+                  <TableCell>
+                    {c.lastContactedAt
+                      ? <span className="text-xs text-muted-foreground">{new Date(c.lastContactedAt).toLocaleDateString('es-ES')}</span>
+                      : <span className="text-xs text-muted-foreground italic">Sin contactar</span>
+                    }
+                  </TableCell>
                   <TableCell>
                     <div className="flex justify-end gap-1">
+                      <Button variant="ghost" size="icon" className="h-8 w-8" title="Marcar contactado" onClick={() => markContacted(c)}><PhoneCall className="w-3.5 h-3.5 text-success" /></Button>
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(c)}><Pencil className="w-3.5 h-3.5" /></Button>
                       <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(c)}><Trash2 className="w-3.5 h-3.5" /></Button>
                     </div>
