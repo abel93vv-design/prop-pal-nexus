@@ -14,16 +14,387 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      agencies: {
+        Row: {
+          address: string | null
+          color: string | null
+          created_at: string
+          email: string | null
+          id: string
+          logo: string | null
+          name: string
+          phone: string | null
+        }
+        Insert: {
+          address?: string | null
+          color?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          logo?: string | null
+          name: string
+          phone?: string | null
+        }
+        Update: {
+          address?: string | null
+          color?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          logo?: string | null
+          name?: string
+          phone?: string | null
+        }
+        Relationships: []
+      }
+      clients: {
+        Row: {
+          address: string | null
+          agency_id: string | null
+          category: string | null
+          contact_count: number | null
+          created_at: string
+          email: string | null
+          id: string
+          last_contacted_at: string | null
+          lead_status: string
+          name: string
+          notes: string | null
+          phone: string | null
+          property_ids: string[] | null
+          registered_at: string
+          type: string
+        }
+        Insert: {
+          address?: string | null
+          agency_id?: string | null
+          category?: string | null
+          contact_count?: number | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          last_contacted_at?: string | null
+          lead_status?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          property_ids?: string[] | null
+          registered_at?: string
+          type?: string
+        }
+        Update: {
+          address?: string | null
+          agency_id?: string | null
+          category?: string | null
+          contact_count?: number | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          last_contacted_at?: string | null
+          lead_status?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          property_ids?: string[] | null
+          registered_at?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clients_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documents: {
+        Row: {
+          file: string | null
+          id: string
+          name: string
+          property_id: string | null
+          type: string
+          uploaded_at: string
+        }
+        Insert: {
+          file?: string | null
+          id?: string
+          name: string
+          property_id?: string | null
+          type?: string
+          uploaded_at?: string
+        }
+        Update: {
+          file?: string | null
+          id?: string
+          name?: string
+          property_id?: string | null
+          type?: string
+          uploaded_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      properties: {
+        Row: {
+          address: string | null
+          agency_id: string | null
+          agent_id: string | null
+          bathrooms: number | null
+          bedrooms: number | null
+          category: string | null
+          created_at: string
+          description: string | null
+          id: string
+          interested_client_ids: string[] | null
+          photos: string[] | null
+          price: number | null
+          published_at: string | null
+          status: string
+          surface: number | null
+          title: string
+          type: string
+        }
+        Insert: {
+          address?: string | null
+          agency_id?: string | null
+          agent_id?: string | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          interested_client_ids?: string[] | null
+          photos?: string[] | null
+          price?: number | null
+          published_at?: string | null
+          status?: string
+          surface?: number | null
+          title: string
+          type?: string
+        }
+        Update: {
+          address?: string | null
+          agency_id?: string | null
+          agent_id?: string | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          interested_client_ids?: string[] | null
+          photos?: string[] | null
+          price?: number | null
+          published_at?: string | null
+          status?: string
+          surface?: number | null
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "properties_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tasks: {
+        Row: {
+          agency_id: string | null
+          agent_id: string | null
+          category: string | null
+          client_id: string | null
+          created_at: string
+          due_date: string | null
+          id: string
+          notes: string | null
+          priority: string
+          property_id: string | null
+          status: string
+          title: string
+          type: string
+        }
+        Insert: {
+          agency_id?: string | null
+          agent_id?: string | null
+          category?: string | null
+          client_id?: string | null
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          priority?: string
+          property_id?: string | null
+          status?: string
+          title: string
+          type?: string
+        }
+        Update: {
+          agency_id?: string | null
+          agent_id?: string | null
+          category?: string | null
+          client_id?: string | null
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          priority?: string
+          property_id?: string | null
+          status?: string
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_members: {
+        Row: {
+          access_type: string
+          agency_id: string | null
+          avatar: string | null
+          client_ids: string[] | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          password: string | null
+          permissions: string[] | null
+          phone: string | null
+          property_ids: string[] | null
+          role: string
+        }
+        Insert: {
+          access_type?: string
+          agency_id?: string | null
+          avatar?: string | null
+          client_ids?: string[] | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          password?: string | null
+          permissions?: string[] | null
+          phone?: string | null
+          property_ids?: string[] | null
+          role?: string
+        }
+        Update: {
+          access_type?: string
+          agency_id?: string | null
+          avatar?: string | null
+          client_ids?: string[] | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          password?: string | null
+          permissions?: string[] | null
+          phone?: string | null
+          property_ids?: string[] | null
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_members_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "agent" | "viewer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +521,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "agent", "viewer"],
+    },
   },
 } as const
