@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { Agency, Client, Document, Property, User, Task } from "@/types/crm";
 import {
   agencies as initialAgencies,
@@ -9,6 +9,13 @@ import {
   documents as initialDocuments,
   monthlyData,
 } from "@/data/mockData";
+
+function loadState<T>(key: string, fallback: T): T {
+  try {
+    const stored = localStorage.getItem(key);
+    return stored ? JSON.parse(stored) : fallback;
+  } catch { return fallback; }
+}
 
 interface DataContextType {
   agencies: Agency[];
@@ -44,12 +51,19 @@ let idCounter = 100;
 const genId = (prefix: string) => `${prefix}${++idCounter}`;
 
 export const DataProvider = ({ children }: { children: ReactNode }) => {
-  const [agencies, setAgencies] = useState<Agency[]>(initialAgencies);
-  const [clients, setClients] = useState<Client[]>(initialClients);
-  const [properties, setProperties] = useState<Property[]>(initialProperties);
-  const [users, setUsers] = useState<User[]>(initialUsers);
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
-  const [documents, setDocuments] = useState<Document[]>(initialDocuments);
+  const [agencies, setAgencies] = useState<Agency[]>(() => loadState("crm_agencies", initialAgencies));
+  const [clients, setClients] = useState<Client[]>(() => loadState("crm_clients", initialClients));
+  const [properties, setProperties] = useState<Property[]>(() => loadState("crm_properties", initialProperties));
+  const [users, setUsers] = useState<User[]>(() => loadState("crm_users", initialUsers));
+  const [tasks, setTasks] = useState<Task[]>(() => loadState("crm_tasks", initialTasks));
+  const [documents, setDocuments] = useState<Document[]>(() => loadState("crm_documents", initialDocuments));
+
+  useEffect(() => { localStorage.setItem("crm_agencies", JSON.stringify(agencies)); }, [agencies]);
+  useEffect(() => { localStorage.setItem("crm_clients", JSON.stringify(clients)); }, [clients]);
+  useEffect(() => { localStorage.setItem("crm_properties", JSON.stringify(properties)); }, [properties]);
+  useEffect(() => { localStorage.setItem("crm_users", JSON.stringify(users)); }, [users]);
+  useEffect(() => { localStorage.setItem("crm_tasks", JSON.stringify(tasks)); }, [tasks]);
+  useEffect(() => { localStorage.setItem("crm_documents", JSON.stringify(documents)); }, [documents]);
 
   return (
     <DataContext.Provider
