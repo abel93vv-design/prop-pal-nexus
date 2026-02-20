@@ -1,21 +1,8 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Agency, Client, Document, Property, User, Task } from "@/types/crm";
-import {
-  agencies as initialAgencies,
-  clients as initialClients,
-  properties as initialProperties,
-  users as initialUsers,
-  tasks as initialTasks,
-  documents as initialDocuments,
-  monthlyData,
-} from "@/data/mockData";
-
-function loadState<T>(key: string, fallback: T): T {
-  try {
-    const stored = localStorage.getItem(key);
-    return stored ? JSON.parse(stored) : fallback;
-  } catch { return fallback; }
-}
+import { monthlyData } from "@/data/mockData";
+import { useAuth } from "@/hooks/useAuth";
 
 interface DataContextType {
   agencies: Agency[];
@@ -25,76 +12,208 @@ interface DataContextType {
   tasks: Task[];
   documents: Document[];
   monthlyData: typeof monthlyData;
-  addAgency: (a: Omit<Agency, "id">) => void;
-  updateAgency: (a: Agency) => void;
-  deleteAgency: (id: string) => void;
-  addClient: (c: Omit<Client, "id">) => void;
-  updateClient: (c: Client) => void;
-  deleteClient: (id: string) => void;
-  addProperty: (p: Omit<Property, "id">) => void;
-  updateProperty: (p: Property) => void;
-  deleteProperty: (id: string) => void;
-  addUser: (u: Omit<User, "id">) => void;
-  updateUser: (u: User) => void;
-  deleteUser: (id: string) => void;
-  addTask: (t: Omit<Task, "id">) => void;
-  updateTask: (t: Task) => void;
-  deleteTask: (id: string) => void;
-  addDocument: (d: Omit<Document, "id">) => void;
-  updateDocument: (d: Document) => void;
-  deleteDocument: (id: string) => void;
+  loading: boolean;
+  addAgency: (a: Omit<Agency, "id">) => Promise<void>;
+  updateAgency: (a: Agency) => Promise<void>;
+  deleteAgency: (id: string) => Promise<void>;
+  addClient: (c: Omit<Client, "id">) => Promise<void>;
+  updateClient: (c: Client) => Promise<void>;
+  deleteClient: (id: string) => Promise<void>;
+  addProperty: (p: Omit<Property, "id">) => Promise<void>;
+  updateProperty: (p: Property) => Promise<void>;
+  deleteProperty: (id: string) => Promise<void>;
+  addUser: (u: Omit<User, "id">) => Promise<void>;
+  updateUser: (u: User) => Promise<void>;
+  deleteUser: (id: string) => Promise<void>;
+  addTask: (t: Omit<Task, "id">) => Promise<void>;
+  updateTask: (t: Task) => Promise<void>;
+  deleteTask: (id: string) => Promise<void>;
+  addDocument: (d: Omit<Document, "id">) => Promise<void>;
+  updateDocument: (d: Document) => Promise<void>;
+  deleteDocument: (id: string) => Promise<void>;
 }
 
 const DataContext = createContext<DataContextType | null>(null);
 
-let idCounter = 100;
-const genId = (prefix: string) => `${prefix}${++idCounter}`;
+// Helper to map DB row to Agency
+const toAgency = (r: any): Agency => ({ id: r.id, name: r.name, address: r.address || '', phone: r.phone || '', email: r.email || '', logo: r.logo || '', color: r.color || '#3B82F6' });
+const toClient = (r: any): Client => ({ id: r.id, name: r.name, email: r.email || '', phone: r.phone || '', address: r.address || '', type: r.type, leadStatus: r.lead_status, propertyIds: r.property_ids || [], registeredAt: r.registered_at, notes: r.notes || '', agencyId: r.agency_id || '', category: r.category || '', lastContactedAt: r.last_contacted_at || '', contactCount: r.contact_count || 0 });
+const toProperty = (r: any): Property => ({ id: r.id, title: r.title, address: r.address || '', type: r.type, status: r.status, price: Number(r.price) || 0, surface: Number(r.surface) || 0, bedrooms: r.bedrooms || 0, bathrooms: r.bathrooms || 0, photos: r.photos || [], agentId: r.agent_id || '', interestedClientIds: r.interested_client_ids || [], publishedAt: r.published_at || '', description: r.description || '', agencyId: r.agency_id || '', category: r.category || '' });
+const toUser = (r: any): User => ({ id: r.id, name: r.name, email: r.email || '', role: r.role as any, phone: r.phone || '', propertyIds: r.property_ids || [], clientIds: r.client_ids || [], avatar: r.avatar || '', agencyId: r.agency_id || '', accessType: r.access_type as any, permissions: r.permissions || [], password: r.password || '' });
+const toTask = (r: any): Task => ({ id: r.id, title: r.title, type: r.type as any, status: r.status as any, priority: r.priority as any, dueDate: r.due_date || '', agentId: r.agent_id || '', clientId: r.client_id || '', propertyId: r.property_id || '', notes: r.notes || '', agencyId: r.agency_id || '', category: r.category || '' });
+const toDocument = (r: any): Document => ({ id: r.id, name: r.name, type: r.type as any, file: r.file || '', uploadedAt: r.uploaded_at || '', propertyId: r.property_id || '' });
 
 export const DataProvider = ({ children }: { children: ReactNode }) => {
-  const [agencies, setAgencies] = useState<Agency[]>(() => loadState("crm_agencies", initialAgencies));
-  const [clients, setClients] = useState<Client[]>(() => loadState("crm_clients", initialClients));
-  const [properties, setProperties] = useState<Property[]>(() => loadState("crm_properties", initialProperties));
-  const [users, setUsers] = useState<User[]>(() => loadState("crm_users", initialUsers));
-  const [tasks, setTasks] = useState<Task[]>(() => loadState("crm_tasks", initialTasks));
-  const [documents, setDocuments] = useState<Document[]>(() => loadState("crm_documents", initialDocuments));
+  const { session } = useAuth();
+  const [agencies, setAgencies] = useState<Agency[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => { localStorage.setItem("crm_agencies", JSON.stringify(agencies)); }, [agencies]);
-  useEffect(() => { localStorage.setItem("crm_clients", JSON.stringify(clients)); }, [clients]);
-  useEffect(() => { localStorage.setItem("crm_properties", JSON.stringify(properties)); }, [properties]);
-  useEffect(() => { localStorage.setItem("crm_users", JSON.stringify(users)); }, [users]);
-  useEffect(() => { localStorage.setItem("crm_tasks", JSON.stringify(tasks)); }, [tasks]);
-  useEffect(() => { localStorage.setItem("crm_documents", JSON.stringify(documents)); }, [documents]);
+  const fetchAll = useCallback(async () => {
+    setLoading(true);
+    // Properties are public, always fetch
+    const pr = await supabase.from('properties').select('*');
+    if (pr.data) setProperties(pr.data.map(toProperty));
+
+    if (session) {
+      const [ag, cl, us, ta, doc] = await Promise.all([
+        supabase.from('agencies').select('*'),
+        supabase.from('clients').select('*'),
+        supabase.from('team_members').select('*'),
+        supabase.from('tasks').select('*'),
+        supabase.from('documents').select('*'),
+      ]);
+      if (ag.data) setAgencies(ag.data.map(toAgency));
+      if (cl.data) setClients(cl.data.map(toClient));
+      if (us.data) setUsers(us.data.map(toUser));
+      if (ta.data) setTasks(ta.data.map(toTask));
+      if (doc.data) setDocuments(doc.data.map(toDocument));
+    }
+    setLoading(false);
+  }, [session]);
+
+  useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  // --- AGENCIES ---
+  const addAgency = async (a: Omit<Agency, "id">) => {
+    const { data, error } = await supabase.from('agencies').insert({ name: a.name, address: a.address, phone: a.phone, email: a.email, logo: a.logo, color: a.color }).select().single();
+    if (data) setAgencies(prev => [...prev, toAgency(data)]);
+  };
+  const updateAgency = async (a: Agency) => {
+    await supabase.from('agencies').update({ name: a.name, address: a.address, phone: a.phone, email: a.email, logo: a.logo, color: a.color }).eq('id', a.id);
+    setAgencies(prev => prev.map(x => x.id === a.id ? a : x));
+  };
+  const deleteAgency = async (id: string) => {
+    await supabase.from('agencies').delete().eq('id', id);
+    setAgencies(prev => prev.filter(x => x.id !== id));
+  };
+
+  // --- CLIENTS ---
+  const addClient = async (c: Omit<Client, "id">) => {
+    const { data } = await supabase.from('clients').insert({
+      name: c.name, email: c.email, phone: c.phone, address: c.address, type: c.type,
+      lead_status: c.leadStatus, property_ids: c.propertyIds, notes: c.notes,
+      agency_id: c.agencyId || null, category: c.category, last_contacted_at: c.lastContactedAt || null,
+      contact_count: c.contactCount,
+    }).select().single();
+    if (data) setClients(prev => [...prev, toClient(data)]);
+  };
+  const updateClient = async (c: Client) => {
+    await supabase.from('clients').update({
+      name: c.name, email: c.email, phone: c.phone, address: c.address, type: c.type,
+      lead_status: c.leadStatus, property_ids: c.propertyIds, notes: c.notes,
+      agency_id: c.agencyId || null, category: c.category, last_contacted_at: c.lastContactedAt || null,
+      contact_count: c.contactCount,
+    }).eq('id', c.id);
+    setClients(prev => prev.map(x => x.id === c.id ? c : x));
+  };
+  const deleteClient = async (id: string) => {
+    await supabase.from('clients').delete().eq('id', id);
+    setClients(prev => prev.filter(x => x.id !== id));
+  };
+
+  // --- PROPERTIES ---
+  const addProperty = async (p: Omit<Property, "id">) => {
+    const { data } = await supabase.from('properties').insert({
+      title: p.title, address: p.address, type: p.type, status: p.status, price: p.price,
+      surface: p.surface, bedrooms: p.bedrooms, bathrooms: p.bathrooms, photos: p.photos,
+      agent_id: p.agentId || null, interested_client_ids: p.interestedClientIds,
+      description: p.description, agency_id: p.agencyId || null, category: p.category,
+    }).select().single();
+    if (data) setProperties(prev => [...prev, toProperty(data)]);
+  };
+  const updateProperty = async (p: Property) => {
+    await supabase.from('properties').update({
+      title: p.title, address: p.address, type: p.type, status: p.status, price: p.price,
+      surface: p.surface, bedrooms: p.bedrooms, bathrooms: p.bathrooms, photos: p.photos,
+      agent_id: p.agentId || null, interested_client_ids: p.interestedClientIds,
+      description: p.description, agency_id: p.agencyId || null, category: p.category,
+    }).eq('id', p.id);
+    setProperties(prev => prev.map(x => x.id === p.id ? p : x));
+  };
+  const deleteProperty = async (id: string) => {
+    await supabase.from('properties').delete().eq('id', id);
+    setProperties(prev => prev.filter(x => x.id !== id));
+  };
+
+  // --- TEAM MEMBERS (Users) ---
+  const addUser = async (u: Omit<User, "id">) => {
+    const { data } = await supabase.from('team_members').insert({
+      name: u.name, email: u.email, role: u.role, phone: u.phone, property_ids: u.propertyIds,
+      client_ids: u.clientIds, avatar: u.avatar, agency_id: u.agencyId || null,
+      access_type: u.accessType, permissions: u.permissions, password: u.password,
+    }).select().single();
+    if (data) setUsers(prev => [...prev, toUser(data)]);
+  };
+  const updateUser = async (u: User) => {
+    await supabase.from('team_members').update({
+      name: u.name, email: u.email, role: u.role, phone: u.phone, property_ids: u.propertyIds,
+      client_ids: u.clientIds, avatar: u.avatar, agency_id: u.agencyId || null,
+      access_type: u.accessType, permissions: u.permissions, password: u.password,
+    }).eq('id', u.id);
+    setUsers(prev => prev.map(x => x.id === u.id ? u : x));
+  };
+  const deleteUser = async (id: string) => {
+    await supabase.from('team_members').delete().eq('id', id);
+    setUsers(prev => prev.filter(x => x.id !== id));
+  };
+
+  // --- TASKS ---
+  const addTask = async (t: Omit<Task, "id">) => {
+    const { data } = await supabase.from('tasks').insert({
+      title: t.title, type: t.type, status: t.status, priority: t.priority,
+      due_date: t.dueDate || null, agent_id: t.agentId || null, client_id: t.clientId || null,
+      property_id: t.propertyId || null, notes: t.notes, agency_id: t.agencyId || null,
+      category: t.category,
+    }).select().single();
+    if (data) setTasks(prev => [...prev, toTask(data)]);
+  };
+  const updateTask = async (t: Task) => {
+    await supabase.from('tasks').update({
+      title: t.title, type: t.type, status: t.status, priority: t.priority,
+      due_date: t.dueDate || null, agent_id: t.agentId || null, client_id: t.clientId || null,
+      property_id: t.propertyId || null, notes: t.notes, agency_id: t.agencyId || null,
+      category: t.category,
+    }).eq('id', t.id);
+    setTasks(prev => prev.map(x => x.id === t.id ? t : x));
+  };
+  const deleteTask = async (id: string) => {
+    await supabase.from('tasks').delete().eq('id', id);
+    setTasks(prev => prev.filter(x => x.id !== id));
+  };
+
+  // --- DOCUMENTS ---
+  const addDocument = async (d: Omit<Document, "id">) => {
+    const { data } = await supabase.from('documents').insert({
+      name: d.name, type: d.type, file: d.file, property_id: d.propertyId || null,
+    }).select().single();
+    if (data) setDocuments(prev => [...prev, toDocument(data)]);
+  };
+  const updateDocument = async (d: Document) => {
+    await supabase.from('documents').update({
+      name: d.name, type: d.type, file: d.file, property_id: d.propertyId || null,
+    }).eq('id', d.id);
+    setDocuments(prev => prev.map(x => x.id === d.id ? d : x));
+  };
+  const deleteDocument = async (id: string) => {
+    await supabase.from('documents').delete().eq('id', id);
+    setDocuments(prev => prev.filter(x => x.id !== id));
+  };
 
   return (
-    <DataContext.Provider
-      value={{
-        agencies,
-        clients,
-        properties,
-        users,
-        tasks,
-        documents,
-        monthlyData,
-        addAgency: (a) => setAgencies((prev) => [...prev, { ...a, id: genId("a") }]),
-        updateAgency: (a) => setAgencies((prev) => prev.map((x) => (x.id === a.id ? a : x))),
-        deleteAgency: (id) => setAgencies((prev) => prev.filter((x) => x.id !== id)),
-        addClient: (c) => setClients((prev) => [...prev, { ...c, id: genId("c") }]),
-        updateClient: (c) => setClients((prev) => prev.map((x) => (x.id === c.id ? c : x))),
-        deleteClient: (id) => setClients((prev) => prev.filter((x) => x.id !== id)),
-        addProperty: (p) => setProperties((prev) => [...prev, { ...p, id: genId("p") }]),
-        updateProperty: (p) => setProperties((prev) => prev.map((x) => (x.id === p.id ? p : x))),
-        deleteProperty: (id) => setProperties((prev) => prev.filter((x) => x.id !== id)),
-        addUser: (u) => setUsers((prev) => [...prev, { ...u, id: genId("u") }]),
-        updateUser: (u) => setUsers((prev) => prev.map((x) => (x.id === u.id ? u : x))),
-        deleteUser: (id) => setUsers((prev) => prev.filter((x) => x.id !== id)),
-        addTask: (t) => setTasks((prev) => [...prev, { ...t, id: genId("t") }]),
-        updateTask: (t) => setTasks((prev) => prev.map((x) => (x.id === t.id ? t : x))),
-        deleteTask: (id) => setTasks((prev) => prev.filter((x) => x.id !== id)),
-        addDocument: (d) => setDocuments((prev) => [...prev, { ...d, id: genId("d") }]),
-        updateDocument: (d) => setDocuments((prev) => prev.map((x) => (x.id === d.id ? d : x))),
-        deleteDocument: (id) => setDocuments((prev) => prev.filter((x) => x.id !== id)),
-      }}
-    >
+    <DataContext.Provider value={{
+      agencies, clients, properties, users, tasks, documents, monthlyData, loading,
+      addAgency, updateAgency, deleteAgency,
+      addClient, updateClient, deleteClient,
+      addProperty, updateProperty, deleteProperty,
+      addUser, updateUser, deleteUser,
+      addTask, updateTask, deleteTask,
+      addDocument, updateDocument, deleteDocument,
+    }}>
       {children}
     </DataContext.Provider>
   );
