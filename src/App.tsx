@@ -14,6 +14,7 @@ import Team from "./pages/Team";
 import Agencies from "./pages/Agencies";
 import PublicProperties from "./pages/PublicProperties";
 import Auth from "./pages/Auth";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,7 @@ const AppRoutes = () => (
     <Route path="/tareas" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
     <Route path="/equipo" element={<ProtectedRoute><Team /></ProtectedRoute>} />
     <Route path="/inmobiliarias" element={<ProtectedRoute><Agencies /></ProtectedRoute>} />
+    <Route path="/ajustes" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );
