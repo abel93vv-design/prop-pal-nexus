@@ -1,4 +1,4 @@
-import { Building2, Users, ClipboardList, LayoutDashboard, Globe, UserCog, Landmark } from "lucide-react";
+import { Building2, Users, ClipboardList, LayoutDashboard, Globe, UserCog, Landmark, Settings } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
   Sidebar,
@@ -23,6 +23,10 @@ const mainItems = [
 
 const publicItems = [
   { title: "Web Pública", url: "/publica", icon: Globe },
+];
+
+const settingsItems = [
+  { title: "Ajustes", url: "/ajustes", icon: Settings },
 ];
 
 export function AppSidebar() {
@@ -69,6 +73,27 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {publicItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild className="h-10">
+                    <NavLink
+                      to={item.url}
+                      className="flex items-center gap-3 px-3 rounded-lg text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors text-sm"
+                      activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                    >
+                      <item.icon className="w-4 h-4 shrink-0" />
+                      <span>{item.title}</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup className="mt-auto">
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {settingsItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild className="h-10">
                     <NavLink
