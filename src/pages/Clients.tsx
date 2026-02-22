@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { useData } from "@/context/DataContext";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Search, Mail, Phone, Plus, Pencil, Trash2, PhoneCall, ArrowUpDown } from "lucide-react";
+import { Search, Mail, Phone, Plus, Pencil, Trash2, PhoneCall, ArrowUpDown, Kanban } from "lucide-react";
 import { Client, ClientType, LeadStatus } from "@/types/crm";
 import { useToast } from "@/hooks/use-toast";
 import { useCustomFieldDefinitions, useCustomFieldValues } from "@/hooks/useCustomFields";
@@ -37,6 +38,7 @@ const emptyClient: Omit<Client, "id"> = {
 const Clients = () => {
   const { clients, agencies, properties, addClient, updateClient, deleteClient } = useData();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const { definitions: customFields } = useCustomFieldDefinitions('client');
   const { interests, addInterest, removeInterest, updateInterestType } = useInterests();
   const [search, setSearch] = useState("");
@@ -181,6 +183,7 @@ const Clients = () => {
                   </TableCell>
                   <TableCell>
                     <div className="flex justify-end gap-1">
+                      <Button variant="ghost" size="icon" className="h-8 w-8" title="Crear oportunidad" onClick={() => navigate(`/pipeline?client=${c.id}`)}><Kanban className="w-3.5 h-3.5 text-primary" /></Button>
                       <Button variant="ghost" size="icon" className="h-8 w-8" title="Marcar contactado" onClick={() => markContacted(c)}><PhoneCall className="w-3.5 h-3.5 text-success" /></Button>
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(c)}><Pencil className="w-3.5 h-3.5" /></Button>
                       <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(c)}><Trash2 className="w-3.5 h-3.5" /></Button>
