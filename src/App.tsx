@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { DataProvider } from "@/context/DataContext";
 import { TenantProvider } from "@/context/TenantContext";
 import { Loader2 } from "lucide-react";
+import { ForcePasswordChange } from "@/components/ForcePasswordChange";
 import Index from "./pages/Index";
 import Properties from "./pages/Properties";
 import Clients from "./pages/Clients";
@@ -53,6 +54,7 @@ const App = () => (
             <Toaster />
             <Sonner />
             <BrowserRouter>
+              <ForcePasswordChange />
               <AppRoutes />
             </BrowserRouter>
           </DataProvider>
