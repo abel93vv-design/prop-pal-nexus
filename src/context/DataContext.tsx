@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Agency, Client, Document, Property, User, Task } from "@/types/crm";
 import { monthlyData } from "@/data/mockData";
 import { useAuth } from "@/hooks/useAuth";
+import { useTenant } from "@/context/TenantContext";
 
 interface DataContextType {
   agencies: Agency[];
@@ -45,6 +46,7 @@ const toDocument = (r: any): Document => ({ id: r.id, name: r.name, type: r.type
 
 export const DataProvider = ({ children }: { children: ReactNode }) => {
   const { session } = useAuth();
+  const { tenantId } = useTenant();
   const [agencies, setAgencies] = useState<Agency[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
@@ -80,7 +82,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
 
   // --- AGENCIES ---
   const addAgency = async (a: Omit<Agency, "id">) => {
-    const { data, error } = await supabase.from('agencies').insert({ name: a.name, address: a.address, phone: a.phone, email: a.email, logo: a.logo, color: a.color }).select().single();
+    const { data, error } = await supabase.from('agencies').insert({ name: a.name, address: a.address, phone: a.phone, email: a.email, logo: a.logo, color: a.color, tenant_id: tenantId }).select().single();
     if (data) setAgencies(prev => [...prev, toAgency(data)]);
   };
   const updateAgency = async (a: Agency) => {
@@ -98,7 +100,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       name: c.name, email: c.email, phone: c.phone, address: c.address, type: c.type,
       lead_status: c.leadStatus, property_ids: c.propertyIds, notes: c.notes,
       agency_id: c.agencyId || null, category: c.category, last_contacted_at: c.lastContactedAt || null,
-      contact_count: c.contactCount,
+      contact_count: c.contactCount, tenant_id: tenantId,
     }).select().single();
     if (data) setClients(prev => [...prev, toClient(data)]);
   };
@@ -123,6 +125,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       surface: p.surface, bedrooms: p.bedrooms, bathrooms: p.bathrooms, photos: p.photos,
       agent_id: p.agentId || null, interested_client_ids: p.interestedClientIds,
       description: p.description, agency_id: p.agencyId || null, category: p.category,
+      tenant_id: tenantId,
     }).select().single();
     if (data) setProperties(prev => [...prev, toProperty(data)]);
   };
@@ -146,6 +149,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       name: u.name, email: u.email, role: u.role, phone: u.phone, property_ids: u.propertyIds,
       client_ids: u.clientIds, avatar: u.avatar, agency_id: u.agencyId || null,
       access_type: u.accessType, permissions: u.permissions, password: u.password,
+      tenant_id: tenantId,
     }).select().single();
     if (data) setUsers(prev => [...prev, toUser(data)]);
   };
@@ -168,7 +172,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       title: t.title, type: t.type, status: t.status, priority: t.priority,
       due_date: t.dueDate || null, agent_id: t.agentId || null, client_id: t.clientId || null,
       property_id: t.propertyId || null, notes: t.notes, agency_id: t.agencyId || null,
-      category: t.category,
+      category: t.category, tenant_id: tenantId,
     }).select().single();
     if (data) setTasks(prev => [...prev, toTask(data)]);
   };
@@ -190,6 +194,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   const addDocument = async (d: Omit<Document, "id">) => {
     const { data } = await supabase.from('documents').insert({
       name: d.name, type: d.type, file: d.file, property_id: d.propertyId || null,
+      tenant_id: tenantId,
     }).select().single();
     if (data) setDocuments(prev => [...prev, toDocument(data)]);
   };
