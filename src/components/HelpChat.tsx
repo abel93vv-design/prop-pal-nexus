@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { MessageCircleQuestion, X, Send, Loader2 } from "lucide-react";
+import { MessageCircleQuestion, X, Send, Loader2, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -124,12 +124,19 @@ export function HelpChat() {
       {open && (
         <div className="fixed bottom-24 right-6 z-50 w-[360px] max-h-[500px] rounded-xl border border-border bg-card shadow-2xl flex flex-col overflow-hidden animate-fade-in">
           {/* Header */}
-          <div className="px-4 py-3 border-b border-border bg-primary/5">
-            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-              <MessageCircleQuestion className="w-4 h-4 text-primary" />
-              Asistente de Ayuda
-            </h3>
-            <p className="text-[11px] text-muted-foreground">Pregúntame cómo usar el CRM</p>
+          <div className="px-4 py-3 border-b border-border bg-primary/5 flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <MessageCircleQuestion className="w-4 h-4 text-primary" />
+                Asistente de Ayuda
+              </h3>
+              <p className="text-[11px] text-muted-foreground">Pregúntame cómo usar el CRM</p>
+            </div>
+            {messages.length > 0 && (
+              <Button variant="ghost" size="icon" className="h-7 w-7" title="Nuevo chat" onClick={() => setMessages([])}>
+                <RotateCcw className="w-3.5 h-3.5" />
+              </Button>
+            )}
           </div>
 
           {/* Messages */}
