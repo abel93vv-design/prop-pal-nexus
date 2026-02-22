@@ -13,6 +13,8 @@ import { Property, PropertyType, PropertyStatus, Document, DocumentType } from "
 import { useToast } from "@/hooks/use-toast";
 import { useCustomFieldDefinitions, useCustomFieldValues } from "@/hooks/useCustomFields";
 import { CustomFieldsRenderer } from "@/components/CustomFieldsRenderer";
+import { useInterests } from "@/hooks/useInterests";
+import { InterestedClients } from "@/components/InterestManager";
 
 const typeLabels: Record<PropertyType, string> = { piso: 'Piso', casa: 'Casa', local: 'Local', terreno: 'Terreno' };
 const statusLabels: Record<PropertyStatus, string> = { disponible: 'Disponible', reservado: 'Reservado', vendido_alquilado: 'Vendido/Alquilado', no_disponible: 'No Disponible' };
@@ -38,9 +40,10 @@ const emptyDoc: Omit<Document, "id"> = {
 };
 
 const Properties = () => {
-  const { properties, users, agencies, documents, addProperty, updateProperty, deleteProperty, addDocument, deleteDocument } = useData();
+  const { properties, users, agencies, clients, documents, addProperty, updateProperty, deleteProperty, addDocument, deleteDocument } = useData();
   const { toast } = useToast();
   const { definitions: customFields } = useCustomFieldDefinitions('property');
+  const { interests, addInterest, removeInterest, updateInterestType } = useInterests();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -290,6 +293,16 @@ const Properties = () => {
                 definitions={customFields}
                 values={cfValues}
                 onChange={(defId, value) => setCfValues(prev => ({ ...prev, [defId]: value }))}
+              />
+            )}
+            {editing && (
+              <InterestedClients
+                propertyId={editing.id}
+                interests={interests}
+                clients={clients}
+                onAdd={(clientId, type) => addInterest(clientId, editing.id, type)}
+                onRemove={removeInterest}
+                onUpdateType={updateInterestType}
               />
             )}
           </div>

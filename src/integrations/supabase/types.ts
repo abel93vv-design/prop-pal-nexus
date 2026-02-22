@@ -58,6 +58,55 @@ export type Database = {
           },
         ]
       }
+      client_property_interests: {
+        Row: {
+          client_id: string
+          created_at: string
+          id: string
+          interest_type: string
+          property_id: string
+          tenant_id: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          id?: string
+          interest_type: string
+          property_id: string
+          tenant_id: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          id?: string
+          interest_type?: string
+          property_id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_property_interests_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_property_interests_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_property_interests_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           address: string | null

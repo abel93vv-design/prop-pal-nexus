@@ -14,6 +14,8 @@ import { Client, ClientType, LeadStatus } from "@/types/crm";
 import { useToast } from "@/hooks/use-toast";
 import { useCustomFieldDefinitions, useCustomFieldValues } from "@/hooks/useCustomFields";
 import { CustomFieldsRenderer } from "@/components/CustomFieldsRenderer";
+import { useInterests } from "@/hooks/useInterests";
+import { InterestedProperties } from "@/components/InterestManager";
 
 const typeLabels: Record<ClientType, string> = { comprador: 'Comprador', vendedor: 'Vendedor', arrendador: 'Arrendador', arrendatario: 'Arrendatario' };
 const statusLabels: Record<LeadStatus, string> = { nuevo: 'Nuevo', contactado: 'Contactado', en_negociacion: 'En negociación', cerrado: 'Cerrado' };
@@ -33,9 +35,10 @@ const emptyClient: Omit<Client, "id"> = {
 };
 
 const Clients = () => {
-  const { clients, agencies, addClient, updateClient, deleteClient } = useData();
+  const { clients, agencies, properties, addClient, updateClient, deleteClient } = useData();
   const { toast } = useToast();
   const { definitions: customFields } = useCustomFieldDefinitions('client');
+  const { interests, addInterest, removeInterest, updateInterestType } = useInterests();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -241,6 +244,16 @@ const Clients = () => {
                 definitions={customFields}
                 values={cfValues}
                 onChange={(defId, value) => setCfValues(prev => ({ ...prev, [defId]: value }))}
+              />
+            )}
+            {editing && (
+              <InterestedProperties
+                clientId={editing.id}
+                interests={interests}
+                properties={properties}
+                onAdd={(propertyId, type) => addInterest(editing.id, propertyId, type)}
+                onRemove={removeInterest}
+                onUpdateType={updateInterestType}
               />
             )}
           </div>
