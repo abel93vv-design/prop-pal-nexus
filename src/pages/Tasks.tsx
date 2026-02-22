@@ -8,22 +8,22 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Phone, Mail, MapPin, Clock, CheckCircle2, Circle, Loader2, Plus, Pencil, Trash2, Search, AlertCircle, ArrowUp, Minus } from "lucide-react";
+import { Phone, Mail, MapPin, Clock, CheckCircle2, Circle, Loader2, Plus, Pencil, Trash2, Search, AlertCircle, ArrowUp, Minus, ClipboardList } from "lucide-react";
 import { Task, TaskStatus, TaskType, TaskPriority } from "@/types/crm";
 import { useToast } from "@/hooks/use-toast";
 
-const typeLabels: Record<TaskType, string> = { llamada: 'Llamada', email: 'Email', visita: 'Visita', recordatorio: 'Recordatorio' };
-const statusLabels: Record<TaskStatus, string> = { pendiente: 'Pendiente', en_progreso: 'En progreso', completada: 'Completada' };
-const priorityLabels: Record<TaskPriority, string> = { baja: 'Baja', media: 'Media', alta: 'Alta' };
-const typeIcons: Record<TaskType, React.ElementType> = { llamada: Phone, email: Mail, visita: MapPin, recordatorio: Clock };
-const statusIcons: Record<TaskStatus, React.ElementType> = { pendiente: Circle, en_progreso: Loader2, completada: CheckCircle2 };
-const statusColors: Record<TaskStatus, string> = { pendiente: 'text-warning', en_progreso: 'text-info', completada: 'text-success' };
-const priorityColors: Record<TaskPriority, string> = {
+const typeLabels: Record<string, string> = { llamada: 'Llamada', email: 'Email', visita: 'Visita', recordatorio: 'Recordatorio', documentacion: 'Documentación' };
+const statusLabels: Record<string, string> = { pendiente: 'Pendiente', en_progreso: 'En progreso', completada: 'Completada' };
+const priorityLabels: Record<string, string> = { baja: 'Baja', media: 'Media', alta: 'Alta' };
+const typeIcons: Record<string, React.ElementType> = { llamada: Phone, email: Mail, visita: MapPin, recordatorio: Clock, documentacion: ClipboardList };
+const statusIcons: Record<string, React.ElementType> = { pendiente: Circle, en_progreso: Loader2, completada: CheckCircle2 };
+const statusColors: Record<string, string> = { pendiente: 'text-warning', en_progreso: 'text-info', completada: 'text-success' };
+const priorityColors: Record<string, string> = {
   alta: 'bg-destructive/10 text-destructive border-destructive/20',
   media: 'bg-warning/10 text-warning border-warning/20',
   baja: 'bg-muted text-muted-foreground border-border',
 };
-const PriorityIcons: Record<TaskPriority, React.ElementType> = { alta: ArrowUp, media: Minus, baja: Minus };
+const PriorityIcons: Record<string, React.ElementType> = { alta: ArrowUp, media: Minus, baja: Minus };
 
 const TASK_CATEGORIES = ['seguimiento', 'documentacion', 'visita', 'contratos', 'marketing', 'otro'];
 
@@ -120,9 +120,9 @@ const Tasks = () => {
             const agent = users.find(u => u.id === t.agentId);
             const client = clients.find(c => c.id === t.clientId);
             const property = properties.find(p => p.id === t.propertyId);
-            const TypeIcon = typeIcons[t.type];
-            const StatusIcon = statusIcons[t.status];
-            const PriorityIcon = PriorityIcons[t.priority];
+            const TypeIcon = typeIcons[t.type] || Circle;
+            const StatusIcon = statusIcons[t.status] || Circle;
+            const PriorityIcon = PriorityIcons[t.priority] || Minus;
 
             return (
               <div key={t.id} className="rounded-xl border border-border bg-card hover:shadow-sm transition-shadow p-4 flex items-center gap-4">
