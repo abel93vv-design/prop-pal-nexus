@@ -47,8 +47,8 @@ const extractSubdomain = (): string | null => {
     return sub === "www" ? null : sub;
   }
 
-  // Skip lovable preview domains
-  if (hostname.includes("lovable.app")) return null;
+  // Skip lovable preview/project domains
+  if (hostname.includes("lovable.app") || hostname.includes("lovableproject.com") || hostname.includes("lovable.dev")) return null;
 
   // standard: sub.domain.tld  (3+ parts)
   if (parts.length >= 3) {
