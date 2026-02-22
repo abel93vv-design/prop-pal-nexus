@@ -11,6 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Building2, MapPin, Bed, Bath, Ruler, Search, Plus, Pencil, Trash2, FileText, Upload, X } from "lucide-react";
 import { Property, PropertyType, PropertyStatus, Document, DocumentType } from "@/types/crm";
 import { useToast } from "@/hooks/use-toast";
+import { useCustomFieldDefinitions, useCustomFieldValues } from "@/hooks/useCustomFields";
+import { CustomFieldsRenderer } from "@/components/CustomFieldsRenderer";
 
 const typeLabels: Record<PropertyType, string> = { piso: 'Piso', casa: 'Casa', local: 'Local', terreno: 'Terreno' };
 const statusLabels: Record<PropertyStatus, string> = { disponible: 'Disponible', reservado: 'Reservado', vendido_alquilado: 'Vendido/Alquilado', no_disponible: 'No Disponible' };
@@ -38,6 +40,7 @@ const emptyDoc: Omit<Document, "id"> = {
 const Properties = () => {
   const { properties, users, agencies, documents, addProperty, updateProperty, deleteProperty, addDocument, deleteDocument } = useData();
   const { toast } = useToast();
+  const { definitions: customFields } = useCustomFieldDefinitions('property');
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -48,6 +51,8 @@ const Properties = () => {
   const [deleteTarget, setDeleteTarget] = useState<Property | null>(null);
   const [docsProperty, setDocsProperty] = useState<Property | null>(null);
   const [docForm, setDocForm] = useState<Omit<Document, "id">>(emptyDoc);
+  const [cfValues, setCfValues] = useState<Record<string, any>>({});
+  const { values: loadedCfValues, saveValues: saveCfValues } = useCustomFieldValues(editing?.id ?? null);
 
   const filtered = properties.filter(p => {
     const matchSearch = p.title.toLowerCase().includes(search.toLowerCase()) || p.address.toLowerCase().includes(search.toLowerCase());
@@ -57,17 +62,24 @@ const Properties = () => {
     return matchSearch && matchType && matchStatus && matchCat;
   });
 
-  const openCreate = () => { setEditing(null); setForm(emptyProperty); setDialogOpen(true); };
+  const openCreate = () => { setEditing(null); setForm(emptyProperty); setCfValues({}); setDialogOpen(true); };
   const openEdit = (p: Property) => {
     setEditing(p);
     setForm({ title: p.title, address: p.address, type: p.type, status: p.status, price: p.price, surface: p.surface, bedrooms: p.bedrooms, bathrooms: p.bathrooms, photos: p.photos, agentId: p.agentId, interestedClientIds: p.interestedClientIds, publishedAt: p.publishedAt, description: p.description, agencyId: p.agencyId, category: p.category });
+    setCfValues(loadedCfValues);
     setDialogOpen(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.title.trim() || !form.address.trim()) { toast({ title: "Error", description: "Título y dirección son obligatorios", variant: "destructive" }); return; }
-    if (editing) { updateProperty({ ...editing, ...form }); toast({ title: "Propiedad actualizada" }); }
-    else { addProperty(form); toast({ title: "Propiedad creada" }); }
+    if (editing) {
+      await updateProperty({ ...editing, ...form });
+      await saveCfValues(editing.id, cfValues);
+      toast({ title: "Propiedad actualizada" });
+    } else {
+      await addProperty(form);
+      toast({ title: "Propiedad creada" });
+    }
     setDialogOpen(false);
   };
 
@@ -273,6 +285,13 @@ const Properties = () => {
                 </label>
               </div>
             </div>
+            {customFields.length > 0 && (
+              <CustomFieldsRenderer
+                definitions={customFields}
+                values={cfValues}
+                onChange={(defId, value) => setCfValues(prev => ({ ...prev, [defId]: value }))}
+              />
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>

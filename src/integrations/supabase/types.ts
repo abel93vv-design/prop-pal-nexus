@@ -130,6 +130,104 @@ export type Database = {
           },
         ]
       }
+      custom_field_definitions: {
+        Row: {
+          created_at: string
+          entity_type: string
+          field_type: string
+          filterable: boolean
+          id: string
+          key: string
+          name: string
+          options: Json | null
+          position: number
+          required: boolean
+          tenant_id: string
+          used_in_matching: boolean
+          weight_in_matching: number
+        }
+        Insert: {
+          created_at?: string
+          entity_type: string
+          field_type: string
+          filterable?: boolean
+          id?: string
+          key: string
+          name: string
+          options?: Json | null
+          position?: number
+          required?: boolean
+          tenant_id: string
+          used_in_matching?: boolean
+          weight_in_matching?: number
+        }
+        Update: {
+          created_at?: string
+          entity_type?: string
+          field_type?: string
+          filterable?: boolean
+          id?: string
+          key?: string
+          name?: string
+          options?: Json | null
+          position?: number
+          required?: boolean
+          tenant_id?: string
+          used_in_matching?: boolean
+          weight_in_matching?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_field_definitions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custom_field_values: {
+        Row: {
+          created_at: string
+          definition_id: string
+          entity_id: string
+          id: string
+          tenant_id: string
+          value: Json | null
+        }
+        Insert: {
+          created_at?: string
+          definition_id: string
+          entity_id: string
+          id?: string
+          tenant_id: string
+          value?: Json | null
+        }
+        Update: {
+          created_at?: string
+          definition_id?: string
+          entity_id?: string
+          id?: string
+          tenant_id?: string
+          value?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_field_values_definition_id_fkey"
+            columns: ["definition_id"]
+            isOneToOne: false
+            referencedRelation: "custom_field_definitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_field_values_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           file: string | null
