@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Layout } from "@/components/Layout";
 import { useData } from "@/context/DataContext";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Mail, Phone, Building2, Users, Plus, Pencil, Trash2, ShieldCheck, Key } from "lucide-react";
+import { Mail, Phone, Building2, Users, Plus, Pencil, Trash2, ShieldCheck, Key, Loader2, Copy, CheckCircle2 } from "lucide-react";
 import { User, UserRole, AccessType, Permission } from "@/types/crm";
 import { useToast } from "@/hooks/use-toast";
 
@@ -52,8 +53,15 @@ const emptyUser: Omit<User, "id"> = {
   avatar: "", agencyId: "", accessType: "solo_inmobiliaria", permissions: ['ver_clientes','ver_propiedades','ver_tareas'], password: "",
 };
 
+interface CreatedCredentials {
+  email: string;
+  password: string;
+  login_url: string;
+  name: string;
+}
+
 const Team = () => {
-  const { users, agencies, addUser, updateUser, deleteUser } = useData();
+  const { users, agencies, updateUser, deleteUser } = useData();
   const { user: authUser } = useAuth();
   const isSuperAdmin = authUser?.email === SUPER_ADMIN_EMAIL;
   const { toast } = useToast();
@@ -62,13 +70,16 @@ const Team = () => {
   const [form, setForm] = useState<Omit<User, "id">>(emptyUser);
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
   const [roleFilter, setRoleFilter] = useState<string>("all");
+  const [creating, setCreating] = useState(false);
+  const [credentials, setCredentials] = useState<CreatedCredentials | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const filtered = users.filter(u => roleFilter === "all" || u.role === roleFilter);
 
   const openCreate = () => { setEditing(null); setForm(emptyUser); setDialogOpen(true); };
   const openEdit = (u: User) => {
     setEditing(u);
-    setForm({ name: u.name, email: u.email, role: u.role, phone: u.phone, propertyIds: u.propertyIds, clientIds: u.clientIds, avatar: u.avatar, agencyId: u.agencyId, accessType: u.accessType, permissions: u.permissions, password: u.password });
+    setForm({ name: u.name, email: u.email, role: u.role, phone: u.phone, propertyIds: u.propertyIds, clientIds: u.clientIds, avatar: u.avatar, agencyId: u.agencyId, accessType: u.accessType, permissions: u.permissions, password: "" });
     setDialogOpen(true);
   };
 
@@ -93,16 +104,65 @@ const Team = () => {
     }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.name.trim() || !form.email.trim()) { toast({ title: "Error", description: "Nombre y email son obligatorios", variant: "destructive" }); return; }
     if (form.role === 'admin_global' && !isSuperAdmin) { toast({ title: "Error", description: "No tienes permisos para asignar el rol Admin Global", variant: "destructive" }); return; }
-    if (editing) { updateUser({ ...editing, ...form }); toast({ title: "Miembro actualizado" }); }
-    else { addUser(form); toast({ title: "Miembro añadido" }); }
-    setDialogOpen(false);
+
+    if (editing) {
+      updateUser({ ...editing, ...form });
+      toast({ title: "Miembro actualizado" });
+      setDialogOpen(false);
+      return;
+    }
+
+    // Creating new user via edge function
+    setCreating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-team-member", {
+        body: {
+          name: form.name,
+          email: form.email,
+          role: form.role,
+          phone: form.phone,
+          agency_id: form.agencyId || null,
+          access_type: form.accessType,
+          permissions: form.permissions,
+          password: form.password || undefined,
+        },
+      });
+
+      if (error) {
+        toast({ title: "Error", description: error.message, variant: "destructive" });
+      } else if (data?.error) {
+        toast({ title: "Error", description: data.error, variant: "destructive" });
+      } else {
+        setDialogOpen(false);
+        setCredentials({
+          email: data.email,
+          password: data.password,
+          login_url: data.login_url,
+          name: form.name,
+        });
+        // Refresh data
+        window.location.reload();
+      }
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setCreating(false);
+    }
   };
 
   const handleDelete = () => {
     if (deleteTarget) { deleteUser(deleteTarget.id); toast({ title: "Miembro eliminado" }); setDeleteTarget(null); }
+  };
+
+  const copyCredentials = () => {
+    if (!credentials) return;
+    const text = `🔐 Credenciales de acceso al CRM\n\nNombre: ${credentials.name}\nEmail: ${credentials.email}\nContraseña: ${credentials.password}\nURL de acceso: ${credentials.login_url}\n\n⚠️ Deberás cambiar tu contraseña en el primer inicio de sesión.`;
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -164,21 +224,24 @@ const Team = () => {
         </div>
       </div>
 
+      {/* Create / Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editing ? "Editar Miembro" : "Nuevo Miembro"}</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            {/* Basic info */}
             <div className="space-y-3">
               <div><Label className="text-xs">Nombre *</Label><Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></div>
-              <div><Label className="text-xs">Email *</Label><Input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} /></div>
+              <div><Label className="text-xs">Email *</Label><Input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} disabled={!!editing} /></div>
               <div className="grid grid-cols-2 gap-3">
                 <div><Label className="text-xs">Teléfono</Label><Input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} /></div>
-                <div><Label className="text-xs">Contraseña</Label><Input type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} placeholder="••••••••" /></div>
+                <div>
+                  <Label className="text-xs">Contraseña {!editing && "(auto si vacío)"}</Label>
+                  <Input type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} placeholder={editing ? "Sin cambios" : "Auto-generada"} />
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-xs">Rol</Label>
+                  <Label className="text-xs">Rol *</Label>
                   <Select value={form.role} onValueChange={(v) => handleRoleChange(v as UserRole)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>{Object.entries(roleLabels).filter(([k]) => k !== 'admin_global' || isSuperAdmin).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
@@ -197,7 +260,6 @@ const Team = () => {
               </div>
             </div>
 
-            {/* Access & Permissions */}
             <div className="p-3 rounded-lg bg-muted/40 border border-border space-y-3">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-primary" />
@@ -230,11 +292,56 @@ const Team = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSave}>{editing ? "Guardar" : "Crear"}</Button>
+            <Button onClick={handleSave} disabled={creating}>
+              {creating && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
+              {editing ? "Guardar" : "Crear Usuario"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
+      {/* Credentials Dialog */}
+      <Dialog open={!!credentials} onOpenChange={() => setCredentials(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-green-500" />
+              Usuario creado exitosamente
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Comparte estas credenciales con <strong>{credentials?.name}</strong>. El usuario deberá cambiar su contraseña en el primer inicio de sesión.
+            </p>
+            <div className="p-4 rounded-lg bg-muted/50 border border-border space-y-2 font-mono text-sm">
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Email:</span>
+                <span className="text-foreground font-medium">{credentials?.email}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Contraseña:</span>
+                <span className="text-foreground font-medium">{credentials?.password}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">URL:</span>
+                <span className="text-foreground font-medium text-xs break-all">{credentials?.login_url}</span>
+              </div>
+            </div>
+            <p className="text-xs text-destructive flex items-center gap-1">
+              ⚠️ Esta contraseña no se mostrará de nuevo.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={copyCredentials}>
+              {copied ? <CheckCircle2 className="w-4 h-4 mr-1" /> : <Copy className="w-4 h-4 mr-1" />}
+              {copied ? "Copiado" : "Copiar credenciales"}
+            </Button>
+            <Button onClick={() => setCredentials(null)}>Cerrar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
       <Dialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle>¿Eliminar miembro?</DialogTitle></DialogHeader>

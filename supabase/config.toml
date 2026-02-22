@@ -2,3 +2,6 @@ project_id = "wjpymaibeeswjpgbexww"
 
 [functions.crm-help]
 verify_jwt = false
+
+[functions.create-team-member]
+verify_jwt = false
