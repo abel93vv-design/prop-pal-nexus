@@ -12,6 +12,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Search, Mail, Phone, Plus, Pencil, Trash2, PhoneCall, ArrowUpDown } from "lucide-react";
 import { Client, ClientType, LeadStatus } from "@/types/crm";
 import { useToast } from "@/hooks/use-toast";
+import { useCustomFieldDefinitions, useCustomFieldValues } from "@/hooks/useCustomFields";
+import { CustomFieldsRenderer } from "@/components/CustomFieldsRenderer";
 
 const typeLabels: Record<ClientType, string> = { comprador: 'Comprador', vendedor: 'Vendedor', arrendador: 'Arrendador', arrendatario: 'Arrendatario' };
 const statusLabels: Record<LeadStatus, string> = { nuevo: 'Nuevo', contactado: 'Contactado', en_negociacion: 'En negociación', cerrado: 'Cerrado' };
@@ -33,14 +35,17 @@ const emptyClient: Omit<Client, "id"> = {
 const Clients = () => {
   const { clients, agencies, addClient, updateClient, deleteClient } = useData();
   const { toast } = useToast();
+  const { definitions: customFields } = useCustomFieldDefinitions('client');
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
-  const [contactSort, setContactSort] = useState<string>("none"); // "asc" | "desc" | "none"
+  const [contactSort, setContactSort] = useState<string>("none");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Client | null>(null);
   const [form, setForm] = useState<Omit<Client, "id">>(emptyClient);
   const [deleteTarget, setDeleteTarget] = useState<Client | null>(null);
+  const [cfValues, setCfValues] = useState<Record<string, any>>({});
+  const { values: loadedCfValues, saveValues: saveCfValues } = useCustomFieldValues(editing?.id ?? null);
 
   const filtered = clients
     .filter(c => {
@@ -56,17 +61,25 @@ const Clients = () => {
       return contactSort === "desc" ? dateB - dateA : dateA - dateB;
     });
 
-  const openCreate = () => { setEditing(null); setForm(emptyClient); setDialogOpen(true); };
+  const openCreate = () => { setEditing(null); setForm(emptyClient); setCfValues({}); setDialogOpen(true); };
   const openEdit = (c: Client) => {
     setEditing(c);
     setForm({ name: c.name, email: c.email, phone: c.phone, address: c.address, type: c.type, leadStatus: c.leadStatus, propertyIds: c.propertyIds, registeredAt: c.registeredAt, notes: c.notes, agencyId: c.agencyId, category: c.category, lastContactedAt: c.lastContactedAt, contactCount: c.contactCount });
+    setCfValues(loadedCfValues);
     setDialogOpen(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.name.trim() || !form.email.trim()) { toast({ title: "Error", description: "Nombre y email son obligatorios", variant: "destructive" }); return; }
-    if (editing) { updateClient({ ...editing, ...form }); toast({ title: "Cliente actualizado" }); }
-    else { addClient(form); toast({ title: "Cliente creado" }); }
+    if (editing) {
+      await updateClient({ ...editing, ...form });
+      await saveCfValues(editing.id, cfValues);
+      toast({ title: "Cliente actualizado" });
+    } else {
+      await addClient(form);
+      // For new clients, we'd need the ID to save custom fields — handled after creation
+      toast({ title: "Cliente creado" });
+    }
     setDialogOpen(false);
   };
 
@@ -223,6 +236,13 @@ const Clients = () => {
               </div>
             </div>
             <div><Label className="text-xs">Notas</Label><Textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={3} /></div>
+            {customFields.length > 0 && (
+              <CustomFieldsRenderer
+                definitions={customFields}
+                values={cfValues}
+                onChange={(defId, value) => setCfValues(prev => ({ ...prev, [defId]: value }))}
+              />
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>

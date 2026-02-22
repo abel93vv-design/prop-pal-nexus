@@ -13,8 +13,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import {
   User, Lock, Plug, Palette, Bell, Shield,
-  Facebook, Globe, Save, RefreshCw
+  Facebook, Globe, Save, RefreshCw, Settings2
 } from "lucide-react";
+import { CustomFieldsAdmin } from "@/components/CustomFieldsAdmin";
 
 function GeneralTab() {
   const { user } = useAuth();
@@ -294,9 +295,12 @@ export default function Settings() {
         </div>
 
         <Tabs defaultValue="general" className="space-y-6">
-          <TabsList className="grid grid-cols-5 w-full">
+          <TabsList className="grid grid-cols-6 w-full">
             <TabsTrigger value="general" className="text-xs sm:text-sm">
               <User className="w-4 h-4 mr-1 hidden sm:inline" /> General
+            </TabsTrigger>
+            <TabsTrigger value="custom-fields" className="text-xs sm:text-sm">
+              <Settings2 className="w-4 h-4 mr-1 hidden sm:inline" /> Campos
             </TabsTrigger>
             <TabsTrigger value="connections" className="text-xs sm:text-sm">
               <Plug className="w-4 h-4 mr-1 hidden sm:inline" /> Conexiones
@@ -313,6 +317,7 @@ export default function Settings() {
           </TabsList>
 
           <TabsContent value="general"><GeneralTab /></TabsContent>
+          <TabsContent value="custom-fields"><CustomFieldsAdmin /></TabsContent>
           <TabsContent value="connections"><ConnectionsTab /></TabsContent>
           <TabsContent value="personalization"><PersonalizationTab /></TabsContent>
           <TabsContent value="notifications"><NotificationsTab /></TabsContent>
