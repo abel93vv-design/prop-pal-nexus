@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Layout } from "@/components/Layout";
 import { useData } from "@/context/DataContext";
+import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Mail, Phone, Building2, Users, Plus, Pencil, Trash2, ShieldCheck, Key } from "lucide-react";
 import { User, UserRole, AccessType, Permission } from "@/types/crm";
 import { useToast } from "@/hooks/use-toast";
+
+const SUPER_ADMIN_EMAIL = "avelascocorpo@gmail.com";
 
 const roleLabels: Record<UserRole, string> = {
   admin_global: 'Admin Global',
@@ -51,6 +54,8 @@ const emptyUser: Omit<User, "id"> = {
 
 const Team = () => {
   const { users, agencies, addUser, updateUser, deleteUser } = useData();
+  const { user: authUser } = useAuth();
+  const isSuperAdmin = authUser?.email === SUPER_ADMIN_EMAIL;
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<User | null>(null);
@@ -90,6 +95,7 @@ const Team = () => {
 
   const handleSave = () => {
     if (!form.name.trim() || !form.email.trim()) { toast({ title: "Error", description: "Nombre y email son obligatorios", variant: "destructive" }); return; }
+    if (form.role === 'admin_global' && !isSuperAdmin) { toast({ title: "Error", description: "No tienes permisos para asignar el rol Admin Global", variant: "destructive" }); return; }
     if (editing) { updateUser({ ...editing, ...form }); toast({ title: "Miembro actualizado" }); }
     else { addUser(form); toast({ title: "Miembro añadido" }); }
     setDialogOpen(false);
@@ -175,7 +181,7 @@ const Team = () => {
                   <Label className="text-xs">Rol</Label>
                   <Select value={form.role} onValueChange={(v) => handleRoleChange(v as UserRole)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>{Object.entries(roleLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
+                    <SelectContent>{Object.entries(roleLabels).filter(([k]) => k !== 'admin_global' || isSuperAdmin).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
                 <div>

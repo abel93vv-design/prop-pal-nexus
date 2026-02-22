@@ -107,7 +107,10 @@ const Index = () => {
         </div>
 
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-base font-semibold">Tareas Pendientes</CardTitle></CardHeader>
+          <CardHeader className="pb-2 flex flex-row items-center justify-between">
+            <CardTitle className="text-base font-semibold">Tareas Pendientes</CardTitle>
+            <Link to="/tareas" className="text-xs text-primary hover:underline font-medium">Ver más →</Link>
+          </CardHeader>
           <CardContent>
             <div className="space-y-2">
               {tasks.filter(t => t.status !== 'completada').slice(0, 5).map(t => {
