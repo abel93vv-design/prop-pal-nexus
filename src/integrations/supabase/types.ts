@@ -322,6 +322,163 @@ export type Database = {
           },
         ]
       }
+      opportunities: {
+        Row: {
+          agency_id: string | null
+          agent_id: string | null
+          client_id: string
+          created_at: string
+          deal_value: number
+          expected_close_date: string | null
+          id: string
+          notes: string | null
+          priority: string
+          probability: number
+          property_id: string | null
+          stage_entered_at: string
+          stage_id: string
+          tenant_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          agency_id?: string | null
+          agent_id?: string | null
+          client_id: string
+          created_at?: string
+          deal_value?: number
+          expected_close_date?: string | null
+          id?: string
+          notes?: string | null
+          priority?: string
+          probability?: number
+          property_id?: string | null
+          stage_entered_at?: string
+          stage_id: string
+          tenant_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          agency_id?: string | null
+          agent_id?: string | null
+          client_id?: string
+          created_at?: string
+          deal_value?: number
+          expected_close_date?: string | null
+          id?: string
+          notes?: string | null
+          priority?: string
+          probability?: number
+          property_id?: string | null
+          stage_entered_at?: string
+          stage_id?: string
+          tenant_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunities_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunities_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunities_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunities_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunities_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "pipeline_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunities_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pipeline_stages: {
+        Row: {
+          agency_id: string | null
+          color: string
+          created_at: string
+          default_probability: number
+          id: string
+          is_active: boolean
+          name: string
+          position: number
+          stage_type: string
+          stale_days: number
+          tenant_id: string
+        }
+        Insert: {
+          agency_id?: string | null
+          color?: string
+          created_at?: string
+          default_probability?: number
+          id?: string
+          is_active?: boolean
+          name: string
+          position?: number
+          stage_type?: string
+          stale_days?: number
+          tenant_id: string
+        }
+        Update: {
+          agency_id?: string | null
+          color?: string
+          created_at?: string
+          default_probability?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          position?: number
+          stage_type?: string
+          stale_days?: number
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pipeline_stages_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pipeline_stages_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -434,6 +591,68 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stage_history: {
+        Row: {
+          changed_by: string
+          created_at: string
+          days_in_previous_stage: number | null
+          from_stage_id: string | null
+          id: string
+          opportunity_id: string
+          tenant_id: string
+          to_stage_id: string
+        }
+        Insert: {
+          changed_by?: string
+          created_at?: string
+          days_in_previous_stage?: number | null
+          from_stage_id?: string | null
+          id?: string
+          opportunity_id: string
+          tenant_id: string
+          to_stage_id: string
+        }
+        Update: {
+          changed_by?: string
+          created_at?: string
+          days_in_previous_stage?: number | null
+          from_stage_id?: string | null
+          id?: string
+          opportunity_id?: string
+          tenant_id?: string
+          to_stage_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stage_history_from_stage_id_fkey"
+            columns: ["from_stage_id"]
+            isOneToOne: false
+            referencedRelation: "pipeline_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stage_history_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stage_history_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stage_history_to_stage_id_fkey"
+            columns: ["to_stage_id"]
+            isOneToOne: false
+            referencedRelation: "pipeline_stages"
             referencedColumns: ["id"]
           },
         ]
