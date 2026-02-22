@@ -1,4 +1,5 @@
-import { Building2, Users, ClipboardList, LayoutDashboard, Globe, UserCog, Landmark, Settings } from "lucide-react";
+import { Building2, Users, ClipboardList, LayoutDashboard, Globe, UserCog, Landmark, Settings, ShieldCheck } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import { NavLink } from "@/components/NavLink";
 import {
   Sidebar,
@@ -30,6 +31,9 @@ const settingsItems = [
 ];
 
 export function AppSidebar() {
+  const { user } = useAuth();
+  const isSuperAdmin = user?.email === "avelascocorpo@gmail.com";
+
   return (
     <Sidebar className="sidebar-gradient border-r-0">
       <SidebarHeader className="p-5 border-b border-sidebar-border">
@@ -89,6 +93,28 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {isSuperAdmin && (
+          <SidebarGroup className="mt-4">
+            <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] uppercase tracking-widest mb-1 px-3">Admin</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild className="h-10">
+                    <NavLink
+                      to="/tenants"
+                      className="flex items-center gap-3 px-3 rounded-lg text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors text-sm"
+                      activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                    >
+                      <ShieldCheck className="w-4 h-4 shrink-0" />
+                      <span>Tenants</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         <SidebarGroup className="mt-auto">
           <SidebarGroupContent>
