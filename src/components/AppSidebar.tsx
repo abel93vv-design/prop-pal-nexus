@@ -1,4 +1,4 @@
-import { Building2, Users, ClipboardList, LayoutDashboard, Globe, UserCog, Landmark, Settings, ShieldCheck, Kanban } from "lucide-react";
+import { Building2, Users, ClipboardList, LayoutDashboard, Globe, UserCog, Landmark, Settings, ShieldCheck, Kanban, Target } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { NavLink } from "@/components/NavLink";
 import {
@@ -16,6 +16,7 @@ import {
 const mainItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Pipeline", url: "/pipeline", icon: Kanban },
+  { title: "Match Center", url: "/match-center", icon: Target },
   { title: "Propiedades", url: "/propiedades", icon: Building2 },
   { title: "Clientes", url: "/clientes", icon: Users },
   { title: "Tareas", url: "/tareas", icon: ClipboardList },

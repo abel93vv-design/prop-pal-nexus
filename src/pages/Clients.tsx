@@ -17,6 +17,9 @@ import { useCustomFieldDefinitions, useCustomFieldValues } from "@/hooks/useCust
 import { CustomFieldsRenderer } from "@/components/CustomFieldsRenderer";
 import { useInterests } from "@/hooks/useInterests";
 import { InterestedProperties } from "@/components/InterestManager";
+import { useMatchCenter, useClientFinancials, useClientPreferences } from "@/hooks/useMatchCenter";
+import { TopPropertyMatches } from "@/components/MatchScoreWidgets";
+import { Switch } from "@/components/ui/switch";
 
 const typeLabels: Record<ClientType, string> = { comprador: 'Comprador', vendedor: 'Vendedor', arrendador: 'Arrendador', arrendatario: 'Arrendatario' };
 const statusLabels: Record<LeadStatus, string> = { nuevo: 'Nuevo', contactado: 'Contactado', en_negociacion: 'En negociación', cerrado: 'Cerrado' };
@@ -41,6 +44,7 @@ const Clients = () => {
   const navigate = useNavigate();
   const { definitions: customFields } = useCustomFieldDefinitions('client');
   const { interests, addInterest, removeInterest, updateInterestType } = useInterests();
+  const { getTopMatchesForClient } = useMatchCenter();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -257,6 +261,12 @@ const Clients = () => {
                 onAdd={(propertyId, type) => addInterest(editing.id, propertyId, type)}
                 onRemove={removeInterest}
                 onUpdateType={updateInterestType}
+              />
+            )}
+            {editing && (
+              <TopPropertyMatches
+                matches={getTopMatchesForClient(editing.id)}
+                properties={properties}
               />
             )}
           </div>
