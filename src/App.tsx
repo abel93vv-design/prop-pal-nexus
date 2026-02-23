@@ -19,6 +19,7 @@ import Auth from "./pages/Auth";
 import Settings from "./pages/Settings";
 import Tenants from "./pages/Tenants";
 import Pipeline from "./pages/Pipeline";
+import MatchCenter from "./pages/MatchCenter";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +43,7 @@ const AppRoutes = () => (
     <Route path="/inmobiliarias" element={<ProtectedRoute><Agencies /></ProtectedRoute>} />
     <Route path="/ajustes" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
     <Route path="/pipeline" element={<ProtectedRoute><Pipeline /></ProtectedRoute>} />
+    <Route path="/match-center" element={<ProtectedRoute><MatchCenter /></ProtectedRoute>} />
     <Route path="/tenants" element={<ProtectedRoute><Tenants /></ProtectedRoute>} />
     <Route path="*" element={<NotFound />} />
   </Routes>
