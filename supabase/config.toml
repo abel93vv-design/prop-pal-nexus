@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.calculate-matches]
 verify_jwt = false
+
+[functions.portal-feed]
+verify_jwt = false
