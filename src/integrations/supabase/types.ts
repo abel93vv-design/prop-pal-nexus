@@ -58,6 +58,123 @@ export type Database = {
           },
         ]
       }
+      client_financials: {
+        Row: {
+          available_cash: number
+          client_id: string
+          created_at: string
+          debt_ratio: number
+          id: string
+          monthly_income: number
+          mortgage_needed: boolean
+          mortgage_preapproved: boolean
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          available_cash?: number
+          client_id: string
+          created_at?: string
+          debt_ratio?: number
+          id?: string
+          monthly_income?: number
+          mortgage_needed?: boolean
+          mortgage_preapproved?: boolean
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          available_cash?: number
+          client_id?: string
+          created_at?: string
+          debt_ratio?: number
+          id?: string
+          monthly_income?: number
+          mortgage_needed?: boolean
+          mortgage_preapproved?: boolean
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_financials_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: true
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_financials_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_preferences: {
+        Row: {
+          client_id: string
+          created_at: string
+          id: string
+          max_price: number | null
+          max_surface: number | null
+          min_bathrooms: number | null
+          min_bedrooms: number | null
+          min_price: number | null
+          min_surface: number | null
+          preferred_locations: string[] | null
+          preferred_types: string[] | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          id?: string
+          max_price?: number | null
+          max_surface?: number | null
+          min_bathrooms?: number | null
+          min_bedrooms?: number | null
+          min_price?: number | null
+          min_surface?: number | null
+          preferred_locations?: string[] | null
+          preferred_types?: string[] | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          id?: string
+          max_price?: number | null
+          max_surface?: number | null
+          min_bathrooms?: number | null
+          min_bedrooms?: number | null
+          min_price?: number | null
+          min_surface?: number | null
+          preferred_locations?: string[] | null
+          preferred_types?: string[] | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_preferences_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: true
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_preferences_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_property_interests: {
         Row: {
           client_id: string
@@ -315,6 +432,83 @@ export type Database = {
           },
           {
             foreignKeyName: "documents_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      match_scores: {
+        Row: {
+          agency_id: string | null
+          category: string
+          client_id: string
+          created_at: string
+          financial_score: number
+          id: string
+          last_calculated_at: string
+          property_id: string
+          property_score: number
+          tenant_id: string
+          total_score: number
+          updated_at: string
+          viability_status: string
+        }
+        Insert: {
+          agency_id?: string | null
+          category?: string
+          client_id: string
+          created_at?: string
+          financial_score?: number
+          id?: string
+          last_calculated_at?: string
+          property_id: string
+          property_score?: number
+          tenant_id: string
+          total_score?: number
+          updated_at?: string
+          viability_status?: string
+        }
+        Update: {
+          agency_id?: string | null
+          category?: string
+          client_id?: string
+          created_at?: string
+          financial_score?: number
+          id?: string
+          last_calculated_at?: string
+          property_id?: string
+          property_score?: number
+          tenant_id?: string
+          total_score?: number
+          updated_at?: string
+          viability_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_scores_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_scores_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_scores_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_scores_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
