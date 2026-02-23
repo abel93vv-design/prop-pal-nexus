@@ -223,7 +223,26 @@ const MatchCenter = () => {
                             : <ChevronRight className="w-4 h-4 text-muted-foreground" />
                           }
                         </TableCell>
-                        <TableCell className="text-sm font-medium">{client?.name || "—"}</TableCell>
+                        <TableCell>
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium truncate">{client?.name || "—"}</p>
+                            <div className="flex flex-wrap gap-x-2 text-[10px] text-muted-foreground">
+                              {client?.email && <span>{client.email}</span>}
+                              {client?.phone && <span>{client.phone}</span>}
+                            </div>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              {client?.leadStatus && (
+                                <Badge variant="outline" className="text-[9px] px-1 py-0">{client.leadStatus}</Badge>
+                              )}
+                              {client?.contactCount != null && (
+                                <span className="text-[9px] text-muted-foreground">{client.contactCount} contactos</span>
+                              )}
+                              {client?.lastContactedAt && (
+                                <span className="text-[9px] text-muted-foreground">Últ: {new Date(client.lastContactedAt).toLocaleDateString("es-ES")}</span>
+                              )}
+                            </div>
+                          </div>
+                        </TableCell>
                         <TableCell>
                           <div>
                             <p className="text-sm">{property?.title || "—"}</p>
