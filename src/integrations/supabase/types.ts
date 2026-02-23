@@ -676,6 +676,53 @@ export type Database = {
           },
         ]
       }
+      portal_connections: {
+        Row: {
+          accepted_requirements: boolean
+          api_key: string | null
+          created_at: string
+          feed_url: string | null
+          id: string
+          is_active: boolean
+          max_ads: number
+          portal_name: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_requirements?: boolean
+          api_key?: string | null
+          created_at?: string
+          feed_url?: string | null
+          id?: string
+          is_active?: boolean
+          max_ads?: number
+          portal_name: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_requirements?: boolean
+          api_key?: string | null
+          created_at?: string
+          feed_url?: string | null
+          id?: string
+          is_active?: boolean
+          max_ads?: number
+          portal_name?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_connections_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -721,12 +768,18 @@ export type Database = {
           agent_id: string | null
           bathrooms: number | null
           bedrooms: number | null
+          built_surface: number | null
           category: string | null
           created_at: string
           description: string | null
+          energy_cert: string | null
           id: string
           interested_client_ids: string[] | null
+          latitude: number | null
+          longitude: number | null
           photos: string[] | null
+          plot_surface: number | null
+          postal_code: string | null
           price: number | null
           published_at: string | null
           status: string
@@ -741,12 +794,18 @@ export type Database = {
           agent_id?: string | null
           bathrooms?: number | null
           bedrooms?: number | null
+          built_surface?: number | null
           category?: string | null
           created_at?: string
           description?: string | null
+          energy_cert?: string | null
           id?: string
           interested_client_ids?: string[] | null
+          latitude?: number | null
+          longitude?: number | null
           photos?: string[] | null
+          plot_surface?: number | null
+          postal_code?: string | null
           price?: number | null
           published_at?: string | null
           status?: string
@@ -761,12 +820,18 @@ export type Database = {
           agent_id?: string | null
           bathrooms?: number | null
           bedrooms?: number | null
+          built_surface?: number | null
           category?: string | null
           created_at?: string
           description?: string | null
+          energy_cert?: string | null
           id?: string
           interested_client_ids?: string[] | null
+          latitude?: number | null
+          longitude?: number | null
           photos?: string[] | null
+          plot_surface?: number | null
+          postal_code?: string | null
           price?: number | null
           published_at?: string | null
           status?: string
@@ -785,6 +850,57 @@ export type Database = {
           },
           {
             foreignKeyName: "properties_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      property_portal_status: {
+        Row: {
+          created_at: string
+          id: string
+          is_published: boolean
+          portal_name: string
+          property_id: string
+          published_at: string | null
+          tenant_id: string
+          updated_at: string
+          validation_errors: Json | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          portal_name: string
+          property_id: string
+          published_at?: string | null
+          tenant_id: string
+          updated_at?: string
+          validation_errors?: Json | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          portal_name?: string
+          property_id?: string
+          published_at?: string | null
+          tenant_id?: string
+          updated_at?: string
+          validation_errors?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_portal_status_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_portal_status_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"

@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Building2, MapPin, Bed, Bath, Ruler, Search, Plus, Pencil, Trash2, FileText, Upload, X, Kanban } from "lucide-react";
+import { PortalPublicationControls } from "@/components/PortalPublicationControls";
 import { Property, PropertyType, PropertyStatus, Document, DocumentType } from "@/types/crm";
 import { useToast } from "@/hooks/use-toast";
 import { useCustomFieldDefinitions, useCustomFieldValues } from "@/hooks/useCustomFields";
@@ -184,7 +185,10 @@ const Properties = () => {
                   </div>
                   <div className="flex items-center justify-between pt-2 border-t border-border">
                     <span className="text-lg font-bold text-foreground">{p.price.toLocaleString('es-ES')} €</span>
-                    <span className="text-xs text-muted-foreground">{agent?.name}</span>
+                    <div className="flex items-center gap-2">
+                      <PortalPublicationControls property={p} compact />
+                      <span className="text-xs text-muted-foreground">{agent?.name}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -317,6 +321,9 @@ const Properties = () => {
                 clients={clients}
                 users={users}
               />
+            )}
+            {editing && (
+              <PortalPublicationControls property={editing} />
             )}
           </div>
           <DialogFooter>
