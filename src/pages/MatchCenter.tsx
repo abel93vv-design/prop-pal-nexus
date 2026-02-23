@@ -282,7 +282,7 @@ const MatchCenter = () => {
 function MatchBreakdown({ match }: { match: MatchScore }) {
   const details = match.score_details;
 
-  if (!details) {
+  if (!details || !details.property || !details.financial) {
     return (
       <div className="p-4 text-sm text-muted-foreground italic">
         Sin desglose disponible. Recalcula los matches para obtener el desglose detallado.
