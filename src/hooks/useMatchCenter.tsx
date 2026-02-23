@@ -2,6 +2,19 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/context/TenantContext";
 
+export interface CriteriaDetail {
+  label: string;
+  weight: number;
+  score: number;
+  met: boolean;
+  detail: string;
+}
+
+export interface ScoreDetails {
+  property: { total: number; criteria: CriteriaDetail[] };
+  financial: { total: number; criteria: CriteriaDetail[] };
+}
+
 export interface MatchScore {
   id: string;
   tenant_id: string;
@@ -13,6 +26,7 @@ export interface MatchScore {
   total_score: number;
   category: string;
   viability_status: string;
+  score_details: ScoreDetails | null;
   last_calculated_at: string;
   created_at: string;
   updated_at: string;
@@ -236,6 +250,7 @@ const mapMatch = (r: any): MatchScore => ({
   total_score: Number(r.total_score),
   category: r.category,
   viability_status: r.viability_status,
+  score_details: r.score_details || null,
   last_calculated_at: r.last_calculated_at,
   created_at: r.created_at,
   updated_at: r.updated_at,

@@ -1,13 +1,14 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, Fragment } from "react";
 import { Layout } from "@/components/Layout";
-import { useMatchCenter } from "@/hooks/useMatchCenter";
+import { useMatchCenter, MatchScore, CriteriaDetail } from "@/hooks/useMatchCenter";
 import { useData } from "@/context/DataContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, RefreshCw, Loader2, ArrowUpDown, Target, TrendingUp, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Search, RefreshCw, Loader2, ArrowUpDown, Target, TrendingUp, AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, Check, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const categoryLabels: Record<string, string> = { high: "Alto", medium: "Medio", low: "Bajo" };
@@ -36,6 +37,16 @@ const MatchCenter = () => {
   const [sortField, setSortField] = useState<"total_score" | "property_score" | "financial_score">("total_score");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(0);
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+
+  const toggleExpanded = (id: string) => {
+    setExpandedRows((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   const filtered = useMemo(() => {
     return matches
@@ -46,11 +57,7 @@ const MatchCenter = () => {
           const client = clients.find((c) => c.id === m.client_id);
           const property = properties.find((p) => p.id === m.property_id);
           const q = search.toLowerCase();
-          if (
-            !client?.name.toLowerCase().includes(q) &&
-            !property?.title.toLowerCase().includes(q)
-          )
-            return false;
+          if (!client?.name.toLowerCase().includes(q) && !property?.title.toLowerCase().includes(q)) return false;
         }
         if (filterAgent !== "all") {
           const property = properties.find((p) => p.id === m.property_id);
@@ -80,7 +87,6 @@ const MatchCenter = () => {
     });
   };
 
-  // Stats
   const highCount = matches.filter((m) => m.category === "high").length;
   const mediumCount = matches.filter((m) => m.category === "medium").length;
   const viableCount = matches.filter((m) => m.viability_status === "Viable").length;
@@ -169,6 +175,7 @@ const MatchCenter = () => {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/30">
+                <TableHead className="w-8"></TableHead>
                 <TableHead className="font-semibold text-xs">Cliente</TableHead>
                 <TableHead className="font-semibold text-xs">Propiedad</TableHead>
                 <TableHead className="font-semibold text-xs">Agente</TableHead>
@@ -183,7 +190,6 @@ const MatchCenter = () => {
                 </TableHead>
                 <TableHead className="font-semibold text-xs">Categoría</TableHead>
                 <TableHead className="font-semibold text-xs">Viabilidad</TableHead>
-                <TableHead className="font-semibold text-xs">Actualizado</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -204,39 +210,51 @@ const MatchCenter = () => {
                   const client = clients.find((c) => c.id === m.client_id);
                   const property = properties.find((p) => p.id === m.property_id);
                   const agent = property ? users.find((u) => u.id === property.agentId) : null;
+                  const isExpanded = expandedRows.has(m.id);
                   return (
-                    <TableRow key={m.id} className="hover:bg-muted/20">
-                      <TableCell className="text-sm font-medium">{client?.name || "—"}</TableCell>
-                      <TableCell>
-                        <div>
-                          <p className="text-sm">{property?.title || "—"}</p>
-                          <p className="text-[10px] text-muted-foreground">{property ? `${property.price.toLocaleString("es-ES")} €` : ""}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{agent?.name || "—"}</TableCell>
-                      <TableCell>
-                        <ScoreBar value={m.property_score} />
-                      </TableCell>
-                      <TableCell>
-                        <ScoreBar value={m.financial_score} />
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-sm font-bold">{m.total_score}</span>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={`text-[10px] ${categoryColors[m.category]}`}>
-                          {categoryLabels[m.category] || m.category}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={`text-[10px] ${viabilityColors[m.viability_status]}`}>
-                          {m.viability_status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-[10px] text-muted-foreground">
-                        {new Date(m.last_calculated_at).toLocaleDateString("es-ES")}
-                      </TableCell>
-                    </TableRow>
+                    <Fragment key={m.id}>
+                      <TableRow
+                        className="hover:bg-muted/20 cursor-pointer transition-colors"
+                        onClick={() => toggleExpanded(m.id)}
+                      >
+                        <TableCell className="w-8 px-2">
+                          {isExpanded
+                            ? <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                            : <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                          }
+                        </TableCell>
+                        <TableCell className="text-sm font-medium">{client?.name || "—"}</TableCell>
+                        <TableCell>
+                          <div>
+                            <p className="text-sm">{property?.title || "—"}</p>
+                            <p className="text-[10px] text-muted-foreground">{property ? `${property.price.toLocaleString("es-ES")} €` : ""}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{agent?.name || "—"}</TableCell>
+                        <TableCell><ScoreBar value={m.property_score} /></TableCell>
+                        <TableCell><ScoreBar value={m.financial_score} /></TableCell>
+                        <TableCell>
+                          <span className="text-sm font-bold">{m.total_score}</span>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={`text-[10px] ${categoryColors[m.category]}`}>
+                            {categoryLabels[m.category] || m.category}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={`text-[10px] ${viabilityColors[m.viability_status]}`}>
+                            {m.viability_status}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                      {isExpanded && (
+                        <TableRow className="bg-muted/10 hover:bg-muted/10">
+                          <TableCell colSpan={9} className="p-0">
+                            <MatchBreakdown match={m} />
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </Fragment>
                   );
                 })
               )}
@@ -260,6 +278,99 @@ const MatchCenter = () => {
     </Layout>
   );
 };
+
+function MatchBreakdown({ match }: { match: MatchScore }) {
+  const details = match.score_details;
+
+  if (!details) {
+    return (
+      <div className="p-4 text-sm text-muted-foreground italic">
+        Sin desglose disponible. Recalcula los matches para obtener el desglose detallado.
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Property Score Breakdown */}
+      <ScoreSection
+        title="Compatibilidad de Propiedad"
+        icon={<Target className="w-4 h-4 text-primary" />}
+        total={details.property.total}
+        weight="70%"
+        criteria={details.property.criteria.filter(c => c.weight > 0)}
+      />
+
+      {/* Financial Score Breakdown */}
+      <ScoreSection
+        title="Viabilidad Financiera"
+        icon={<TrendingUp className="w-4 h-4 text-primary" />}
+        total={details.financial.total}
+        weight="30%"
+        criteria={details.financial.criteria}
+      />
+    </div>
+  );
+}
+
+function ScoreSection({ title, icon, total, weight, criteria }: {
+  title: string;
+  icon: React.ReactNode;
+  total: number;
+  weight: string;
+  criteria: CriteriaDetail[];
+}) {
+  const color = total >= 75 ? "text-success" : total >= 60 ? "text-warning" : total >= 40 ? "text-orange-500" : "text-destructive";
+  const progressColor = total >= 75 ? "[&>div]:bg-success" : total >= 60 ? "[&>div]:bg-warning" : total >= 40 ? "[&>div]:bg-orange-500" : "[&>div]:bg-destructive";
+
+  return (
+    <div className="rounded-lg border border-border bg-card p-3 space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          {icon}
+          <span className="text-sm font-semibold text-foreground">{title}</span>
+          <span className="text-[10px] text-muted-foreground">({weight} del total)</span>
+        </div>
+        <span className={`text-lg font-bold ${color}`}>{total}%</span>
+      </div>
+
+      <Progress value={total} className={`h-2 ${progressColor}`} />
+
+      <div className="space-y-2">
+        {criteria.map((c, i) => (
+          <CriteriaRow key={i} criteria={c} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function CriteriaRow({ criteria }: { criteria: CriteriaDetail }) {
+  const scoreColor = criteria.score >= 75 ? "text-success" : criteria.score >= 50 ? "text-warning" : "text-destructive";
+
+  return (
+    <div className="flex items-start gap-2 text-xs">
+      <div className="mt-0.5 shrink-0">
+        {criteria.met
+          ? <Check className="w-3.5 h-3.5 text-success" />
+          : <X className="w-3.5 h-3.5 text-destructive/60" />
+        }
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between gap-2">
+          <span className="font-medium text-foreground">{criteria.label}</span>
+          <div className="flex items-center gap-1.5 shrink-0">
+            {criteria.weight > 0 && (
+              <span className="text-[9px] text-muted-foreground">{criteria.weight}%</span>
+            )}
+            <span className={`font-bold ${scoreColor}`}>{criteria.score}</span>
+          </div>
+        </div>
+        <p className="text-muted-foreground leading-tight mt-0.5">{criteria.detail}</p>
+      </div>
+    </div>
+  );
+}
 
 function ScoreBar({ value }: { value: number }) {
   const color = value >= 75 ? "bg-success" : value >= 60 ? "bg-warning" : value >= 40 ? "bg-info" : "bg-muted-foreground/30";

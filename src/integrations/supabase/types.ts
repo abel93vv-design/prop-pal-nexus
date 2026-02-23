@@ -450,6 +450,7 @@ export type Database = {
           last_calculated_at: string
           property_id: string
           property_score: number
+          score_details: Json | null
           tenant_id: string
           total_score: number
           updated_at: string
@@ -465,6 +466,7 @@ export type Database = {
           last_calculated_at?: string
           property_id: string
           property_score?: number
+          score_details?: Json | null
           tenant_id: string
           total_score?: number
           updated_at?: string
@@ -480,6 +482,7 @@ export type Database = {
           last_calculated_at?: string
           property_id?: string
           property_score?: number
+          score_details?: Json | null
           tenant_id?: string
           total_score?: number
           updated_at?: string
