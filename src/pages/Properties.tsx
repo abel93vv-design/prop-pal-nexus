@@ -58,7 +58,7 @@ const Properties = () => {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [operationFilter, setOperationFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Property | null>(null);
   const [form, setForm] = useState<Omit<Property, "id">>(emptyProperty);
@@ -72,8 +72,8 @@ const Properties = () => {
     const matchSearch = p.title.toLowerCase().includes(search.toLowerCase()) || p.address.toLowerCase().includes(search.toLowerCase());
     const matchType = typeFilter === "all" || p.type === typeFilter;
     const matchStatus = statusFilter === "all" || p.status === statusFilter;
-    const matchCat = categoryFilter === "all" || p.category === categoryFilter;
-    return matchSearch && matchType && matchStatus && matchCat;
+    const matchOp = operationFilter === "all" || p.operationType === operationFilter || p.operationType === "ambos" || operationFilter === "ambos";
+    return matchSearch && matchType && matchStatus && matchOp;
   });
 
   const openCreate = () => { setEditing(null); setForm(emptyProperty); setCfValues({}); setDialogOpen(true); };
@@ -158,11 +158,13 @@ const Properties = () => {
               {Object.entries(statusLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
             </SelectContent>
           </Select>
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-[140px]"><SelectValue placeholder="Categoría" /></SelectTrigger>
+          <Select value={operationFilter} onValueChange={setOperationFilter}>
+            <SelectTrigger className="w-[140px]"><SelectValue placeholder="Operación" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todas</SelectItem>
-              {PROP_CATEGORIES.map(c => <SelectItem key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</SelectItem>)}
+              <SelectItem value="venta">Venta</SelectItem>
+              <SelectItem value="alquiler">Alquiler</SelectItem>
+              <SelectItem value="ambos">Ambos</SelectItem>
             </SelectContent>
           </Select>
         </div>
