@@ -64,6 +64,22 @@ export interface Property {
   description: string;
   agencyId: string;
   category: string;
+  // New technical fields
+  postal_code: string;
+  latitude: number | null;
+  longitude: number | null;
+  built_surface: number;
+  plot_surface: number;
+  energy_cert: string;
+  neighborhood: string;
+  floor: number | null;
+  community_fees: number;
+  ibi_annual: number;
+  has_elevator: boolean;
+  has_terrace: boolean;
+  has_pool: boolean;
+  has_garage: boolean;
+  has_air_conditioning: boolean;
 }
 
 export interface User {

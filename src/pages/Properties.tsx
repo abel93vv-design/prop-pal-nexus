@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Building2, MapPin, Bed, Bath, Ruler, Search, Plus, Pencil, Trash2, FileText, Upload, X, Kanban } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { PortalPublicationControls } from "@/components/PortalPublicationControls";
 import { Property, PropertyType, PropertyStatus, Document, DocumentType } from "@/types/crm";
 import { useToast } from "@/hooks/use-toast";
@@ -32,11 +33,13 @@ const statusColors: Record<PropertyStatus, string> = {
 
 const PROP_CATEGORIES = ['residencial', 'comercial', 'lujo', 'suelo', 'industrial', 'otro'];
 
+const defaultExtras = { postal_code: '', latitude: null as number | null, longitude: null as number | null, built_surface: 0, plot_surface: 0, energy_cert: 'en_tramite', neighborhood: '', floor: null as number | null, community_fees: 0, ibi_annual: 0, has_elevator: false, has_terrace: false, has_pool: false, has_garage: false, has_air_conditioning: false };
+
 const emptyProperty: Omit<Property, "id"> = {
   title: "", address: "", type: "piso", status: "disponible", price: 0, surface: 0,
   bedrooms: 0, bathrooms: 0, photos: [], agentId: "", interestedClientIds: [],
   publishedAt: new Date().toISOString().split("T")[0], description: "",
-  agencyId: "", category: "residencial",
+  agencyId: "", category: "residencial", ...defaultExtras,
 };
 
 const emptyDoc: Omit<Document, "id"> = {
@@ -74,7 +77,19 @@ const Properties = () => {
   const openCreate = () => { setEditing(null); setForm(emptyProperty); setCfValues({}); setDialogOpen(true); };
   const openEdit = (p: Property) => {
     setEditing(p);
-    setForm({ title: p.title, address: p.address, type: p.type, status: p.status, price: p.price, surface: p.surface, bedrooms: p.bedrooms, bathrooms: p.bathrooms, photos: p.photos, agentId: p.agentId, interestedClientIds: p.interestedClientIds, publishedAt: p.publishedAt, description: p.description, agencyId: p.agencyId, category: p.category });
+    setForm({
+      title: p.title, address: p.address, type: p.type, status: p.status, price: p.price, surface: p.surface,
+      bedrooms: p.bedrooms, bathrooms: p.bathrooms, photos: p.photos, agentId: p.agentId,
+      interestedClientIds: p.interestedClientIds, publishedAt: p.publishedAt, description: p.description,
+      agencyId: p.agencyId, category: p.category,
+      postal_code: p.postal_code || "", latitude: p.latitude, longitude: p.longitude,
+      built_surface: p.built_surface || 0, plot_surface: p.plot_surface || 0,
+      energy_cert: p.energy_cert || "en_tramite", neighborhood: p.neighborhood || "",
+      floor: p.floor, community_fees: p.community_fees || 0, ibi_annual: p.ibi_annual || 0,
+      has_elevator: p.has_elevator || false, has_terrace: p.has_terrace || false,
+      has_pool: p.has_pool || false, has_garage: p.has_garage || false,
+      has_air_conditioning: p.has_air_conditioning || false,
+    });
     setCfValues(loadedCfValues);
     setDialogOpen(true);
   };
@@ -250,9 +265,54 @@ const Properties = () => {
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <div><Label className="text-xs">Habitaciones</Label><Input type="number" value={form.bedrooms || ""} onChange={e => setForm({ ...form, bedrooms: Number(e.target.value) })} /></div>
               <div><Label className="text-xs">Baños</Label><Input type="number" value={form.bathrooms || ""} onChange={e => setForm({ ...form, bathrooms: Number(e.target.value) })} /></div>
+              <div><Label className="text-xs">Planta</Label><Input type="number" value={form.floor ?? ""} onChange={e => setForm({ ...form, floor: e.target.value ? Number(e.target.value) : null })} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label className="text-xs">Sup. construida (m²)</Label><Input type="number" value={form.built_surface || ""} onChange={e => setForm({ ...form, built_surface: Number(e.target.value) })} /></div>
+              <div><Label className="text-xs">Sup. parcela (m²)</Label><Input type="number" value={form.plot_surface || ""} onChange={e => setForm({ ...form, plot_surface: Number(e.target.value) })} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label className="text-xs">Barrio / Zona</Label><Input value={form.neighborhood || ""} onChange={e => setForm({ ...form, neighborhood: e.target.value })} placeholder="Ej: Centro, Teatinos..." /></div>
+              <div><Label className="text-xs">Código Postal</Label><Input value={form.postal_code || ""} onChange={e => setForm({ ...form, postal_code: e.target.value })} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label className="text-xs">Latitud</Label><Input type="number" step="any" value={form.latitude ?? ""} onChange={e => setForm({ ...form, latitude: e.target.value ? Number(e.target.value) : null })} /></div>
+              <div><Label className="text-xs">Longitud</Label><Input type="number" step="any" value={form.longitude ?? ""} onChange={e => setForm({ ...form, longitude: e.target.value ? Number(e.target.value) : null })} /></div>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <Label className="text-xs">Cert. Energético</Label>
+                <Select value={form.energy_cert || "en_tramite"} onValueChange={v => setForm({ ...form, energy_cert: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="en_tramite">En trámite</SelectItem>
+                    <SelectItem value="A">A</SelectItem><SelectItem value="B">B</SelectItem>
+                    <SelectItem value="C">C</SelectItem><SelectItem value="D">D</SelectItem>
+                    <SelectItem value="E">E</SelectItem><SelectItem value="F">F</SelectItem>
+                    <SelectItem value="G">G</SelectItem><SelectItem value="exento">Exento</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div><Label className="text-xs">Comunidad (€/mes)</Label><Input type="number" value={form.community_fees || ""} onChange={e => setForm({ ...form, community_fees: Number(e.target.value) })} /></div>
+              <div><Label className="text-xs">IBI (€/año)</Label><Input type="number" value={form.ibi_annual || ""} onChange={e => setForm({ ...form, ibi_annual: Number(e.target.value) })} /></div>
+            </div>
+            {/* Extras booleanos */}
+            <div>
+              <Label className="text-xs font-semibold">Extras</Label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-1.5">
+                {([
+                  ['has_elevator', 'Ascensor'], ['has_terrace', 'Terraza'], ['has_pool', 'Piscina'],
+                  ['has_garage', 'Garaje'], ['has_air_conditioning', 'Aire acond.']
+                ] as [string, string][]).map(([key, label]) => (
+                  <label key={key} className="flex items-center gap-2 text-xs cursor-pointer">
+                    <Checkbox checked={!!form[key]} onCheckedChange={v => setForm({ ...form, [key]: !!v })} />
+                    {label}
+                  </label>
+                ))}
+              </div>
             </div>
             <div><Label className="text-xs">Descripción</Label><Textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={3} /></div>
             {/* Image upload */}

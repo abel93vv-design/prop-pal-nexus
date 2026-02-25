@@ -10,6 +10,7 @@ interface ClientFinancials {
   available_cash: number;
   monthly_income: number;
   debt_ratio: number;
+  monthly_debts: number;
   mortgage_needed: boolean;
   mortgage_preapproved: boolean;
 }
@@ -23,18 +24,32 @@ interface ClientPreferences {
   min_bathrooms: number;
   preferred_types: string[];
   preferred_locations: string[];
+  required_extras: string[];
+  neighborhood: string;
 }
 
 interface Property {
   id: string;
   price: number;
   surface: number;
+  built_surface: number;
+  plot_surface: number;
   bedrooms: number;
   bathrooms: number;
+  floor: number | null;
   type: string;
   address: string;
+  neighborhood: string;
+  postal_code: string;
   status: string;
   agency_id: string | null;
+  community_fees: number;
+  ibi_annual: number;
+  has_elevator: boolean;
+  has_terrace: boolean;
+  has_pool: boolean;
+  has_garage: boolean;
+  has_air_conditioning: boolean;
 }
 
 interface Client {
@@ -51,15 +66,11 @@ interface CriteriaDetail {
 }
 
 interface ScoreDetails {
-  property: {
-    total: number;
-    criteria: CriteriaDetail[];
-  };
-  financial: {
-    total: number;
-    criteria: CriteriaDetail[];
-  };
+  property: { total: number; criteria: CriteriaDetail[] };
+  financial: { total: number; criteria: CriteriaDetail[] };
 }
+
+// ======== WEIGHTS: Financial 40%, Location 30%, Price 20%, Features 10% ========
 
 function calculatePropertyScore(
   prefs: ClientPreferences | null,
@@ -70,267 +81,225 @@ function calculatePropertyScore(
   if (!prefs) {
     return {
       score: 50,
-      criteria: [{ label: "Sin preferencias", weight: 100, score: 50, met: false, detail: "No hay preferencias configuradas para este cliente" }],
+      criteria: [{ label: "Sin preferencias", weight: 100, score: 50, met: false, detail: "No hay preferencias configuradas" }],
     };
   }
 
-  // Price match (30%)
+  // === PRICE MATCH (20%) ===
   let priceScore = 50;
   let priceMet = false;
   let priceDetail = "";
   if (prefs.max_price > 0) {
     if (prop.price >= prefs.min_price && prop.price <= prefs.max_price) {
-      priceScore = 100;
-      priceMet = true;
-      priceDetail = `Precio ${prop.price.toLocaleString()}€ dentro del rango ${prefs.min_price.toLocaleString()}€ - ${prefs.max_price.toLocaleString()}€`;
-    } else if (prop.price < prefs.min_price) {
+      priceScore = 100; priceMet = true;
+      priceDetail = `Precio ${prop.price.toLocaleString()}€ dentro del rango`;
+    } else if (prop.price > prefs.max_price) {
+      // Hard filter: if exceeds budget, score = 0
+      priceScore = 0;
+      priceDetail = `Precio ${prop.price.toLocaleString()}€ supera presupuesto máximo ${prefs.max_price.toLocaleString()}€`;
+    } else {
       const diff = (prefs.min_price - prop.price) / prefs.min_price;
       priceScore = Math.max(0, 100 - diff * 200);
-      priceDetail = `Precio ${prop.price.toLocaleString()}€ por debajo del mínimo ${prefs.min_price.toLocaleString()}€`;
-    } else {
-      const diff = (prop.price - prefs.max_price) / prefs.max_price;
-      priceScore = Math.max(0, 100 - diff * 200);
-      priceDetail = `Precio ${prop.price.toLocaleString()}€ supera el máximo ${prefs.max_price.toLocaleString()}€`;
+      priceDetail = `Precio ${prop.price.toLocaleString()}€ por debajo del mínimo`;
     }
   } else {
     priceDetail = "Sin rango de precio configurado";
   }
-  criteria.push({ label: "Precio", weight: 30, score: Math.round(priceScore), met: priceMet, detail: priceDetail });
+  criteria.push({ label: "Precio", weight: 20, score: Math.round(priceScore), met: priceMet, detail: priceDetail });
 
-  // Location match (25%)
+  // === LOCATION MATCH (30%) ===
   let locationScore = 50;
   let locationMet = false;
   let locationDetail = "";
-  if (prefs.preferred_locations.length > 0) {
-    const addrLower = (prop.address || "").toLowerCase();
-    const matchedLoc = prefs.preferred_locations.find((loc) => addrLower.includes(loc.toLowerCase()));
-    if (matchedLoc) {
-      locationScore = 100;
-      locationMet = true;
-      locationDetail = `Ubicación "${matchedLoc}" encontrada en dirección`;
+
+  // First check neighborhood exact match
+  if (prefs.neighborhood && prop.neighborhood) {
+    if (prop.neighborhood.toLowerCase() === prefs.neighborhood.toLowerCase()) {
+      locationScore = 100; locationMet = true;
+      locationDetail = `Barrio "${prop.neighborhood}" coincide exactamente`;
     } else {
       locationScore = 20;
-      locationDetail = `Dirección no coincide con ubicaciones preferidas: ${prefs.preferred_locations.join(", ")}`;
+      locationDetail = `Barrio "${prop.neighborhood}" no coincide con "${prefs.neighborhood}"`;
+    }
+  } else if (prefs.preferred_locations.length > 0) {
+    const addrLower = (prop.address || "").toLowerCase() + " " + (prop.neighborhood || "").toLowerCase();
+    const matchedLoc = prefs.preferred_locations.find((loc) => addrLower.includes(loc.toLowerCase()));
+    if (matchedLoc) {
+      locationScore = 100; locationMet = true;
+      locationDetail = `Ubicación "${matchedLoc}" encontrada`;
+    } else {
+      locationScore = 20;
+      locationDetail = `No coincide con zonas: ${prefs.preferred_locations.join(", ")}`;
     }
   } else {
-    locationDetail = "Sin ubicaciones preferidas configuradas";
+    locationDetail = "Sin ubicaciones preferidas";
   }
-  criteria.push({ label: "Ubicación", weight: 25, score: Math.round(locationScore), met: locationMet, detail: locationDetail });
+  criteria.push({ label: "Ubicación", weight: 30, score: Math.round(locationScore), met: locationMet, detail: locationDetail });
 
-  // Features match (25%)
-  const featureCriteria: CriteriaDetail[] = [];
+  // === FEATURES MATCH (10%) ===
   let featureHits = 0;
   let featureTotal = 0;
+  const featureDetails: string[] = [];
 
   if (prefs.min_bedrooms > 0) {
     featureTotal++;
-    const bedMet = prop.bedrooms >= prefs.min_bedrooms;
-    if (bedMet) featureHits++;
-    else featureHits += Math.max(0, prop.bedrooms / prefs.min_bedrooms);
-    featureCriteria.push({
-      label: "Habitaciones",
-      weight: 0,
-      score: bedMet ? 100 : Math.round(Math.max(0, (prop.bedrooms / prefs.min_bedrooms) * 100)),
-      met: bedMet,
-      detail: `${prop.bedrooms} habitaciones (mín. ${prefs.min_bedrooms})`,
-    });
+    if (prop.bedrooms >= prefs.min_bedrooms) { featureHits++; featureDetails.push(`${prop.bedrooms} hab ✓`); }
+    else featureDetails.push(`${prop.bedrooms}/${prefs.min_bedrooms} hab ✗`);
   }
   if (prefs.min_bathrooms > 0) {
     featureTotal++;
-    const bathMet = prop.bathrooms >= prefs.min_bathrooms;
-    if (bathMet) featureHits++;
-    else featureHits += Math.max(0, prop.bathrooms / prefs.min_bathrooms);
-    featureCriteria.push({
-      label: "Baños",
-      weight: 0,
-      score: bathMet ? 100 : Math.round(Math.max(0, (prop.bathrooms / prefs.min_bathrooms) * 100)),
-      met: bathMet,
-      detail: `${prop.bathrooms} baños (mín. ${prefs.min_bathrooms})`,
-    });
+    if (prop.bathrooms >= prefs.min_bathrooms) { featureHits++; featureDetails.push(`${prop.bathrooms} baños ✓`); }
+    else featureDetails.push(`${prop.bathrooms}/${prefs.min_bathrooms} baños ✗`);
   }
-  if (prefs.min_surface > 0 || prefs.max_surface > 0) {
+  if (prefs.min_surface > 0) {
     featureTotal++;
-    let surfMet = false;
-    let surfScore = 0;
-    let surfDetail = "";
-    if (prefs.max_surface > 0) {
-      if (prop.surface >= prefs.min_surface && prop.surface <= prefs.max_surface) {
-        surfMet = true;
-        surfScore = 100;
-        featureHits++;
-        surfDetail = `${prop.surface}m² dentro del rango ${prefs.min_surface}-${prefs.max_surface}m²`;
-      } else {
-        const mid = (prefs.min_surface + prefs.max_surface) / 2;
-        const range = prefs.max_surface - prefs.min_surface;
-        if (range > 0) {
-          const ratio = Math.max(0, 1 - Math.abs(prop.surface - mid) / range);
-          featureHits += ratio;
-          surfScore = Math.round(ratio * 100);
-        }
-        surfDetail = `${prop.surface}m² fuera del rango ${prefs.min_surface}-${prefs.max_surface}m²`;
-      }
-    } else if (prop.surface >= prefs.min_surface) {
-      surfMet = true;
-      surfScore = 100;
-      featureHits++;
-      surfDetail = `${prop.surface}m² cumple mínimo de ${prefs.min_surface}m²`;
-    } else {
-      surfDetail = `${prop.surface}m² no cumple mínimo de ${prefs.min_surface}m²`;
-    }
-    featureCriteria.push({ label: "Superficie", weight: 0, score: surfScore, met: surfMet, detail: surfDetail });
+    if (prop.surface >= prefs.min_surface) { featureHits++; featureDetails.push(`${prop.surface}m² ✓`); }
+    else featureDetails.push(`${prop.surface}/${prefs.min_surface}m² ✗`);
   }
+  if (prefs.preferred_types.length > 0) {
+    featureTotal++;
+    if (prefs.preferred_types.includes(prop.type)) { featureHits++; featureDetails.push(`Tipo ${prop.type} ✓`); }
+    else featureDetails.push(`Tipo ${prop.type} ✗`);
+  }
+
+  // Required extras check
+  if (prefs.required_extras && prefs.required_extras.length > 0) {
+    const extrasMap: Record<string, boolean> = {
+      ascensor: prop.has_elevator, terraza: prop.has_terrace, piscina: prop.has_pool,
+      garaje: prop.has_garage, aire_acondicionado: prop.has_air_conditioning,
+    };
+    for (const extra of prefs.required_extras) {
+      featureTotal++;
+      if (extrasMap[extra]) { featureHits++; featureDetails.push(`${extra} ✓`); }
+      else featureDetails.push(`${extra} ✗ (indispensable)`);
+    }
+  }
+
   const featuresScore = featureTotal > 0 ? (featureHits / featureTotal) * 100 : 50;
   criteria.push({
-    label: "Características",
-    weight: 25,
-    score: Math.round(featuresScore),
-    met: featuresScore >= 75,
-    detail: featureCriteria.length > 0 ? featureCriteria.map(f => f.detail).join("; ") : "Sin requisitos de características",
+    label: "Características", weight: 10, score: Math.round(featuresScore),
+    met: featuresScore >= 75, detail: featureDetails.join("; ") || "Sin requisitos",
   });
-  // Add sub-criteria
-  featureCriteria.forEach(fc => criteria.push(fc));
 
-  // Extras match (10%)
-  let extrasScore = 50;
-  let extrasMet = false;
-  let extrasDetail = "";
-  if (prefs.preferred_types.length > 0) {
-    extrasMet = prefs.preferred_types.includes(prop.type);
-    extrasScore = extrasMet ? 100 : 20;
-    extrasDetail = extrasMet
-      ? `Tipo "${prop.type}" coincide con preferencias`
-      : `Tipo "${prop.type}" no coincide con: ${prefs.preferred_types.join(", ")}`;
-  } else {
-    extrasDetail = "Sin tipos preferidos configurados";
-  }
-  criteria.push({ label: "Tipo de vivienda", weight: 10, score: Math.round(extrasScore), met: extrasMet, detail: extrasDetail });
-
-  // Emotional fit (10%) - placeholder
-  criteria.push({ label: "Encaje emocional", weight: 10, score: 50, met: false, detail: "Puntuación base (sin datos adicionales)" });
-
-  const propertyScore =
-    priceScore * 0.3 +
-    locationScore * 0.25 +
-    featuresScore * 0.25 +
-    extrasScore * 0.1 +
-    50 * 0.1;
+  // Weighted total for property part: Price 20% + Location 30% + Features 10% = 60% of total
+  // But we normalize within property score
+  const propertyScore = priceScore * (20/60) + locationScore * (30/60) + featuresScore * (10/60);
 
   return { score: Math.round(Math.min(100, Math.max(0, propertyScore))), criteria };
 }
 
 function calculateFinancialScore(
   financials: ClientFinancials | null,
-  propPrice: number
+  prop: Property
 ): { score: number; criteria: CriteriaDetail[] } {
   const criteria: CriteriaDetail[] = [];
+  const propPrice = Number(prop.price);
 
   if (!financials) {
     return {
       score: 50,
-      criteria: [{ label: "Sin datos financieros", weight: 100, score: 50, met: false, detail: "No hay datos financieros configurados para este cliente" }],
+      criteria: [{ label: "Sin datos financieros", weight: 100, score: 50, met: false, detail: "No hay datos financieros configurados" }],
     };
   }
 
-  let score = 50;
-  const entryRequired = propPrice * 0.2;
-  const additionalCosts = propPrice * 0.1;
-  const totalRequired = entryRequired + additionalCosts;
+  // Real costs calculation
+  const entryRequired = propPrice * 0.2; // 20% down
+  const taxesAndFees = propPrice * 0.10; // ~10% taxes/fees
+  const totalCashNeeded = entryRequired + taxesAndFees;
+  const annualMaintenance = (Number(prop.community_fees) * 12) + Number(prop.ibi_annual);
 
-  // Cash coverage
+  let totalScore = 0;
+  const maxScore = 100;
+
+  // 1. Cash coverage (30 points max)
   let cashScore = 0;
   let cashMet = false;
   let cashDetail = "";
-  if (financials.available_cash >= totalRequired) {
-    cashScore = 20;
-    cashMet = true;
-    cashDetail = `${financials.available_cash.toLocaleString()}€ cubre entrada (${entryRequired.toLocaleString()}€) + gastos (${additionalCosts.toLocaleString()}€)`;
+  if (financials.available_cash >= totalCashNeeded) {
+    cashScore = 30; cashMet = true;
+    cashDetail = `${financials.available_cash.toLocaleString()}€ cubre entrada + gastos (${totalCashNeeded.toLocaleString()}€)`;
   } else if (financials.available_cash >= entryRequired) {
-    cashScore = 10;
-    cashDetail = `${financials.available_cash.toLocaleString()}€ cubre entrada pero no todos los gastos adicionales`;
+    cashScore = 15;
+    cashDetail = `Cubre entrada pero no todos los gastos adicionales`;
   } else {
-    cashScore = -15;
-    cashDetail = `${financials.available_cash.toLocaleString()}€ insuficiente para entrada de ${entryRequired.toLocaleString()}€`;
+    cashScore = 0;
+    cashDetail = `${financials.available_cash.toLocaleString()}€ insuficiente para ${totalCashNeeded.toLocaleString()}€`;
   }
-  criteria.push({ label: "Cobertura de efectivo", weight: 25, score: Math.max(0, 50 + cashScore), met: cashMet, detail: cashDetail });
+  totalScore += cashScore;
+  criteria.push({ label: "Cobertura efectivo", weight: 30, score: Math.round((cashScore/30)*100), met: cashMet, detail: cashDetail });
 
-  score += cashScore;
-
-  // Debt ratio
+  // 2. Debt ratio / affordability (30 points max)
   let debtScore = 0;
   let debtMet = false;
   let debtDetail = "";
-  if (financials.debt_ratio > 40) {
-    debtScore = -20;
-    debtDetail = `Ratio de endeudamiento ${financials.debt_ratio}% supera el 40% (alto riesgo)`;
-  } else if (financials.debt_ratio > 30) {
-    debtScore = -10;
-    debtDetail = `Ratio de endeudamiento ${financials.debt_ratio}% entre 30-40% (riesgo moderado)`;
-  } else if (financials.debt_ratio < 20) {
-    debtScore = 5;
-    debtMet = true;
-    debtDetail = `Ratio de endeudamiento ${financials.debt_ratio}% menor al 20% (excelente)`;
+  if (financials.monthly_income > 0) {
+    const mortgageAmount = Math.max(0, propPrice - financials.available_cash);
+    const estimatedMonthly = mortgageAmount / (25 * 12); // 25yr mortgage
+    const totalMonthlyDebt = estimatedMonthly + (financials.monthly_debts || 0);
+    const debtRatio = (totalMonthlyDebt / financials.monthly_income) * 100;
+
+    if (debtRatio <= 30) {
+      debtScore = 30; debtMet = true;
+      debtDetail = `Endeudamiento ${Math.round(debtRatio)}% ≤ 30% (excelente)`;
+    } else if (debtRatio <= 35) {
+      debtScore = 20;
+      debtDetail = `Endeudamiento ${Math.round(debtRatio)}% (30-35%, aceptable)`;
+    } else if (debtRatio <= 40) {
+      debtScore = 10;
+      debtDetail = `Endeudamiento ${Math.round(debtRatio)}% (35-40%, riesgo moderado)`;
+    } else {
+      debtScore = 0;
+      debtDetail = `Endeudamiento ${Math.round(debtRatio)}% > 40% (alto riesgo)`;
+    }
   } else {
-    debtMet = true;
-    debtDetail = `Ratio de endeudamiento ${financials.debt_ratio}% aceptable (20-30%)`;
+    debtDetail = "Sin datos de ingresos";
   }
-  criteria.push({ label: "Ratio de endeudamiento", weight: 20, score: Math.max(0, 50 + debtScore), met: debtMet, detail: debtDetail });
+  totalScore += debtScore;
+  criteria.push({ label: "Capacidad endeudamiento", weight: 30, score: Math.round((debtScore/30)*100), met: debtMet, detail: debtDetail });
 
-  score += debtScore;
-
-  // Mortgage / Income
+  // 3. Mortgage capacity (25 points max)
   let mortgageScore = 0;
   let mortgageMet = false;
   let mortgageDetail = "";
-  if (financials.mortgage_needed && financials.monthly_income > 0) {
-    const mortgageAmount = propPrice - financials.available_cash;
-    const monthlyMortgage = mortgageAmount / (25 * 12);
-    const mortgageRatio = monthlyMortgage / financials.monthly_income;
-    if (mortgageRatio <= 0.3) {
+  if (!financials.mortgage_needed) {
+    mortgageScore = 25; mortgageMet = true;
+    mortgageDetail = "Compra sin hipoteca";
+  } else if (financials.mortgage_preapproved) {
+    mortgageScore = 25; mortgageMet = true;
+    mortgageDetail = "Hipoteca pre-aprobada ✓ (+15% confianza)";
+  } else if (financials.monthly_income > 0) {
+    const needed = Math.max(0, propPrice - financials.available_cash);
+    // Banks typically lend max 80% of property value
+    if (needed <= propPrice * 0.8) {
       mortgageScore = 15;
-      mortgageMet = true;
-      mortgageDetail = `Cuota estimada ${Math.round(monthlyMortgage).toLocaleString()}€/mes = ${Math.round(mortgageRatio * 100)}% de ingresos (≤30%)`;
-    } else if (mortgageRatio <= 0.4) {
-      mortgageScore = 5;
-      mortgageDetail = `Cuota estimada ${Math.round(monthlyMortgage).toLocaleString()}€/mes = ${Math.round(mortgageRatio * 100)}% de ingresos (30-40%)`;
+      mortgageDetail = `Necesita ${needed.toLocaleString()}€ (≤80% del valor)`;
     } else {
-      mortgageScore = -15;
-      mortgageDetail = `Cuota estimada ${Math.round(monthlyMortgage).toLocaleString()}€/mes = ${Math.round(mortgageRatio * 100)}% de ingresos (>40%, alto riesgo)`;
+      mortgageScore = 5;
+      mortgageDetail = `Necesita ${needed.toLocaleString()}€ (>80% del valor, difícil)`;
     }
-  } else if (!financials.mortgage_needed) {
-    mortgageMet = true;
-    mortgageDetail = "No necesita hipoteca";
   } else {
-    mortgageDetail = "Sin datos de ingresos mensuales";
+    mortgageDetail = "Necesita hipoteca sin datos de ingresos";
   }
-  criteria.push({ label: "Capacidad hipotecaria", weight: 25, score: Math.max(0, 50 + mortgageScore), met: mortgageMet, detail: mortgageDetail });
+  totalScore += mortgageScore;
+  criteria.push({ label: "Viabilidad hipotecaria", weight: 25, score: Math.round((mortgageScore/25)*100), met: mortgageMet, detail: mortgageDetail });
 
-  score += mortgageScore;
+  // 4. Maintenance sustainability (15 points max)
+  let maintScore = 0;
+  let maintMet = false;
+  let maintDetail = "";
+  if (annualMaintenance > 0 && financials.monthly_income > 0) {
+    const monthlyMaint = annualMaintenance / 12;
+    const ratio = monthlyMaint / financials.monthly_income;
+    if (ratio <= 0.05) { maintScore = 15; maintMet = true; maintDetail = `Gastos mantenimiento ${Math.round(monthlyMaint)}€/mes (${Math.round(ratio*100)}% ingresos)`; }
+    else if (ratio <= 0.10) { maintScore = 10; maintDetail = `Gastos mantenimiento ${Math.round(monthlyMaint)}€/mes (${Math.round(ratio*100)}% ingresos)`; }
+    else { maintScore = 5; maintDetail = `Gastos mantenimiento altos: ${Math.round(monthlyMaint)}€/mes`; }
+  } else {
+    maintScore = 10; maintDetail = "Sin datos de gastos de mantenimiento";
+  }
+  totalScore += maintScore;
+  criteria.push({ label: "Sostenibilidad gastos", weight: 15, score: Math.round((maintScore/15)*100), met: maintMet, detail: maintDetail });
 
-  // Pre-approved
-  const preapprovedMet = financials.mortgage_preapproved;
-  criteria.push({
-    label: "Hipoteca pre-aprobada",
-    weight: 15,
-    score: preapprovedMet ? 70 : 40,
-    met: preapprovedMet,
-    detail: preapprovedMet ? "Hipoteca pre-aprobada ✓" : "Sin pre-aprobación hipotecaria",
-  });
-  if (preapprovedMet) score += 10;
-
-  // High liquidity
-  const highLiquidity = financials.available_cash > totalRequired * 1.5;
-  criteria.push({
-    label: "Liquidez alta",
-    weight: 15,
-    score: highLiquidity ? 65 : 45,
-    met: highLiquidity,
-    detail: highLiquidity
-      ? `Efectivo disponible supera 1.5x el requerido (${Math.round(totalRequired * 1.5).toLocaleString()}€)`
-      : `Efectivo disponible no supera 1.5x el requerido`,
-  });
-  if (highLiquidity) score += 5;
-
-  return { score: Math.round(Math.min(100, Math.max(0, score))), criteria };
+  return { score: Math.round(Math.min(100, Math.max(0, totalScore))), criteria };
 }
 
 function getCategory(score: number): string {
@@ -375,7 +344,7 @@ Deno.serve(async (req) => {
 
     let propsQuery = supabase
       .from("properties")
-      .select("id, price, surface, bedrooms, bathrooms, type, address, status, agency_id")
+      .select("id, price, surface, built_surface, plot_surface, bedrooms, bathrooms, floor, type, address, neighborhood, postal_code, status, agency_id, community_fees, ibi_annual, has_elevator, has_terrace, has_pool, has_garage, has_air_conditioning")
       .eq("tenant_id", tenant_id)
       .in("status", ["disponible", "reservado"]);
     if (property_id) propsQuery = propsQuery.eq("id", property_id);
@@ -401,6 +370,7 @@ Deno.serve(async (req) => {
         available_cash: Number(f.available_cash),
         monthly_income: Number(f.monthly_income),
         debt_ratio: Number(f.debt_ratio),
+        monthly_debts: Number(f.monthly_debts || 0),
         mortgage_needed: f.mortgage_needed,
         mortgage_preapproved: f.mortgage_preapproved,
       });
@@ -423,6 +393,8 @@ Deno.serve(async (req) => {
         min_bathrooms: p.min_bathrooms,
         preferred_types: p.preferred_types || [],
         preferred_locations: p.preferred_locations || [],
+        required_extras: p.required_extras || [],
+        neighborhood: p.neighborhood || '',
       });
     });
 
@@ -435,8 +407,25 @@ Deno.serve(async (req) => {
 
       for (const prop of properties as Property[]) {
         const propResult = calculatePropertyScore(prefs, prop);
-        const finResult = calculateFinancialScore(financials, Number(prop.price));
-        const totalScore = Math.round(propResult.score * 0.7 + finResult.score * 0.3);
+        const finResult = calculateFinancialScore(financials, prop);
+
+        // HARD FILTER: if price exceeds budget, total = 0
+        const priceExceeds = prefs && prefs.max_price > 0 && Number(prop.price) > prefs.max_price;
+        // HARD FILTER: if location doesn't match at all
+        const locationMiss = prefs && prefs.preferred_locations.length > 0 &&
+          !prefs.preferred_locations.some(loc =>
+            ((prop.address || '') + ' ' + (prop.neighborhood || '')).toLowerCase().includes(loc.toLowerCase())
+          ) && prefs.neighborhood && prop.neighborhood &&
+          prop.neighborhood.toLowerCase() !== prefs.neighborhood.toLowerCase();
+
+        let totalScore: number;
+        if (priceExceeds) {
+          totalScore = 0; // Hard filter
+        } else {
+          // Weights: Financial 40%, Property (location+price+features) 60%
+          totalScore = Math.round(finResult.score * 0.4 + propResult.score * 0.6);
+        }
+
         const category = getCategory(totalScore);
         const viability = getViability(finResult.score);
 
