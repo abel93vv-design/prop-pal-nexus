@@ -11,8 +11,16 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Building2, Plus, Pencil, Trash2, Loader2, Globe, Copy, CheckCircle2, AlertCircle, Eye, EyeOff } from "lucide-react";
+import { Building2, Plus, Pencil, Trash2, Loader2, Globe, Copy, CheckCircle2, AlertCircle, Eye, EyeOff, Users, KeyRound, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+
+interface TenantUser {
+  id: string;
+  email: string;
+  full_name: string | null;
+  created_at: string;
+  last_sign_in_at: string | null;
+}
 
 const SUPER_ADMIN_EMAIL = "avelascocorpo@gmail.com";
 
@@ -49,6 +57,13 @@ const Tenants = () => {
   const [saving, setSaving] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [provisionResult, setProvisionResult] = useState<{ success: boolean; message: string; credentials?: { email: string; password: string } } | null>(null);
+  const [detailTenant, setDetailTenant] = useState<Tenant | null>(null);
+  const [tenantUsers, setTenantUsers] = useState<TenantUser[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [resetUserId, setResetUserId] = useState<string | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [resettingPassword, setResettingPassword] = useState(false);
 
   const isSuperAdmin = user?.email === SUPER_ADMIN_EMAIL;
 
@@ -155,6 +170,37 @@ const Tenants = () => {
     toast({ title: "Copiado al portapapeles" });
   };
 
+  const openDetail = async (t: Tenant) => {
+    setDetailTenant(t);
+    setTenantUsers([]);
+    setResetUserId(null);
+    setNewPassword("");
+    setLoadingUsers(true);
+    const { data, error } = await supabase.functions.invoke("manage-tenant-admin", {
+      body: { action: "get_admin_users", tenant_id: t.id },
+    });
+    if (!error && data?.users) setTenantUsers(data.users);
+    setLoadingUsers(false);
+  };
+
+  const handleResetPassword = async () => {
+    if (!resetUserId || !newPassword.trim()) return;
+    setResettingPassword(true);
+    const { data, error } = await supabase.functions.invoke("manage-tenant-admin", {
+      body: { action: "reset_password", user_id: resetUserId, new_password: newPassword },
+    });
+    if (error || !data?.success) {
+      toast({ title: "Error", description: data?.error || error?.message, variant: "destructive" });
+    } else {
+      toast({ title: "Contraseña actualizada", description: "El usuario deberá cambiarla en su próximo login" });
+      setResetUserId(null);
+      setNewPassword("");
+    }
+    setResettingPassword(false);
+  };
+
+  const getAccessUrl = (slug: string) => `https://${slug}.tudominio.com`;
+
   return (
     <Layout>
       <div className="space-y-6 animate-fade-in">
@@ -173,6 +219,7 @@ const Tenants = () => {
             {tenants.map(t => (
               <Card key={t.id} className="overflow-hidden hover:shadow-md transition-shadow relative group">
                 <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 z-10">
+                  <Button variant="secondary" size="icon" className="h-7 w-7" onClick={() => openDetail(t)} title="Ver usuarios"><Users className="w-3 h-3" /></Button>
                   <Button variant="secondary" size="icon" className="h-7 w-7" onClick={() => openEdit(t)}><Pencil className="w-3 h-3" /></Button>
                   <Button variant="secondary" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(t)}><Trash2 className="w-3 h-3" /></Button>
                 </div>
@@ -358,6 +405,103 @@ const Tenants = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteTarget(null)}>Cancelar</Button>
             <Button variant="destructive" onClick={handleDelete}>Eliminar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Detail Dialog */}
+      <Dialog open={!!detailTenant} onOpenChange={() => setDetailTenant(null)}>
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Building2 className="w-5 h-5 text-primary" />
+              {detailTenant?.name}
+            </DialogTitle>
+          </DialogHeader>
+
+          {detailTenant && (
+            <div className="space-y-4">
+              {/* Access URL */}
+              <div className="rounded-lg border border-border bg-muted/50 p-3 space-y-1">
+                <p className="text-xs font-semibold text-foreground uppercase tracking-wide flex items-center gap-1">
+                  <ExternalLink className="w-3 h-3" /> URL de acceso
+                </p>
+                <div className="flex items-center justify-between gap-2">
+                  <code className="text-sm font-mono text-primary break-all">{getAccessUrl(detailTenant.slug)}</code>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => copyToClipboard(getAccessUrl(detailTenant.slug))}>
+                    <Copy className="w-3 h-3" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Users */}
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-foreground uppercase tracking-wide flex items-center gap-1">
+                  <Users className="w-3 h-3" /> Usuarios del tenant
+                </p>
+
+                {loadingUsers ? (
+                  <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
+                ) : tenantUsers.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-3">No se encontraron usuarios</p>
+                ) : (
+                  <div className="space-y-2">
+                    {tenantUsers.map(u => (
+                      <div key={u.id} className="rounded-lg border border-border p-3 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-foreground truncate">{u.full_name || "Sin nombre"}</p>
+                            <p className="text-xs text-muted-foreground font-mono">{u.email}</p>
+                          </div>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => copyToClipboard(u.email)}>
+                            <Copy className="w-3 h-3" />
+                          </Button>
+                        </div>
+                        <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+                          <span>Creado: {new Date(u.created_at).toLocaleDateString("es-ES")}</span>
+                          <span>Último login: {u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleDateString("es-ES") : "Nunca"}</span>
+                        </div>
+
+                        {resetUserId === u.id ? (
+                          <div className="space-y-2 pt-2 border-t border-border">
+                            <Label className="text-xs">Nueva contraseña</Label>
+                            <div className="flex gap-2">
+                              <div className="relative flex-1">
+                                <Input
+                                  type={showNewPassword ? "text" : "password"}
+                                  value={newPassword}
+                                  onChange={e => setNewPassword(e.target.value)}
+                                  placeholder="Mínimo 6 caracteres"
+                                />
+                                <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full w-9" onClick={() => setShowNewPassword(!showNewPassword)}>
+                                  {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                </Button>
+                              </div>
+                              <Button variant="outline" size="sm" onClick={() => setNewPassword(generatePassword())}>Generar</Button>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button size="sm" onClick={handleResetPassword} disabled={resettingPassword || newPassword.length < 6}>
+                                {resettingPassword && <Loader2 className="w-3 h-3 mr-1 animate-spin" />}
+                                Cambiar
+                              </Button>
+                              <Button variant="outline" size="sm" onClick={() => { setResetUserId(null); setNewPassword(""); }}>Cancelar</Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <Button variant="outline" size="sm" className="w-full" onClick={() => { setResetUserId(u.id); setNewPassword(generatePassword()); setShowNewPassword(false); }}>
+                            <KeyRound className="w-3 h-3 mr-1" /> Cambiar contraseña
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDetailTenant(null)}>Cerrar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
