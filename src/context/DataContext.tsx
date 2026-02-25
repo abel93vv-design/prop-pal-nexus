@@ -38,8 +38,8 @@ const DataContext = createContext<DataContextType | null>(null);
 
 // Helper to map DB row to Agency
 const toAgency = (r: any): Agency => ({ id: r.id, name: r.name, address: r.address || '', phone: r.phone || '', email: r.email || '', logo: r.logo || '', color: r.color || '#3B82F6' });
-const toClient = (r: any): Client => ({ id: r.id, name: r.name, email: r.email || '', phone: r.phone || '', address: r.address || '', type: r.type, leadStatus: r.lead_status, propertyIds: r.property_ids || [], registeredAt: r.registered_at, notes: r.notes || '', agencyId: r.agency_id || '', category: r.category || '', lastContactedAt: r.last_contacted_at || '', contactCount: r.contact_count || 0 });
-const toProperty = (r: any): Property => ({ id: r.id, title: r.title, address: r.address || '', type: r.type, status: r.status, price: Number(r.price) || 0, surface: Number(r.surface) || 0, bedrooms: r.bedrooms || 0, bathrooms: r.bathrooms || 0, photos: r.photos || [], agentId: r.agent_id || '', interestedClientIds: r.interested_client_ids || [], publishedAt: r.published_at || '', description: r.description || '', agencyId: r.agency_id || '', category: r.category || '', postal_code: r.postal_code || '', latitude: r.latitude != null ? Number(r.latitude) : null, longitude: r.longitude != null ? Number(r.longitude) : null, built_surface: Number(r.built_surface) || 0, plot_surface: Number(r.plot_surface) || 0, energy_cert: r.energy_cert || 'en_tramite', neighborhood: r.neighborhood || '', floor: r.floor != null ? Number(r.floor) : null, community_fees: Number(r.community_fees) || 0, ibi_annual: Number(r.ibi_annual) || 0, has_elevator: r.has_elevator || false, has_terrace: r.has_terrace || false, has_pool: r.has_pool || false, has_garage: r.has_garage || false, has_air_conditioning: r.has_air_conditioning || false });
+const toClient = (r: any): Client => ({ id: r.id, name: r.name, email: r.email || '', phone: r.phone || '', address: r.address || '', type: r.type, leadStatus: r.lead_status, propertyIds: r.property_ids || [], registeredAt: r.registered_at, notes: r.notes || '', agencyId: r.agency_id || '', category: r.category || '', lastContactedAt: r.last_contacted_at || '', contactCount: r.contact_count || 0, operationType: r.operation_type || 'compra' });
+const toProperty = (r: any): Property => ({ id: r.id, title: r.title, address: r.address || '', type: r.type, status: r.status, price: Number(r.price) || 0, surface: Number(r.surface) || 0, bedrooms: r.bedrooms || 0, bathrooms: r.bathrooms || 0, photos: r.photos || [], agentId: r.agent_id || '', interestedClientIds: r.interested_client_ids || [], publishedAt: r.published_at || '', description: r.description || '', agencyId: r.agency_id || '', category: r.category || '', postal_code: r.postal_code || '', latitude: r.latitude != null ? Number(r.latitude) : null, longitude: r.longitude != null ? Number(r.longitude) : null, built_surface: Number(r.built_surface) || 0, plot_surface: Number(r.plot_surface) || 0, energy_cert: r.energy_cert || 'en_tramite', neighborhood: r.neighborhood || '', floor: r.floor != null ? Number(r.floor) : null, community_fees: Number(r.community_fees) || 0, ibi_annual: Number(r.ibi_annual) || 0, has_elevator: r.has_elevator || false, has_terrace: r.has_terrace || false, has_pool: r.has_pool || false, has_garage: r.has_garage || false, has_air_conditioning: r.has_air_conditioning || false, operationType: r.operation_type || 'venta', monthly_rent: Number(r.monthly_rent) || 0 });
 const toUser = (r: any): User => ({ id: r.id, name: r.name, email: r.email || '', role: r.role as any, phone: r.phone || '', propertyIds: r.property_ids || [], clientIds: r.client_ids || [], avatar: r.avatar || '', agencyId: r.agency_id || '', accessType: r.access_type as any, permissions: r.permissions || [], password: r.password || '' });
 const toTask = (r: any): Task => ({ id: r.id, title: r.title, type: r.type as any, status: r.status as any, priority: r.priority as any, dueDate: r.due_date || '', agentId: r.agent_id || '', clientId: r.client_id || '', propertyId: r.property_id || '', notes: r.notes || '', agencyId: r.agency_id || '', category: r.category || '' });
 const toDocument = (r: any): Document => ({ id: r.id, name: r.name, type: r.type as any, file: r.file || '', uploadedAt: r.uploaded_at || '', propertyId: r.property_id || '' });
@@ -100,7 +100,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       name: c.name, email: c.email, phone: c.phone, address: c.address, type: c.type,
       lead_status: c.leadStatus, property_ids: c.propertyIds, notes: c.notes,
       agency_id: c.agencyId || null, category: c.category, last_contacted_at: c.lastContactedAt || null,
-      contact_count: c.contactCount, tenant_id: tenantId,
+      contact_count: c.contactCount, tenant_id: tenantId, operation_type: c.operationType,
     }).select().single();
     if (data) setClients(prev => [...prev, toClient(data)]);
   };
@@ -109,7 +109,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       name: c.name, email: c.email, phone: c.phone, address: c.address, type: c.type,
       lead_status: c.leadStatus, property_ids: c.propertyIds, notes: c.notes,
       agency_id: c.agencyId || null, category: c.category, last_contacted_at: c.lastContactedAt || null,
-      contact_count: c.contactCount,
+      contact_count: c.contactCount, operation_type: c.operationType,
     }).eq('id', c.id);
     setClients(prev => prev.map(x => x.id === c.id ? c : x));
   };
@@ -130,6 +130,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       neighborhood: p.neighborhood, floor: p.floor, community_fees: p.community_fees,
       ibi_annual: p.ibi_annual, has_elevator: p.has_elevator, has_terrace: p.has_terrace,
       has_pool: p.has_pool, has_garage: p.has_garage, has_air_conditioning: p.has_air_conditioning,
+      operation_type: p.operationType, monthly_rent: p.monthly_rent,
     }).select().single();
     if (data) setProperties(prev => [...prev, toProperty(data)]);
   };
@@ -144,6 +145,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       neighborhood: p.neighborhood, floor: p.floor, community_fees: p.community_fees,
       ibi_annual: p.ibi_annual, has_elevator: p.has_elevator, has_terrace: p.has_terrace,
       has_pool: p.has_pool, has_garage: p.has_garage, has_air_conditioning: p.has_air_conditioning,
+      operation_type: p.operationType, monthly_rent: p.monthly_rent,
     }).eq('id', p.id);
     setProperties(prev => prev.map(x => x.id === p.id ? p : x));
   };
