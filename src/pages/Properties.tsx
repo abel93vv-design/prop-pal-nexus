@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Building2, MapPin, Bed, Bath, Ruler, Search, Plus, Pencil, Trash2, FileText, Upload, X, Kanban } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PortalPublicationControls } from "@/components/PortalPublicationControls";
+import { PropertyZoneSelector } from "@/components/PropertyZoneSelector";
 import { Property, PropertyType, PropertyStatus, Document, DocumentType, OperationType } from "@/types/crm";
 import { useToast } from "@/hooks/use-toast";
 import { useCustomFieldDefinitions, useCustomFieldValues } from "@/hooks/useCustomFields";
@@ -293,7 +294,14 @@ const Properties = () => {
               <div><Label className="text-xs">Sup. parcela (m²)</Label><Input type="number" value={form.plot_surface || ""} onChange={e => setForm({ ...form, plot_surface: Number(e.target.value) })} /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label className="text-xs">Barrio / Zona</Label><Input value={form.neighborhood || ""} onChange={e => setForm({ ...form, neighborhood: e.target.value })} placeholder="Ej: Centro, Teatinos..." /></div>
+              <div className="col-span-2">
+                <PropertyZoneSelector
+                  value={form.neighborhood || ""}
+                  onChange={(zoneId) => setForm({ ...form, neighborhood: zoneId })}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
               <div><Label className="text-xs">Código Postal</Label><Input value={form.postal_code || ""} onChange={e => setForm({ ...form, postal_code: e.target.value })} /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
