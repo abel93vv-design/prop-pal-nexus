@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Building2, Plus, Pencil, Trash2, Loader2, Users, Globe } from "lucide-react";
+import { Building2, Plus, Pencil, Trash2, Loader2, Globe, Copy, CheckCircle2, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const SUPER_ADMIN_EMAIL = "avelascocorpo@gmail.com";
@@ -26,7 +26,15 @@ interface Tenant {
   created_at: string;
 }
 
+const generatePassword = () => {
+  const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+  let pw = "";
+  for (let i = 0; i < 10; i++) pw += chars[Math.floor(Math.random() * chars.length)];
+  return pw + "!1";
+};
+
 const emptyForm = { name: "", slug: "", plan: "free", is_active: true, is_demo: false };
+const emptyProvision = { admin_email: "", admin_name: "", admin_password: generatePassword() };
 
 const Tenants = () => {
   const { user } = useAuth();
@@ -36,8 +44,11 @@ const Tenants = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Tenant | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [provision, setProvision] = useState(emptyProvision);
   const [deleteTarget, setDeleteTarget] = useState<Tenant | null>(null);
   const [saving, setSaving] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [provisionResult, setProvisionResult] = useState<{ success: boolean; message: string; credentials?: { email: string; password: string } } | null>(null);
 
   const isSuperAdmin = user?.email === SUPER_ADMIN_EMAIL;
 
@@ -52,10 +63,19 @@ const Tenants = () => {
 
   if (!isSuperAdmin) return <Navigate to="/" replace />;
 
-  const openCreate = () => { setEditing(null); setForm(emptyForm); setDialogOpen(true); };
+  const openCreate = () => {
+    setEditing(null);
+    setForm(emptyForm);
+    setProvision({ ...emptyProvision, admin_password: generatePassword() });
+    setProvisionResult(null);
+    setShowPassword(false);
+    setDialogOpen(true);
+  };
+
   const openEdit = (t: Tenant) => {
     setEditing(t);
     setForm({ name: t.name, slug: t.slug, plan: t.plan, is_active: t.is_active, is_demo: t.is_demo });
+    setProvisionResult(null);
     setDialogOpen(true);
   };
 
@@ -72,21 +92,47 @@ const Tenants = () => {
     }
 
     setSaving(true);
+
     if (editing) {
+      // Simple update
       const { error } = await supabase.from("tenants").update({
         name: form.name, slug: form.slug, plan: form.plan, is_active: form.is_active, is_demo: form.is_demo,
       }).eq("id", editing.id);
       if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
-      else toast({ title: "Tenant actualizado" });
+      else { toast({ title: "Tenant actualizado" }); setDialogOpen(false); }
     } else {
-      const { error } = await supabase.from("tenants").insert({
-        name: form.name, slug: form.slug, plan: form.plan, is_active: form.is_active, is_demo: form.is_demo,
+      // Provision via edge function
+      if (!provision.admin_email.trim()) {
+        toast({ title: "Error", description: "El email del administrador es obligatorio", variant: "destructive" });
+        setSaving(false);
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke("provision-tenant", {
+        body: {
+          name: form.name,
+          slug: slugClean,
+          plan: form.plan,
+          is_active: form.is_active,
+          is_demo: form.is_demo,
+          admin_email: provision.admin_email,
+          admin_password: provision.admin_password,
+          admin_name: provision.admin_name || form.name,
+        },
       });
-      if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
-      else toast({ title: "Tenant creado" });
+
+      if (error || !data?.success) {
+        toast({ title: "Error", description: data?.error || error?.message || "Error al provisionar", variant: "destructive" });
+      } else {
+        setProvisionResult({
+          success: true,
+          message: data.message,
+          credentials: { email: provision.admin_email, password: provision.admin_password },
+        });
+        toast({ title: "¡Tenant provisionado!", description: "Se ha creado el tenant con su usuario administrador" });
+      }
     }
     setSaving(false);
-    setDialogOpen(false);
     fetchTenants();
   };
 
@@ -102,6 +148,11 @@ const Tenants = () => {
   const toggleActive = async (t: Tenant) => {
     await supabase.from("tenants").update({ is_active: !t.is_active }).eq("id", t.id);
     fetchTenants();
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({ title: "Copiado al portapapeles" });
   };
 
   return (
@@ -132,7 +183,10 @@ const Tenants = () => {
                     </div>
                     <div className="min-w-0">
                       <h3 className="font-bold text-foreground truncate">{t.name}</h3>
-                      <p className="text-xs text-muted-foreground flex items-center gap-1"><Globe className="w-3 h-3" />{t.slug}</p>
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Globe className="w-3 h-3" />
+                        <span className="truncate">{t.slug}.tudominio.com</span>
+                      </p>
                     </div>
                   </div>
 
@@ -140,7 +194,7 @@ const Tenants = () => {
                     <Badge variant={t.is_active ? "default" : "secondary"}>
                       {t.is_active ? "Activo" : "Inactivo"}
                     </Badge>
-                    <Badge variant="outline">{t.plan}</Badge>
+                    <Badge variant="outline" className="capitalize">{t.plan}</Badge>
                     {t.is_demo && <Badge variant="outline" className="border-amber-400 text-amber-600">Demo</Badge>}
                   </div>
 
@@ -158,47 +212,141 @@ const Tenants = () => {
       </div>
 
       {/* Create / Edit Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>{editing ? "Editar Tenant" : "Nuevo Tenant"}</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <div>
-              <Label className="text-xs">Nombre *</Label>
-              <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Mi Inmobiliaria" />
+      <Dialog open={dialogOpen} onOpenChange={v => { if (!v) setDialogOpen(false); }}>
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editing ? "Editar Tenant" : "Provisionar Nuevo Tenant"}</DialogTitle>
+          </DialogHeader>
+
+          {provisionResult ? (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-sm">
+                <CheckCircle2 className="w-5 h-5 text-success shrink-0" />
+                <span className="text-foreground font-medium">{provisionResult.message}</span>
+              </div>
+
+              {provisionResult.credentials && (
+                <div className="rounded-lg border border-border bg-muted/50 p-4 space-y-3">
+                  <p className="text-xs font-semibold text-foreground uppercase tracking-wide">Credenciales del administrador</p>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div>
+                        <p className="text-[10px] text-muted-foreground">Email</p>
+                        <p className="text-sm font-mono text-foreground">{provisionResult.credentials.email}</p>
+                      </div>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyToClipboard(provisionResult.credentials!.email)}>
+                        <Copy className="w-3 h-3" />
+                      </Button>
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <div>
+                        <p className="text-[10px] text-muted-foreground">Contraseña temporal</p>
+                        <p className="text-sm font-mono text-foreground">{provisionResult.credentials.password}</p>
+                      </div>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyToClipboard(provisionResult.credentials!.password)}>
+                        <Copy className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2 pt-2 border-t border-border">
+                    <AlertCircle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
+                    <p className="text-[11px] text-muted-foreground">
+                      Al iniciar sesión por primera vez, el usuario deberá cambiar su contraseña. Envía estas credenciales de forma segura.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <DialogFooter>
+                <Button onClick={() => setDialogOpen(false)}>Cerrar</Button>
+              </DialogFooter>
             </div>
-            <div>
-              <Label className="text-xs">Slug (subdominio) *</Label>
-              <Input value={form.slug} onChange={e => setForm({ ...form, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") })} placeholder="mi-inmobiliaria" />
-              <p className="text-[10px] text-muted-foreground mt-1">{form.slug || "slug"}.tudominio.com</p>
-            </div>
-            <div>
-              <Label className="text-xs">Plan</Label>
-              <Select value={form.plan} onValueChange={v => setForm({ ...form, plan: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="free">Free</SelectItem>
-                  <SelectItem value="starter">Starter</SelectItem>
-                  <SelectItem value="pro">Pro</SelectItem>
-                  <SelectItem value="enterprise">Enterprise</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center justify-between">
-              <Label className="text-xs">Activo</Label>
-              <Switch checked={form.is_active} onCheckedChange={v => setForm({ ...form, is_active: v })} />
-            </div>
-            <div className="flex items-center justify-between">
-              <Label className="text-xs">Tenant demo</Label>
-              <Switch checked={form.is_demo} onCheckedChange={v => setForm({ ...form, is_demo: v })} />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSave} disabled={saving}>
-              {saving && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
-              {editing ? "Guardar" : "Crear"}
-            </Button>
-          </DialogFooter>
+          ) : (
+            <>
+              <div className="space-y-3">
+                <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wide">Datos del tenant</p>
+                <div>
+                  <Label className="text-xs">Nombre del negocio *</Label>
+                  <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Valoracasa" />
+                </div>
+                <div>
+                  <Label className="text-xs">Slug (subdominio) *</Label>
+                  <Input value={form.slug} onChange={e => setForm({ ...form, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") })} placeholder="valoracasa" />
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    URL: <span className="font-mono font-medium">{form.slug || "slug"}.tudominio.com</span>
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-xs">Plan</Label>
+                  <Select value={form.plan} onValueChange={v => setForm({ ...form, plan: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="free">Free</SelectItem>
+                      <SelectItem value="starter">Starter</SelectItem>
+                      <SelectItem value="pro">Pro</SelectItem>
+                      <SelectItem value="enterprise">Enterprise</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs">Activo</Label>
+                  <Switch checked={form.is_active} onCheckedChange={v => setForm({ ...form, is_active: v })} />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs">Tenant demo</Label>
+                  <Switch checked={form.is_demo} onCheckedChange={v => setForm({ ...form, is_demo: v })} />
+                </div>
+
+                {!editing && (
+                  <>
+                    <div className="border-t border-border pt-3 mt-3">
+                      <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wide mb-3">Administrador del tenant</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs">Nombre del administrador</Label>
+                      <Input value={provision.admin_name} onChange={e => setProvision({ ...provision, admin_name: e.target.value })} placeholder="Juan García" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Email del administrador *</Label>
+                      <Input type="email" value={provision.admin_email} onChange={e => setProvision({ ...provision, admin_email: e.target.value })} placeholder="admin@valoracasa.com" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Contraseña temporal</Label>
+                      <div className="flex gap-2">
+                        <div className="relative flex-1">
+                          <Input
+                            type={showPassword ? "text" : "password"}
+                            value={provision.admin_password}
+                            onChange={e => setProvision({ ...provision, admin_password: e.target.value })}
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="absolute right-0 top-0 h-full w-9"
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </Button>
+                        </div>
+                        <Button variant="outline" size="sm" onClick={() => setProvision({ ...provision, admin_password: generatePassword() })}>
+                          Generar
+                        </Button>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground mt-1">Se le pedirá cambiarla en el primer login</p>
+                    </div>
+                  </>
+                )}
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
+                <Button onClick={handleSave} disabled={saving}>
+                  {saving && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
+                  {editing ? "Guardar" : "Provisionar Tenant"}
+                </Button>
+              </DialogFooter>
+            </>
+          )}
         </DialogContent>
       </Dialog>
 
@@ -206,7 +354,7 @@ const Tenants = () => {
       <Dialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle>¿Eliminar tenant?</DialogTitle></DialogHeader>
-          <p className="text-sm text-muted-foreground">Se eliminará <strong>{deleteTarget?.name}</strong> permanentemente.</p>
+          <p className="text-sm text-muted-foreground">Se eliminará <strong>{deleteTarget?.name}</strong> permanentemente. Esto NO elimina los datos asociados (clientes, propiedades, etc.).</p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteTarget(null)}>Cancelar</Button>
             <Button variant="destructive" onClick={handleDelete}>Eliminar</Button>
