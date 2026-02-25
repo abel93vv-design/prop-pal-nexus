@@ -1,4 +1,4 @@
-import { Building2, Users, ClipboardList, LayoutDashboard, Globe, UserCog, Landmark, Settings, ShieldCheck, Kanban, Target } from "lucide-react";
+import { Building2, Users, ClipboardList, LayoutDashboard, UserCog, Landmark, Settings, ShieldCheck, Kanban, Target } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { NavLink } from "@/components/NavLink";
 import {
@@ -22,10 +22,6 @@ const mainItems = [
   { title: "Tareas", url: "/tareas", icon: ClipboardList },
   { title: "Equipo", url: "/equipo", icon: UserCog },
   { title: "Inmobiliarias", url: "/inmobiliarias", icon: Landmark },
-];
-
-const publicItems = [
-  { title: "Web Pública", url: "/publica", icon: Globe },
 ];
 
 const settingsItems = [
@@ -61,28 +57,6 @@ export function AppSidebar() {
                     <NavLink
                       to={item.url}
                       end={item.url === "/"}
-                      className="flex items-center gap-3 px-3 rounded-lg text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors text-sm"
-                      activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                    >
-                      <item.icon className="w-4 h-4 shrink-0" />
-                      <span>{item.title}</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup className="mt-4">
-          <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] uppercase tracking-widest mb-1 px-3">Público</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {publicItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild className="h-10">
-                    <NavLink
-                      to={item.url}
                       className="flex items-center gap-3 px-3 rounded-lg text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors text-sm"
                       activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
                     >
