@@ -236,12 +236,12 @@ const Clients = () => {
       await updateClient({ ...editing, ...form });
       await saveCfValues(editing.id, cfValues);
       toast({ title: "Cliente actualizado" });
+      setDialogOpen(false);
     } else {
       await addClient(form);
-      // For new clients, we'd need the ID to save custom fields — handled after creation
-      toast({ title: "Cliente creado" });
+      toast({ title: "Cliente creado", description: "Ahora puedes completar su perfil financiero y preferencias editándolo." });
+      setDialogOpen(false);
     }
-    setDialogOpen(false);
   };
 
   const handleDelete = () => {
@@ -422,23 +422,29 @@ const Clients = () => {
                 onChange={(defId, value) => setCfValues(prev => ({ ...prev, [defId]: value }))}
               />
             )}
-            {editing && <ClientFinancialsForm clientId={editing.id} />}
-            {editing && <ClientPreferencesForm clientId={editing.id} />}
-            {editing && (
-              <InterestedProperties
-                clientId={editing.id}
-                interests={interests}
-                properties={properties}
-                onAdd={(propertyId, type) => addInterest(editing.id, propertyId, type)}
-                onRemove={removeInterest}
-                onUpdateType={updateInterestType}
-              />
-            )}
-            {editing && (
-              <TopPropertyMatches
-                matches={getTopMatchesForClient(editing.id)}
-                properties={properties}
-              />
+            {editing ? (
+              <>
+                <ClientFinancialsForm clientId={editing.id} />
+                <ClientPreferencesForm clientId={editing.id} />
+                <InterestedProperties
+                  clientId={editing.id}
+                  interests={interests}
+                  properties={properties}
+                  onAdd={(propertyId, type) => addInterest(editing.id, propertyId, type)}
+                  onRemove={removeInterest}
+                  onUpdateType={updateInterestType}
+                />
+                <TopPropertyMatches
+                  matches={getTopMatchesForClient(editing.id)}
+                  properties={properties}
+                />
+              </>
+            ) : (
+              <div className="p-3 rounded-lg bg-muted/40 border border-border">
+                <p className="text-xs text-muted-foreground text-center">
+                  💡 Guarda el cliente para acceder al <strong>perfil financiero</strong>, <strong>preferencias de búsqueda</strong>, <strong>zonas de interés</strong> y <strong>matching</strong>.
+                </p>
+              </div>
             )}
           </div>
           <DialogFooter>
