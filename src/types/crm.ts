@@ -2,6 +2,7 @@ export type ClientType = 'comprador' | 'vendedor' | 'arrendador' | 'arrendatario
 export type LeadStatus = 'nuevo' | 'contactado' | 'en_negociacion' | 'cerrado';
 export type PropertyType = 'piso' | 'casa' | 'local' | 'terreno';
 export type PropertyStatus = 'disponible' | 'reservado' | 'vendido_alquilado' | 'no_disponible';
+export type OperationType = 'venta' | 'alquiler' | 'ambos' | 'compra';
 export type UserRole = 'admin_global' | 'admin_inmobiliaria' | 'agente' | 'personalizado';
 export type TaskType = 'llamada' | 'email' | 'visita' | 'recordatorio';
 export type TaskStatus = 'pendiente' | 'en_progreso' | 'completada';
@@ -45,6 +46,7 @@ export interface Client {
   category: string;
   lastContactedAt: string;
   contactCount: number;
+  operationType: OperationType;
 }
 
 export interface Property {
@@ -80,6 +82,8 @@ export interface Property {
   has_pool: boolean;
   has_garage: boolean;
   has_air_conditioning: boolean;
+  operationType: OperationType;
+  monthly_rent: number;
 }
 
 export interface User {

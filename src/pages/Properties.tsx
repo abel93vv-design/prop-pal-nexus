@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Building2, MapPin, Bed, Bath, Ruler, Search, Plus, Pencil, Trash2, FileText, Upload, X, Kanban } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PortalPublicationControls } from "@/components/PortalPublicationControls";
-import { Property, PropertyType, PropertyStatus, Document, DocumentType } from "@/types/crm";
+import { Property, PropertyType, PropertyStatus, Document, DocumentType, OperationType } from "@/types/crm";
 import { useToast } from "@/hooks/use-toast";
 import { useCustomFieldDefinitions, useCustomFieldValues } from "@/hooks/useCustomFields";
 import { CustomFieldsRenderer } from "@/components/CustomFieldsRenderer";
@@ -40,6 +40,7 @@ const emptyProperty: Omit<Property, "id"> = {
   bedrooms: 0, bathrooms: 0, photos: [], agentId: "", interestedClientIds: [],
   publishedAt: new Date().toISOString().split("T")[0], description: "",
   agencyId: "", category: "residencial", ...defaultExtras,
+  operationType: "venta", monthly_rent: 0,
 };
 
 const emptyDoc: Omit<Document, "id"> = {
@@ -89,6 +90,7 @@ const Properties = () => {
       has_elevator: p.has_elevator || false, has_terrace: p.has_terrace || false,
       has_pool: p.has_pool || false, has_garage: p.has_garage || false,
       has_air_conditioning: p.has_air_conditioning || false,
+      operationType: p.operationType || "venta", monthly_rent: p.monthly_rent || 0,
     });
     setCfValues(loadedCfValues);
     setDialogOpen(true);
@@ -234,6 +236,22 @@ const Properties = () => {
                   <SelectContent>{Object.entries(statusLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <Label className="text-xs">Operación</Label>
+                <Select value={form.operationType} onValueChange={(v) => setForm({ ...form, operationType: v as OperationType })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="venta">Venta</SelectItem>
+                    <SelectItem value="alquiler">Alquiler</SelectItem>
+                    <SelectItem value="ambos">Ambos</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {(form.operationType === 'alquiler' || form.operationType === 'ambos') && (
+                <div><Label className="text-xs">Renta mensual (€)</Label><Input type="number" value={form.monthly_rent || ""} onChange={e => setForm({ ...form, monthly_rent: Number(e.target.value) })} /></div>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>

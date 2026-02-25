@@ -11,18 +11,27 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Search, Mail, Phone, Plus, Pencil, Trash2, PhoneCall, ArrowUpDown, Kanban } from "lucide-react";
-import { Client, ClientType, LeadStatus } from "@/types/crm";
+import { Client, ClientType, LeadStatus, OperationType } from "@/types/crm";
 import { useToast } from "@/hooks/use-toast";
 import { useCustomFieldDefinitions, useCustomFieldValues } from "@/hooks/useCustomFields";
 import { CustomFieldsRenderer } from "@/components/CustomFieldsRenderer";
 import { useInterests } from "@/hooks/useInterests";
 import { InterestedProperties } from "@/components/InterestManager";
+import { ZoneSelector } from "@/components/ZoneSelector";
 import { useMatchCenter, useClientFinancials, useClientPreferences } from "@/hooks/useMatchCenter";
 import { TopPropertyMatches } from "@/components/MatchScoreWidgets";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 
 const EXTRAS_OPTIONS = ['ascensor', 'terraza', 'piscina', 'garaje', 'aire_acondicionado'] as const;
+
+const operationLabels: Record<string, string> = { compra: 'Compra', alquiler: 'Alquiler', ambos: 'Ambos', venta: 'Venta' };
+const operationColors: Record<string, string> = {
+  compra: 'bg-primary/10 text-primary border-primary/20',
+  alquiler: 'bg-info/10 text-info border-info/20',
+  ambos: 'bg-warning/10 text-warning border-warning/20',
+  venta: 'bg-success/10 text-success border-success/20',
+};
 
 function ClientFinancialsForm({ clientId }: { clientId: string }) {
   const { financials, loading, save } = useClientFinancials(clientId);
@@ -75,7 +84,7 @@ function ClientPreferencesForm({ clientId }: { clientId: string }) {
     min_price: 0, max_price: 0, min_surface: 0, max_surface: 0,
     min_bedrooms: 0, min_bathrooms: 0, preferred_types: [] as string[],
     preferred_locations: [] as string[], required_extras: [] as string[],
-    neighborhood: '',
+    neighborhood: '', selected_zones: [] as string[],
   });
   const [dirty, setDirty] = useState(false);
 
@@ -88,6 +97,7 @@ function ClientPreferencesForm({ clientId }: { clientId: string }) {
         preferred_types: preferences.preferred_types, preferred_locations: preferences.preferred_locations,
         required_extras: (preferences as any).required_extras || [],
         neighborhood: (preferences as any).neighborhood || '',
+        selected_zones: (preferences as any).selected_zones || [],
       });
     }
   }, [preferences]);
@@ -120,11 +130,10 @@ function ClientPreferencesForm({ clientId }: { clientId: string }) {
         <div><Label className="text-xs">Hab. mínimas</Label><Input type="number" value={form.min_bedrooms || ""} onChange={e => { setForm(f => ({ ...f, min_bedrooms: Number(e.target.value) })); setDirty(true); }} /></div>
         <div><Label className="text-xs">Baños mínimos</Label><Input type="number" value={form.min_bathrooms || ""} onChange={e => { setForm(f => ({ ...f, min_bathrooms: Number(e.target.value) })); setDirty(true); }} /></div>
       </div>
-      <div><Label className="text-xs">Barrio / Zona preferida</Label><Input value={form.neighborhood} onChange={e => { setForm(f => ({ ...f, neighborhood: e.target.value })); setDirty(true); }} placeholder="Ej: Centro, Teatinos..." /></div>
-      <div>
-        <Label className="text-xs">Zonas de interés (separar con coma)</Label>
-        <Input value={form.preferred_locations.join(', ')} onChange={e => { setForm(f => ({ ...f, preferred_locations: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })); setDirty(true); }} placeholder="Centro, Teatinos, Malagueta..." />
-      </div>
+      <ZoneSelector
+        selectedZones={form.selected_zones || []}
+        onChange={(zones) => { setForm(f => ({ ...f, selected_zones: zones })); setDirty(true); }}
+      />
       <div>
         <Label className="text-xs">Tipología deseada</Label>
         <div className="flex flex-wrap gap-2 mt-1">
@@ -178,6 +187,7 @@ const emptyClient: Omit<Client, "id"> = {
   name: "", email: "", phone: "", address: "", type: "comprador", leadStatus: "nuevo",
   propertyIds: [], registeredAt: new Date().toISOString().split("T")[0], notes: "",
   agencyId: "", category: "estandar", lastContactedAt: "", contactCount: 0,
+  operationType: "compra",
 };
 
 const Clients = () => {
@@ -215,7 +225,7 @@ const Clients = () => {
   const openCreate = () => { setEditing(null); setForm(emptyClient); setCfValues({}); setDialogOpen(true); };
   const openEdit = (c: Client) => {
     setEditing(c);
-    setForm({ name: c.name, email: c.email, phone: c.phone, address: c.address, type: c.type, leadStatus: c.leadStatus, propertyIds: c.propertyIds, registeredAt: c.registeredAt, notes: c.notes, agencyId: c.agencyId, category: c.category, lastContactedAt: c.lastContactedAt, contactCount: c.contactCount });
+    setForm({ name: c.name, email: c.email, phone: c.phone, address: c.address, type: c.type, leadStatus: c.leadStatus, propertyIds: c.propertyIds, registeredAt: c.registeredAt, notes: c.notes, agencyId: c.agencyId, category: c.category, lastContactedAt: c.lastContactedAt, contactCount: c.contactCount, operationType: c.operationType || 'compra' });
     setCfValues(loadedCfValues);
     setDialogOpen(true);
   };
@@ -293,6 +303,7 @@ const Clients = () => {
                 <TableHead className="font-semibold text-xs">Nombre</TableHead>
                 <TableHead className="font-semibold text-xs">Contacto</TableHead>
                 <TableHead className="font-semibold text-xs">Tipo</TableHead>
+                <TableHead className="font-semibold text-xs">Operación</TableHead>
                 <TableHead className="font-semibold text-xs">Categoría</TableHead>
                 <TableHead className="font-semibold text-xs">Estado</TableHead>
                 <TableHead className="font-semibold text-xs">Últ. contacto</TableHead>
@@ -314,6 +325,11 @@ const Clients = () => {
                     </div>
                   </TableCell>
                   <TableCell><Badge variant="outline" className="text-[10px]">{typeLabels[c.type]}</Badge></TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className={`text-[10px] ${operationColors[c.operationType] || ''}`}>
+                      {operationLabels[c.operationType] || c.operationType}
+                    </Badge>
+                  </TableCell>
                   <TableCell><Badge variant="outline" className="text-[10px] capitalize">{c.category}</Badge></TableCell>
                   <TableCell>
                     <Badge variant="outline" className={`text-[10px] ${statusColors[c.leadStatus]}`}>{statusLabels[c.leadStatus]}</Badge>
@@ -368,7 +384,18 @@ const Clients = () => {
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <Label className="text-xs">Operación</Label>
+                <Select value={form.operationType} onValueChange={(v) => setForm({ ...form, operationType: v as OperationType })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="compra">Compra</SelectItem>
+                    <SelectItem value="alquiler">Alquiler</SelectItem>
+                    <SelectItem value="ambos">Ambos</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div>
                 <Label className="text-xs">Categoría</Label>
                 <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>

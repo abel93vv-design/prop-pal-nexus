@@ -26,6 +26,7 @@ interface ClientPreferences {
   preferred_locations: string[];
   required_extras: string[];
   neighborhood: string;
+  selected_zones: string[];
 }
 
 interface Property {
@@ -50,11 +51,14 @@ interface Property {
   has_pool: boolean;
   has_garage: boolean;
   has_air_conditioning: boolean;
+  operation_type: string;
+  monthly_rent: number;
 }
 
 interface Client {
   id: string;
   agency_id: string | null;
+  operation_type: string;
 }
 
 interface CriteriaDetail {
@@ -336,7 +340,7 @@ Deno.serve(async (req) => {
 
     let clientsQuery = supabase
       .from("clients")
-      .select("id, agency_id")
+      .select("id, agency_id, operation_type")
       .eq("tenant_id", tenant_id)
       .in("type", ["comprador", "arrendatario"]);
     if (client_id) clientsQuery = clientsQuery.eq("id", client_id);
@@ -344,7 +348,7 @@ Deno.serve(async (req) => {
 
     let propsQuery = supabase
       .from("properties")
-      .select("id, price, surface, built_surface, plot_surface, bedrooms, bathrooms, floor, type, address, neighborhood, postal_code, status, agency_id, community_fees, ibi_annual, has_elevator, has_terrace, has_pool, has_garage, has_air_conditioning")
+      .select("id, price, surface, built_surface, plot_surface, bedrooms, bathrooms, floor, type, address, neighborhood, postal_code, status, agency_id, community_fees, ibi_annual, has_elevator, has_terrace, has_pool, has_garage, has_air_conditioning, operation_type, monthly_rent")
       .eq("tenant_id", tenant_id)
       .in("status", ["disponible", "reservado"]);
     if (property_id) propsQuery = propsQuery.eq("id", property_id);
@@ -395,6 +399,7 @@ Deno.serve(async (req) => {
         preferred_locations: p.preferred_locations || [],
         required_extras: p.required_extras || [],
         neighborhood: p.neighborhood || '',
+        selected_zones: p.selected_zones || [],
       });
     });
 
@@ -406,47 +411,69 @@ Deno.serve(async (req) => {
       const prefs = prefsMap.get(client.id) || null;
 
       for (const prop of properties as Property[]) {
+        // HARD FILTER: Operation type mismatch
+        const clientOp = client.operation_type || 'compra';
+        const propOp = prop.operation_type || 'venta';
+        const opMatch = clientOp === 'ambos' || propOp === 'ambos' ||
+          (clientOp === 'compra' && propOp === 'venta') ||
+          (clientOp === 'alquiler' && propOp === 'alquiler');
+
+        if (!opMatch) {
+          // Operation mismatch → score 0
+          upserts.push({
+            tenant_id, agency_id: client.agency_id || prop.agency_id || null,
+            client_id: client.id, property_id: prop.id,
+            property_score: 0, financial_score: 0, total_score: 0,
+            category: "low", viability_status: "Not Viable",
+            score_details: { property: { total: 0, criteria: [{ label: "Tipo operación", weight: 100, score: 0, met: false, detail: `Cliente busca ${clientOp}, propiedad es ${propOp}` }] }, financial: { total: 0, criteria: [] } },
+            last_calculated_at: now, updated_at: now,
+          });
+          continue;
+        }
+
+        // Determine if rental match
+        const isRental = (clientOp === 'alquiler') || (propOp === 'alquiler' && clientOp !== 'compra');
+
         const propResult = calculatePropertyScore(prefs, prop);
-        const finResult = calculateFinancialScore(financials, prop);
+        let finResult;
+
+        if (isRental && financials && financials.monthly_income > 0) {
+          // Rental: financial score based on rent ≤ 35% of income
+          const rent = Number(prop.monthly_rent) || 0;
+          const ratio = rent > 0 ? (rent / financials.monthly_income) * 100 : 0;
+          let rentScore = 0;
+          let rentMet = false;
+          let rentDetail = "";
+          if (rent <= 0) { rentScore = 50; rentDetail = "Sin renta mensual configurada"; }
+          else if (ratio <= 25) { rentScore = 100; rentMet = true; rentDetail = `Renta ${rent}€ = ${Math.round(ratio)}% ingresos (≤25%, excelente)`; }
+          else if (ratio <= 35) { rentScore = 70; rentMet = true; rentDetail = `Renta ${rent}€ = ${Math.round(ratio)}% ingresos (≤35%, aceptable)`; }
+          else if (ratio <= 45) { rentScore = 30; rentDetail = `Renta ${rent}€ = ${Math.round(ratio)}% ingresos (35-45%, riesgo)`; }
+          else { rentScore = 0; rentDetail = `Renta ${rent}€ = ${Math.round(ratio)}% ingresos (>45%, no viable)`; }
+          finResult = { score: rentScore, criteria: [{ label: "Solvencia alquiler", weight: 100, score: rentScore, met: rentMet, detail: rentDetail }] };
+        } else {
+          finResult = calculateFinancialScore(financials, prop);
+        }
 
         // HARD FILTER: if price exceeds budget, total = 0
         const priceExceeds = prefs && prefs.max_price > 0 && Number(prop.price) > prefs.max_price;
-        // HARD FILTER: if location doesn't match at all
-        const locationMiss = prefs && prefs.preferred_locations.length > 0 &&
-          !prefs.preferred_locations.some(loc =>
-            ((prop.address || '') + ' ' + (prop.neighborhood || '')).toLowerCase().includes(loc.toLowerCase())
-          ) && prefs.neighborhood && prop.neighborhood &&
-          prop.neighborhood.toLowerCase() !== prefs.neighborhood.toLowerCase();
 
         let totalScore: number;
         if (priceExceeds) {
-          totalScore = 0; // Hard filter
+          totalScore = 0;
         } else {
-          // Weights: Financial 40%, Property (location+price+features) 60%
           totalScore = Math.round(finResult.score * 0.4 + propResult.score * 0.6);
         }
 
         const category = getCategory(totalScore);
         const viability = getViability(finResult.score);
 
-        const scoreDetails: ScoreDetails = {
-          property: { total: propResult.score, criteria: propResult.criteria },
-          financial: { total: finResult.score, criteria: finResult.criteria },
-        };
-
         upserts.push({
-          tenant_id,
-          agency_id: client.agency_id || prop.agency_id || null,
-          client_id: client.id,
-          property_id: prop.id,
-          property_score: propResult.score,
-          financial_score: finResult.score,
-          total_score: totalScore,
-          category,
-          viability_status: viability,
-          score_details: scoreDetails,
-          last_calculated_at: now,
-          updated_at: now,
+          tenant_id, agency_id: client.agency_id || prop.agency_id || null,
+          client_id: client.id, property_id: prop.id,
+          property_score: propResult.score, financial_score: finResult.score,
+          total_score: totalScore, category, viability_status: viability,
+          score_details: { property: { total: propResult.score, criteria: propResult.criteria }, financial: { total: finResult.score, criteria: finResult.criteria } },
+          last_calculated_at: now, updated_at: now,
         });
       }
     }

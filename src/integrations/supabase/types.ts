@@ -130,6 +130,7 @@ export type Database = {
           preferred_locations: string[] | null
           preferred_types: string[] | null
           required_extras: string[] | null
+          selected_zones: string[] | null
           tenant_id: string
           updated_at: string
         }
@@ -147,6 +148,7 @@ export type Database = {
           preferred_locations?: string[] | null
           preferred_types?: string[] | null
           required_extras?: string[] | null
+          selected_zones?: string[] | null
           tenant_id: string
           updated_at?: string
         }
@@ -164,6 +166,7 @@ export type Database = {
           preferred_locations?: string[] | null
           preferred_types?: string[] | null
           required_extras?: string[] | null
+          selected_zones?: string[] | null
           tenant_id?: string
           updated_at?: string
         }
@@ -246,6 +249,7 @@ export type Database = {
           lead_status: string
           name: string
           notes: string | null
+          operation_type: string
           phone: string | null
           property_ids: string[] | null
           registered_at: string
@@ -264,6 +268,7 @@ export type Database = {
           lead_status?: string
           name: string
           notes?: string | null
+          operation_type?: string
           phone?: string | null
           property_ids?: string[] | null
           registered_at?: string
@@ -282,6 +287,7 @@ export type Database = {
           lead_status?: string
           name?: string
           notes?: string | null
+          operation_type?: string
           phone?: string | null
           property_ids?: string[] | null
           registered_at?: string
@@ -794,7 +800,9 @@ export type Database = {
           interested_client_ids: string[] | null
           latitude: number | null
           longitude: number | null
+          monthly_rent: number | null
           neighborhood: string | null
+          operation_type: string
           photos: string[] | null
           plot_surface: number | null
           postal_code: string | null
@@ -829,7 +837,9 @@ export type Database = {
           interested_client_ids?: string[] | null
           latitude?: number | null
           longitude?: number | null
+          monthly_rent?: number | null
           neighborhood?: string | null
+          operation_type?: string
           photos?: string[] | null
           plot_surface?: number | null
           postal_code?: string | null
@@ -864,7 +874,9 @@ export type Database = {
           interested_client_ids?: string[] | null
           latitude?: number | null
           longitude?: number | null
+          monthly_rent?: number | null
           neighborhood?: string | null
+          operation_type?: string
           photos?: string[] | null
           plot_surface?: number | null
           postal_code?: string | null
