@@ -65,6 +65,7 @@ export type Database = {
           created_at: string
           debt_ratio: number
           id: string
+          monthly_debts: number | null
           monthly_income: number
           mortgage_needed: boolean
           mortgage_preapproved: boolean
@@ -77,6 +78,7 @@ export type Database = {
           created_at?: string
           debt_ratio?: number
           id?: string
+          monthly_debts?: number | null
           monthly_income?: number
           mortgage_needed?: boolean
           mortgage_preapproved?: boolean
@@ -89,6 +91,7 @@ export type Database = {
           created_at?: string
           debt_ratio?: number
           id?: string
+          monthly_debts?: number | null
           monthly_income?: number
           mortgage_needed?: boolean
           mortgage_preapproved?: boolean
@@ -123,8 +126,10 @@ export type Database = {
           min_bedrooms: number | null
           min_price: number | null
           min_surface: number | null
+          neighborhood: string | null
           preferred_locations: string[] | null
           preferred_types: string[] | null
+          required_extras: string[] | null
           tenant_id: string
           updated_at: string
         }
@@ -138,8 +143,10 @@ export type Database = {
           min_bedrooms?: number | null
           min_price?: number | null
           min_surface?: number | null
+          neighborhood?: string | null
           preferred_locations?: string[] | null
           preferred_types?: string[] | null
+          required_extras?: string[] | null
           tenant_id: string
           updated_at?: string
         }
@@ -153,8 +160,10 @@ export type Database = {
           min_bedrooms?: number | null
           min_price?: number | null
           min_surface?: number | null
+          neighborhood?: string | null
           preferred_locations?: string[] | null
           preferred_types?: string[] | null
+          required_extras?: string[] | null
           tenant_id?: string
           updated_at?: string
         }
@@ -770,13 +779,22 @@ export type Database = {
           bedrooms: number | null
           built_surface: number | null
           category: string | null
+          community_fees: number | null
           created_at: string
           description: string | null
           energy_cert: string | null
+          floor: number | null
+          has_air_conditioning: boolean | null
+          has_elevator: boolean | null
+          has_garage: boolean | null
+          has_pool: boolean | null
+          has_terrace: boolean | null
+          ibi_annual: number | null
           id: string
           interested_client_ids: string[] | null
           latitude: number | null
           longitude: number | null
+          neighborhood: string | null
           photos: string[] | null
           plot_surface: number | null
           postal_code: string | null
@@ -796,13 +814,22 @@ export type Database = {
           bedrooms?: number | null
           built_surface?: number | null
           category?: string | null
+          community_fees?: number | null
           created_at?: string
           description?: string | null
           energy_cert?: string | null
+          floor?: number | null
+          has_air_conditioning?: boolean | null
+          has_elevator?: boolean | null
+          has_garage?: boolean | null
+          has_pool?: boolean | null
+          has_terrace?: boolean | null
+          ibi_annual?: number | null
           id?: string
           interested_client_ids?: string[] | null
           latitude?: number | null
           longitude?: number | null
+          neighborhood?: string | null
           photos?: string[] | null
           plot_surface?: number | null
           postal_code?: string | null
@@ -822,13 +849,22 @@ export type Database = {
           bedrooms?: number | null
           built_surface?: number | null
           category?: string | null
+          community_fees?: number | null
           created_at?: string
           description?: string | null
           energy_cert?: string | null
+          floor?: number | null
+          has_air_conditioning?: boolean | null
+          has_elevator?: boolean | null
+          has_garage?: boolean | null
+          has_pool?: boolean | null
+          has_terrace?: boolean | null
+          ibi_annual?: number | null
           id?: string
           interested_client_ids?: string[] | null
           latitude?: number | null
           longitude?: number | null
+          neighborhood?: string | null
           photos?: string[] | null
           plot_surface?: number | null
           postal_code?: string | null

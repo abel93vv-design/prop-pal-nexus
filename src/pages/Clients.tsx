@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { useData } from "@/context/DataContext";
@@ -20,6 +20,148 @@ import { InterestedProperties } from "@/components/InterestManager";
 import { useMatchCenter, useClientFinancials, useClientPreferences } from "@/hooks/useMatchCenter";
 import { TopPropertyMatches } from "@/components/MatchScoreWidgets";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
+
+const EXTRAS_OPTIONS = ['ascensor', 'terraza', 'piscina', 'garaje', 'aire_acondicionado'] as const;
+
+function ClientFinancialsForm({ clientId }: { clientId: string }) {
+  const { financials, loading, save } = useClientFinancials(clientId);
+  const [form, setForm] = useState({
+    available_cash: 0, monthly_income: 0, debt_ratio: 0,
+    monthly_debts: 0, mortgage_needed: false, mortgage_preapproved: false,
+  });
+  const [dirty, setDirty] = useState(false);
+
+  useEffect(() => {
+    if (financials) {
+      setForm({
+        available_cash: financials.available_cash,
+        monthly_income: financials.monthly_income,
+        debt_ratio: financials.debt_ratio,
+        monthly_debts: (financials as any).monthly_debts || 0,
+        mortgage_needed: financials.mortgage_needed,
+        mortgage_preapproved: financials.mortgage_preapproved,
+      });
+    }
+  }, [financials]);
+
+  const handleSave = () => { save(form); setDirty(false); };
+
+  if (loading) return null;
+
+  return (
+    <div className="p-3 rounded-lg bg-muted/40 border border-border space-y-3">
+      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Perfil Financiero</p>
+      <div className="grid grid-cols-2 gap-3">
+        <div><Label className="text-xs">Ahorros disponibles (€)</Label><Input type="number" value={form.available_cash || ""} onChange={e => { setForm(f => ({ ...f, available_cash: Number(e.target.value) })); setDirty(true); }} /></div>
+        <div><Label className="text-xs">Ingresos netos/mes (€)</Label><Input type="number" value={form.monthly_income || ""} onChange={e => { setForm(f => ({ ...f, monthly_income: Number(e.target.value) })); setDirty(true); }} /></div>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div><Label className="text-xs">Deudas mensuales (€)</Label><Input type="number" value={form.monthly_debts || ""} onChange={e => { setForm(f => ({ ...f, monthly_debts: Number(e.target.value) })); setDirty(true); }} /></div>
+        <div><Label className="text-xs">Ratio endeudamiento (%)</Label><Input type="number" value={form.debt_ratio || ""} onChange={e => { setForm(f => ({ ...f, debt_ratio: Number(e.target.value) })); setDirty(true); }} /></div>
+      </div>
+      <div className="flex items-center gap-4">
+        <label className="flex items-center gap-2 text-xs"><Switch checked={form.mortgage_needed} onCheckedChange={v => { setForm(f => ({ ...f, mortgage_needed: !!v })); setDirty(true); }} />Necesita hipoteca</label>
+        <label className="flex items-center gap-2 text-xs"><Switch checked={form.mortgage_preapproved} onCheckedChange={v => { setForm(f => ({ ...f, mortgage_preapproved: !!v })); setDirty(true); }} />Pre-aprobada</label>
+      </div>
+      {dirty && <Button size="sm" onClick={handleSave} className="w-full">Guardar financiero</Button>}
+    </div>
+  );
+}
+
+function ClientPreferencesForm({ clientId }: { clientId: string }) {
+  const { preferences, loading, save } = useClientPreferences(clientId);
+  const [form, setForm] = useState({
+    min_price: 0, max_price: 0, min_surface: 0, max_surface: 0,
+    min_bedrooms: 0, min_bathrooms: 0, preferred_types: [] as string[],
+    preferred_locations: [] as string[], required_extras: [] as string[],
+    neighborhood: '',
+  });
+  const [dirty, setDirty] = useState(false);
+
+  useEffect(() => {
+    if (preferences) {
+      setForm({
+        min_price: preferences.min_price, max_price: preferences.max_price,
+        min_surface: preferences.min_surface, max_surface: preferences.max_surface,
+        min_bedrooms: preferences.min_bedrooms, min_bathrooms: preferences.min_bathrooms,
+        preferred_types: preferences.preferred_types, preferred_locations: preferences.preferred_locations,
+        required_extras: (preferences as any).required_extras || [],
+        neighborhood: (preferences as any).neighborhood || '',
+      });
+    }
+  }, [preferences]);
+
+  const handleSave = () => { save(form); setDirty(false); };
+  const toggleExtra = (extra: string) => {
+    setForm(f => ({
+      ...f,
+      required_extras: f.required_extras.includes(extra)
+        ? f.required_extras.filter(e => e !== extra)
+        : [...f.required_extras, extra],
+    }));
+    setDirty(true);
+  };
+
+  if (loading) return null;
+
+  return (
+    <div className="p-3 rounded-lg bg-muted/40 border border-border space-y-3">
+      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Preferencias de Búsqueda</p>
+      <div className="grid grid-cols-2 gap-3">
+        <div><Label className="text-xs">Presup. mínimo (€)</Label><Input type="number" value={form.min_price || ""} onChange={e => { setForm(f => ({ ...f, min_price: Number(e.target.value) })); setDirty(true); }} /></div>
+        <div><Label className="text-xs">Presup. máximo (€)</Label><Input type="number" value={form.max_price || ""} onChange={e => { setForm(f => ({ ...f, max_price: Number(e.target.value) })); setDirty(true); }} /></div>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div><Label className="text-xs">Sup. mínima (m²)</Label><Input type="number" value={form.min_surface || ""} onChange={e => { setForm(f => ({ ...f, min_surface: Number(e.target.value) })); setDirty(true); }} /></div>
+        <div><Label className="text-xs">Sup. máxima (m²)</Label><Input type="number" value={form.max_surface || ""} onChange={e => { setForm(f => ({ ...f, max_surface: Number(e.target.value) })); setDirty(true); }} /></div>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div><Label className="text-xs">Hab. mínimas</Label><Input type="number" value={form.min_bedrooms || ""} onChange={e => { setForm(f => ({ ...f, min_bedrooms: Number(e.target.value) })); setDirty(true); }} /></div>
+        <div><Label className="text-xs">Baños mínimos</Label><Input type="number" value={form.min_bathrooms || ""} onChange={e => { setForm(f => ({ ...f, min_bathrooms: Number(e.target.value) })); setDirty(true); }} /></div>
+      </div>
+      <div><Label className="text-xs">Barrio / Zona preferida</Label><Input value={form.neighborhood} onChange={e => { setForm(f => ({ ...f, neighborhood: e.target.value })); setDirty(true); }} placeholder="Ej: Centro, Teatinos..." /></div>
+      <div>
+        <Label className="text-xs">Zonas de interés (separar con coma)</Label>
+        <Input value={form.preferred_locations.join(', ')} onChange={e => { setForm(f => ({ ...f, preferred_locations: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })); setDirty(true); }} placeholder="Centro, Teatinos, Malagueta..." />
+      </div>
+      <div>
+        <Label className="text-xs">Tipología deseada</Label>
+        <div className="flex flex-wrap gap-2 mt-1">
+          {['piso', 'casa', 'local', 'terreno'].map(t => (
+            <label key={t} className="flex items-center gap-1.5 text-xs cursor-pointer">
+              <Checkbox
+                checked={form.preferred_types.includes(t)}
+                onCheckedChange={() => {
+                  setForm(f => ({
+                    ...f,
+                    preferred_types: f.preferred_types.includes(t)
+                      ? f.preferred_types.filter(x => x !== t)
+                      : [...f.preferred_types, t],
+                  }));
+                  setDirty(true);
+                }}
+              />
+              {t.charAt(0).toUpperCase() + t.slice(1)}
+            </label>
+          ))}
+        </div>
+      </div>
+      <div>
+        <Label className="text-xs">Extras indispensables</Label>
+        <div className="flex flex-wrap gap-2 mt-1">
+          {EXTRAS_OPTIONS.map(extra => (
+            <label key={extra} className="flex items-center gap-1.5 text-xs cursor-pointer">
+              <Checkbox checked={form.required_extras.includes(extra)} onCheckedChange={() => toggleExtra(extra)} />
+              {extra.replace('_', ' ').replace(/^\w/, c => c.toUpperCase())}
+            </label>
+          ))}
+        </div>
+      </div>
+      {dirty && <Button size="sm" onClick={handleSave} className="w-full">Guardar preferencias</Button>}
+    </div>
+  );
+}
 
 const typeLabels: Record<ClientType, string> = { comprador: 'Comprador', vendedor: 'Vendedor', arrendador: 'Arrendador', arrendatario: 'Arrendatario' };
 const statusLabels: Record<LeadStatus, string> = { nuevo: 'Nuevo', contactado: 'Contactado', en_negociacion: 'En negociación', cerrado: 'Cerrado' };
@@ -253,6 +395,8 @@ const Clients = () => {
                 onChange={(defId, value) => setCfValues(prev => ({ ...prev, [defId]: value }))}
               />
             )}
+            {editing && <ClientFinancialsForm clientId={editing.id} />}
+            {editing && <ClientPreferencesForm clientId={editing.id} />}
             {editing && (
               <InterestedProperties
                 clientId={editing.id}
