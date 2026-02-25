@@ -116,27 +116,56 @@ function calculatePropertyScore(
   let locationMet = false;
   let locationDetail = "";
 
-  // First check neighborhood exact match
-  if (prefs.neighborhood && prop.neighborhood) {
-    if (prop.neighborhood.toLowerCase() === prefs.neighborhood.toLowerCase()) {
+  const propZoneId = (prop.neighborhood || "").trim();
+
+  // Primary: check if property's zone ID is in client's selected_zones
+  if (prefs.selected_zones && prefs.selected_zones.length > 0 && propZoneId) {
+    // Direct match: property zone ID is in selected zones
+    if (prefs.selected_zones.includes(propZoneId)) {
       locationScore = 100; locationMet = true;
-      locationDetail = `Barrio "${prop.neighborhood}" coincide exactamente`;
+      locationDetail = `Zona "${propZoneId}" coincide con zona de interés`;
     } else {
-      locationScore = 20;
-      locationDetail = `Barrio "${prop.neighborhood}" no coincide con "${prefs.neighborhood}"`;
+      // Check if property is in a selected district
+      // e.g. property is "barrio:huelin", check if "distrito:cruz-humilladero" is selected
+      const [propType, propId] = propZoneId.split(":");
+      if (propType === "barrio") {
+        const districtMatch = prefs.selected_zones.find(z => {
+          if (!z.startsWith("distrito:")) return false;
+          // We need to check if this barrio belongs to that distrito
+          // Since we don't have the full hierarchy in the edge function, 
+          // we store distrito: IDs in selected_zones when a full district is selected
+          return false; // District-level matching handled by client storing all barrio IDs
+        });
+      }
+      locationScore = 10;
+      locationDetail = `Zona "${propZoneId}" no está en las ${prefs.selected_zones.length} zonas seleccionadas`;
     }
-  } else if (prefs.preferred_locations.length > 0) {
-    const addrLower = (prop.address || "").toLowerCase() + " " + (prop.neighborhood || "").toLowerCase();
-    const matchedLoc = prefs.preferred_locations.find((loc) => addrLower.includes(loc.toLowerCase()));
-    if (matchedLoc) {
-      locationScore = 100; locationMet = true;
-      locationDetail = `Ubicación "${matchedLoc}" encontrada`;
+  } else if (prefs.selected_zones && prefs.selected_zones.length > 0 && !propZoneId) {
+    locationScore = 0;
+    locationDetail = "Propiedad sin zona asignada, cliente tiene zonas definidas";
+  } else if (!prefs.selected_zones || prefs.selected_zones.length === 0) {
+    // Fallback: old neighborhood text match
+    if (prefs.neighborhood && prop.neighborhood) {
+      if (prop.neighborhood.toLowerCase() === prefs.neighborhood.toLowerCase()) {
+        locationScore = 100; locationMet = true;
+        locationDetail = `Barrio "${prop.neighborhood}" coincide exactamente`;
+      } else {
+        locationScore = 20;
+        locationDetail = `Barrio "${prop.neighborhood}" no coincide con "${prefs.neighborhood}"`;
+      }
+    } else if (prefs.preferred_locations.length > 0) {
+      const addrLower = (prop.address || "").toLowerCase() + " " + (prop.neighborhood || "").toLowerCase();
+      const matchedLoc = prefs.preferred_locations.find((loc) => addrLower.includes(loc.toLowerCase()));
+      if (matchedLoc) {
+        locationScore = 100; locationMet = true;
+        locationDetail = `Ubicación "${matchedLoc}" encontrada`;
+      } else {
+        locationScore = 20;
+        locationDetail = `No coincide con zonas: ${prefs.preferred_locations.join(", ")}`;
+      }
     } else {
-      locationScore = 20;
-      locationDetail = `No coincide con zonas: ${prefs.preferred_locations.join(", ")}`;
+      locationDetail = "Sin ubicaciones preferidas";
     }
-  } else {
-    locationDetail = "Sin ubicaciones preferidas";
   }
   criteria.push({ label: "Ubicación", weight: 30, score: Math.round(locationScore), met: locationMet, detail: locationDetail });
 
