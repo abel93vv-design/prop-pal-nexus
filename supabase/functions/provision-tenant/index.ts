@@ -62,7 +62,8 @@ serve(async (req) => {
 
     const tenantId = tenant.id;
 
-    // 2. Create auth user with service role
+    // 2. Create or find auth user
+    let userId: string;
     const { data: authData, error: authErr } = await adminClient.auth.admin.createUser({
       email: admin_email,
       password: admin_password,
@@ -70,12 +71,26 @@ serve(async (req) => {
       user_metadata: { full_name: admin_name || name },
     });
     if (authErr) {
-      // Rollback tenant
-      await adminClient.from("tenants").delete().eq("id", tenantId);
-      throw new Error(`Error creando usuario: ${authErr.message}`);
+      if (authErr.message.includes("already been registered")) {
+        // User exists — find them and reuse
+        const { data: { users }, error: listErr } = await adminClient.auth.admin.listUsers();
+        if (listErr) {
+          await adminClient.from("tenants").delete().eq("id", tenantId);
+          throw new Error(`Error buscando usuario existente: ${listErr.message}`);
+        }
+        const existing = users.find((u: any) => u.email === admin_email);
+        if (!existing) {
+          await adminClient.from("tenants").delete().eq("id", tenantId);
+          throw new Error("El usuario existe pero no se pudo localizar");
+        }
+        userId = existing.id;
+      } else {
+        await adminClient.from("tenants").delete().eq("id", tenantId);
+        throw new Error(`Error creando usuario: ${authErr.message}`);
+      }
+    } else {
+      userId = authData.user.id;
     }
-
-    const userId = authData.user.id;
 
     // 3. Update profile with tenant_id and must_change_password
     const { error: profileErr } = await adminClient
