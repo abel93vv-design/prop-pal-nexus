@@ -74,6 +74,20 @@ serve(async (req) => {
       });
     }
 
+    if (action === "get_activity_logs") {
+      if (!tenant_id) throw new Error("tenant_id es obligatorio");
+      const { data: logs, error: logErr } = await adminClient
+        .from("activity_logs")
+        .select("*")
+        .eq("tenant_id", tenant_id)
+        .order("created_at", { ascending: false })
+        .limit(100);
+      if (logErr) throw new Error(logErr.message);
+      return new Response(JSON.stringify({ success: true, logs: logs || [] }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     throw new Error(`Acción no reconocida: ${action}`);
   } catch (err) {
     return new Response(
