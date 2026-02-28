@@ -90,7 +90,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     setAgencies(prev => prev.map(x => x.id === a.id ? a : x));
   };
   const deleteAgency = async (id: string) => {
-    await supabase.from('agencies').delete().eq('id', id);
+    await supabase.from('agencies').update({ deleted_at: new Date().toISOString() } as any).eq('id', id);
     setAgencies(prev => prev.filter(x => x.id !== id));
   };
 
@@ -114,7 +114,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     setClients(prev => prev.map(x => x.id === c.id ? c : x));
   };
   const deleteClient = async (id: string) => {
-    await supabase.from('clients').delete().eq('id', id);
+    await supabase.from('clients').update({ deleted_at: new Date().toISOString() } as any).eq('id', id);
     setClients(prev => prev.filter(x => x.id !== id));
   };
 
@@ -150,7 +150,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     setProperties(prev => prev.map(x => x.id === p.id ? p : x));
   };
   const deleteProperty = async (id: string) => {
-    await supabase.from('properties').delete().eq('id', id);
+    await supabase.from('properties').update({ deleted_at: new Date().toISOString() } as any).eq('id', id);
     setProperties(prev => prev.filter(x => x.id !== id));
   };
 
@@ -173,7 +173,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     setUsers(prev => prev.map(x => x.id === u.id ? u : x));
   };
   const deleteUser = async (id: string) => {
-    await supabase.from('team_members').delete().eq('id', id);
+    await supabase.from('team_members').update({ deleted_at: new Date().toISOString() } as any).eq('id', id);
     setUsers(prev => prev.filter(x => x.id !== id));
   };
 
@@ -197,7 +197,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     setTasks(prev => prev.map(x => x.id === t.id ? t : x));
   };
   const deleteTask = async (id: string) => {
-    await supabase.from('tasks').delete().eq('id', id);
+    await supabase.from('tasks').update({ deleted_at: new Date().toISOString() } as any).eq('id', id);
     setTasks(prev => prev.filter(x => x.id !== id));
   };
 
@@ -216,7 +216,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     setDocuments(prev => prev.map(x => x.id === d.id ? d : x));
   };
   const deleteDocument = async (id: string) => {
-    await supabase.from('documents').delete().eq('id', id);
+    await supabase.from('documents').update({ deleted_at: new Date().toISOString() } as any).eq('id', id);
     setDocuments(prev => prev.filter(x => x.id !== id));
   };
 
