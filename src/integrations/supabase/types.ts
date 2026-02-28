@@ -14,11 +14,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_logs: {
+        Row: {
+          action: string
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          metadata: Json | null
+          tenant_id: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          metadata?: Json | null
+          tenant_id: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          metadata?: Json | null
+          tenant_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_logs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agencies: {
         Row: {
           address: string | null
           color: string | null
           created_at: string
+          deleted_at: string | null
           email: string | null
           id: string
           logo: string | null
@@ -30,6 +72,7 @@ export type Database = {
           address?: string | null
           color?: string | null
           created_at?: string
+          deleted_at?: string | null
           email?: string | null
           id?: string
           logo?: string | null
@@ -41,6 +84,7 @@ export type Database = {
           address?: string | null
           color?: string | null
           created_at?: string
+          deleted_at?: string | null
           email?: string | null
           id?: string
           logo?: string | null
@@ -243,6 +287,7 @@ export type Database = {
           category: string | null
           contact_count: number | null
           created_at: string
+          deleted_at: string | null
           email: string | null
           id: string
           last_contacted_at: string | null
@@ -262,6 +307,7 @@ export type Database = {
           category?: string | null
           contact_count?: number | null
           created_at?: string
+          deleted_at?: string | null
           email?: string | null
           id?: string
           last_contacted_at?: string | null
@@ -281,6 +327,7 @@ export type Database = {
           category?: string | null
           contact_count?: number | null
           created_at?: string
+          deleted_at?: string | null
           email?: string | null
           id?: string
           last_contacted_at?: string | null
@@ -411,6 +458,7 @@ export type Database = {
       }
       documents: {
         Row: {
+          deleted_at: string | null
           file: string | null
           id: string
           name: string
@@ -420,6 +468,7 @@ export type Database = {
           uploaded_at: string
         }
         Insert: {
+          deleted_at?: string | null
           file?: string | null
           id?: string
           name: string
@@ -429,6 +478,7 @@ export type Database = {
           uploaded_at?: string
         }
         Update: {
+          deleted_at?: string | null
           file?: string | null
           id?: string
           name?: string
@@ -787,6 +837,7 @@ export type Database = {
           category: string | null
           community_fees: number | null
           created_at: string
+          deleted_at: string | null
           description: string | null
           energy_cert: string | null
           floor: number | null
@@ -824,6 +875,7 @@ export type Database = {
           category?: string | null
           community_fees?: number | null
           created_at?: string
+          deleted_at?: string | null
           description?: string | null
           energy_cert?: string | null
           floor?: number | null
@@ -861,6 +913,7 @@ export type Database = {
           category?: string | null
           community_fees?: number | null
           created_at?: string
+          deleted_at?: string | null
           description?: string | null
           energy_cert?: string | null
           floor?: number | null
@@ -1025,6 +1078,7 @@ export type Database = {
           category: string | null
           client_id: string | null
           created_at: string
+          deleted_at: string | null
           due_date: string | null
           id: string
           notes: string | null
@@ -1041,6 +1095,7 @@ export type Database = {
           category?: string | null
           client_id?: string | null
           created_at?: string
+          deleted_at?: string | null
           due_date?: string | null
           id?: string
           notes?: string | null
@@ -1057,6 +1112,7 @@ export type Database = {
           category?: string | null
           client_id?: string | null
           created_at?: string
+          deleted_at?: string | null
           due_date?: string | null
           id?: string
           notes?: string | null
@@ -1105,6 +1161,7 @@ export type Database = {
           avatar: string | null
           client_ids: string[] | null
           created_at: string
+          deleted_at: string | null
           email: string | null
           id: string
           name: string
@@ -1121,6 +1178,7 @@ export type Database = {
           avatar?: string | null
           client_ids?: string[] | null
           created_at?: string
+          deleted_at?: string | null
           email?: string | null
           id?: string
           name: string
@@ -1137,6 +1195,7 @@ export type Database = {
           avatar?: string | null
           client_ids?: string[] | null
           created_at?: string
+          deleted_at?: string | null
           email?: string | null
           id?: string
           name?: string
@@ -1164,33 +1223,77 @@ export type Database = {
           },
         ]
       }
+      tenant_api_keys: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          key_hash: string
+          last_used_at: string | null
+          name: string
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          key_hash: string
+          last_used_at?: string | null
+          name: string
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          key_hash?: string
+          last_used_at?: string | null
+          name?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_api_keys_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenants: {
         Row: {
           created_at: string
+          deleted_at: string | null
           id: string
           is_active: boolean
           is_demo: boolean
           name: string
           plan: string
           slug: string
+          updated_at: string | null
         }
         Insert: {
           created_at?: string
+          deleted_at?: string | null
           id?: string
           is_active?: boolean
           is_demo?: boolean
           name: string
           plan?: string
           slug: string
+          updated_at?: string | null
         }
         Update: {
           created_at?: string
+          deleted_at?: string | null
           id?: string
           is_active?: boolean
           is_demo?: boolean
           name?: string
           plan?: string
           slug?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -1224,6 +1327,17 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      log_activity: {
+        Args: {
+          _action: string
+          _entity_id?: string
+          _entity_type: string
+          _metadata?: Json
+          _tenant_id: string
+          _user_id: string
+        }
+        Returns: undefined
       }
     }
     Enums: {
