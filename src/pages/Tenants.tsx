@@ -11,7 +11,9 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Building2, Plus, Pencil, Trash2, Loader2, Globe, Copy, CheckCircle2, AlertCircle, Eye, EyeOff, Users, KeyRound, ExternalLink } from "lucide-react";
+import { Building2, Plus, Pencil, Trash2, Loader2, Globe, Copy, CheckCircle2, AlertCircle, Eye, EyeOff, Users, KeyRound, ExternalLink, Activity } from "lucide-react";
+import { ActivityLogViewer } from "@/components/ActivityLogViewer";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 
 interface TenantUser {
@@ -420,84 +422,91 @@ const Tenants = () => {
           </DialogHeader>
 
           {detailTenant && (
-            <div className="space-y-4">
-              {/* Access URL */}
-              <div className="rounded-lg border border-border bg-muted/50 p-3 space-y-1">
-                <p className="text-xs font-semibold text-foreground uppercase tracking-wide flex items-center gap-1">
-                  <ExternalLink className="w-3 h-3" /> URL de acceso
-                </p>
-                <div className="flex items-center justify-between gap-2">
-                  <code className="text-sm font-mono text-primary break-all">{getAccessUrl(detailTenant.slug)}</code>
-                  <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => copyToClipboard(getAccessUrl(detailTenant.slug))}>
-                    <Copy className="w-3 h-3" />
-                  </Button>
-                </div>
-              </div>
+            <Tabs defaultValue="users" className="w-full">
+              <TabsList className="w-full">
+                <TabsTrigger value="users" className="flex-1"><Users className="w-3 h-3 mr-1" />Usuarios</TabsTrigger>
+                <TabsTrigger value="activity" className="flex-1"><Activity className="w-3 h-3 mr-1" />Actividad</TabsTrigger>
+              </TabsList>
 
-              {/* Users */}
-              <div className="space-y-2">
-                <p className="text-xs font-semibold text-foreground uppercase tracking-wide flex items-center gap-1">
-                  <Users className="w-3 h-3" /> Usuarios del tenant
-                </p>
-
-                {loadingUsers ? (
-                  <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
-                ) : tenantUsers.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-3">No se encontraron usuarios</p>
-                ) : (
-                  <div className="space-y-2">
-                    {tenantUsers.map(u => (
-                      <div key={u.id} className="rounded-lg border border-border p-3 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium text-foreground truncate">{u.full_name || "Sin nombre"}</p>
-                            <p className="text-xs text-muted-foreground font-mono">{u.email}</p>
-                          </div>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => copyToClipboard(u.email)}>
-                            <Copy className="w-3 h-3" />
-                          </Button>
-                        </div>
-                        <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
-                          <span>Creado: {new Date(u.created_at).toLocaleDateString("es-ES")}</span>
-                          <span>Último login: {u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleDateString("es-ES") : "Nunca"}</span>
-                        </div>
-
-                        {resetUserId === u.id ? (
-                          <div className="space-y-2 pt-2 border-t border-border">
-                            <Label className="text-xs">Nueva contraseña</Label>
-                            <div className="flex gap-2">
-                              <div className="relative flex-1">
-                                <Input
-                                  type={showNewPassword ? "text" : "password"}
-                                  value={newPassword}
-                                  onChange={e => setNewPassword(e.target.value)}
-                                  placeholder="Mínimo 6 caracteres"
-                                />
-                                <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full w-9" onClick={() => setShowNewPassword(!showNewPassword)}>
-                                  {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                </Button>
-                              </div>
-                              <Button variant="outline" size="sm" onClick={() => setNewPassword(generatePassword())}>Generar</Button>
-                            </div>
-                            <div className="flex gap-2">
-                              <Button size="sm" onClick={handleResetPassword} disabled={resettingPassword || newPassword.length < 6}>
-                                {resettingPassword && <Loader2 className="w-3 h-3 mr-1 animate-spin" />}
-                                Cambiar
-                              </Button>
-                              <Button variant="outline" size="sm" onClick={() => { setResetUserId(null); setNewPassword(""); }}>Cancelar</Button>
-                            </div>
-                          </div>
-                        ) : (
-                          <Button variant="outline" size="sm" className="w-full" onClick={() => { setResetUserId(u.id); setNewPassword(generatePassword()); setShowNewPassword(false); }}>
-                            <KeyRound className="w-3 h-3 mr-1" /> Cambiar contraseña
-                          </Button>
-                        )}
-                      </div>
-                    ))}
+              <TabsContent value="users" className="space-y-4 mt-4">
+                {/* Access URL */}
+                <div className="rounded-lg border border-border bg-muted/50 p-3 space-y-1">
+                  <p className="text-xs font-semibold text-foreground uppercase tracking-wide flex items-center gap-1">
+                    <ExternalLink className="w-3 h-3" /> URL de acceso
+                  </p>
+                  <div className="flex items-center justify-between gap-2">
+                    <code className="text-sm font-mono text-primary break-all">{getAccessUrl(detailTenant.slug)}</code>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => copyToClipboard(getAccessUrl(detailTenant.slug))}>
+                      <Copy className="w-3 h-3" />
+                    </Button>
                   </div>
-                )}
-              </div>
-            </div>
+                </div>
+
+                {/* Users */}
+                <div className="space-y-2">
+                  {loadingUsers ? (
+                    <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
+                  ) : tenantUsers.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-3">No se encontraron usuarios</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {tenantUsers.map(u => (
+                        <div key={u.id} className="rounded-lg border border-border p-3 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-foreground truncate">{u.full_name || "Sin nombre"}</p>
+                              <p className="text-xs text-muted-foreground font-mono">{u.email}</p>
+                            </div>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => copyToClipboard(u.email)}>
+                              <Copy className="w-3 h-3" />
+                            </Button>
+                          </div>
+                          <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+                            <span>Creado: {new Date(u.created_at).toLocaleDateString("es-ES")}</span>
+                            <span>Último login: {u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleDateString("es-ES") : "Nunca"}</span>
+                          </div>
+
+                          {resetUserId === u.id ? (
+                            <div className="space-y-2 pt-2 border-t border-border">
+                              <Label className="text-xs">Nueva contraseña</Label>
+                              <div className="flex gap-2">
+                                <div className="relative flex-1">
+                                  <Input
+                                    type={showNewPassword ? "text" : "password"}
+                                    value={newPassword}
+                                    onChange={e => setNewPassword(e.target.value)}
+                                    placeholder="Mínimo 6 caracteres"
+                                  />
+                                  <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full w-9" onClick={() => setShowNewPassword(!showNewPassword)}>
+                                    {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                  </Button>
+                                </div>
+                                <Button variant="outline" size="sm" onClick={() => setNewPassword(generatePassword())}>Generar</Button>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button size="sm" onClick={handleResetPassword} disabled={resettingPassword || newPassword.length < 6}>
+                                  {resettingPassword && <Loader2 className="w-3 h-3 mr-1 animate-spin" />}
+                                  Cambiar
+                                </Button>
+                                <Button variant="outline" size="sm" onClick={() => { setResetUserId(null); setNewPassword(""); }}>Cancelar</Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <Button variant="outline" size="sm" className="w-full" onClick={() => { setResetUserId(u.id); setNewPassword(generatePassword()); setShowNewPassword(false); }}>
+                              <KeyRound className="w-3 h-3 mr-1" /> Cambiar contraseña
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="activity" className="mt-4">
+                <ActivityLogViewer tenantId={detailTenant.id} />
+              </TabsContent>
+            </Tabs>
           )}
 
           <DialogFooter>
