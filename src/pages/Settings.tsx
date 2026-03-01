@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { CustomFieldsAdmin } from "@/components/CustomFieldsAdmin";
 import { ConnectionsTab } from "@/components/settings/ConnectionsTab";
+import { SecurityTab } from "@/components/settings/SecurityTab";
 
 function GeneralTab() {
   const { user } = useAuth();
@@ -195,43 +196,7 @@ function NotificationsTab() {
   );
 }
 
-function SecurityTab() {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Shield className="w-5 h-5 text-primary" /> Seguridad
-        </CardTitle>
-        <CardDescription>Gestiona la seguridad de tu cuenta</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-5">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium">Autenticación en dos pasos (2FA)</p>
-            <p className="text-xs text-muted-foreground">Añade una capa extra de seguridad a tu cuenta</p>
-          </div>
-          <Badge variant="outline">Próximamente</Badge>
-        </div>
-        <Separator />
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium">Sesiones activas</p>
-            <p className="text-xs text-muted-foreground">Revisa y cierra sesiones en otros dispositivos</p>
-          </div>
-          <Button size="sm" variant="outline">Ver sesiones</Button>
-        </div>
-        <Separator />
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium">Registro de actividad</p>
-            <p className="text-xs text-muted-foreground">Historial de acciones recientes en tu cuenta</p>
-          </div>
-          <Button size="sm" variant="outline">Ver registro</Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
+// SecurityTab is now imported from @/components/settings/SecurityTab
 
 export default function Settings() {
   return (
