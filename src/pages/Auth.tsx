@@ -253,7 +253,15 @@ const Auth = () => {
                 </div>
               )}
             </div>
-            <Button type="submit" className="w-full" disabled={submitting}>
+            {locked && mode === "login" && (
+              <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-center">
+                <p className="text-sm text-destructive font-medium">Cuenta bloqueada temporalmente</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Demasiados intentos fallidos. Intenta de nuevo en {minutesLeft} minutos.
+                </p>
+              </div>
+            )}
+            <Button type="submit" className="w-full" disabled={submitting || (locked && mode === "login")}>
               {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               {mode === "login" ? "Iniciar sesión" : "Registrarse"}
             </Button>
