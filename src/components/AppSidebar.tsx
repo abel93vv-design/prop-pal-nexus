@@ -37,11 +37,9 @@ export function AppSidebar() {
     <Sidebar className="sidebar-gradient border-r-0">
       <SidebarHeader className="p-5 border-b border-sidebar-border">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-sidebar-primary flex items-center justify-center">
-            <Building2 className="w-5 h-5 text-sidebar-primary-foreground" />
-          </div>
+          <img src={logoIsotipo} alt="KageSan CRM" className="w-9 h-9 rounded-lg object-contain" />
           <div>
-            <h1 className="text-sm font-bold text-sidebar-accent-foreground tracking-tight">InmoCRM</h1>
+            <h1 className="text-sm font-bold text-sidebar-accent-foreground tracking-tight">KageSan CRM</h1>
             <p className="text-xs text-sidebar-foreground/60">Gestión inmobiliaria</p>
           </div>
         </div>

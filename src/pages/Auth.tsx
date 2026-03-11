@@ -135,9 +135,7 @@ const Auth = () => {
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center space-y-3">
-            <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mx-auto">
-              <Building2 className="w-7 h-7 text-primary" />
-            </div>
+            <img src={logoIsotipo} alt="KageSan CRM" className="w-14 h-14 rounded-xl mx-auto" />
             <CardTitle className="text-xl">Recuperar contraseña</CardTitle>
             <CardDescription>Te enviaremos un enlace para restablecer tu contraseña</CardDescription>
           </CardHeader>

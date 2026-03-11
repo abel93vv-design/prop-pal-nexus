@@ -157,7 +157,7 @@ const SignUp = () => {
                 className="mt-0.5"
               />
               <label htmlFor="newsletter" className="text-xs text-muted-foreground leading-tight cursor-pointer">
-                Recibir novedades y consejos inmobiliarios de InmoCRM
+                Recibir novedades y consejos inmobiliarios de KageSan CRM
               </label>
             </div>
 
