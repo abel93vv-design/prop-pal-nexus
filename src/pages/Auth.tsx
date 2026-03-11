@@ -11,6 +11,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { Separator } from "@/components/ui/separator";
 
+const MAX_ATTEMPTS = 5;
+
 const Auth = () => {
   const { user, loading } = useAuth();
   const [mode, setMode] = useState<"login" | "register" | "forgot">("login");
@@ -19,8 +21,51 @@ const Auth = () => {
   const [fullName, setFullName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [locked, setLocked] = useState(false);
+  const [minutesLeft, setMinutesLeft] = useState(0);
+  const [attemptsRemaining, setAttemptsRemaining] = useState(MAX_ATTEMPTS);
   const { signIn, signUp } = useAuth();
   const { toast } = useToast();
+
+  const checkAttempts = async (emailToCheck: string) => {
+    try {
+      const { data } = await supabase.functions.invoke("login-attempts", {
+        body: { action: "check", email: emailToCheck },
+      });
+      if (data?.locked) {
+        setLocked(true);
+        setMinutesLeft(data.minutes_left || 0);
+        return false;
+      }
+      setLocked(false);
+      setAttemptsRemaining(data?.remaining ?? MAX_ATTEMPTS);
+      return true;
+    } catch { return true; }
+  };
+
+  const recordFailure = async (emailToRecord: string) => {
+    try {
+      const { data } = await supabase.functions.invoke("login-attempts", {
+        body: { action: "record_failure", email: emailToRecord },
+      });
+      if (data?.locked) {
+        setLocked(true);
+        setMinutesLeft(120);
+      } else {
+        setAttemptsRemaining(data?.remaining ?? 0);
+      }
+    } catch {}
+  };
+
+  const resetAttempts = async (emailToReset: string) => {
+    try {
+      await supabase.functions.invoke("login-attempts", {
+        body: { action: "reset", email: emailToReset },
+      });
+      setLocked(false);
+      setAttemptsRemaining(MAX_ATTEMPTS);
+    } catch {}
+  };
 
   if (loading) {
     return (
