@@ -128,6 +128,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     if (data) { setClients(prev => [...prev, toClient(data)]); logActivity(tenantId, user?.id, 'create', 'client', data.id, { name: c.name }); }
   };
   const updateClient = async (c: Client) => {
+    const old = clients.find(x => x.id === c.id);
+    if (old) await saveSnapshot(tenantId, user?.id, 'client', c.id, 'update', old as any);
     await supabase.from('clients').update({
       name: c.name, email: c.email, phone: c.phone, address: c.address, type: c.type,
       lead_status: c.leadStatus, property_ids: c.propertyIds, notes: c.notes,
@@ -138,10 +140,11 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     logActivity(tenantId, user?.id, 'update', 'client', c.id, { name: c.name });
   };
   const deleteClient = async (id: string) => {
-    const name = clients.find(x => x.id === id)?.name;
+    const old = clients.find(x => x.id === id);
+    if (old) await saveSnapshot(tenantId, user?.id, 'client', id, 'delete', old as any);
     await supabase.from('clients').update({ deleted_at: new Date().toISOString() } as any).eq('id', id);
     setClients(prev => prev.filter(x => x.id !== id));
-    logActivity(tenantId, user?.id, 'delete', 'client', id, { name });
+    logActivity(tenantId, user?.id, 'delete', 'client', id, { name: old?.name });
   };
 
   // --- PROPERTIES ---
