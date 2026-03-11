@@ -28,8 +28,30 @@ const viabilityColors: Record<string, string> = {
 const PAGE_SIZE = 25;
 
 const MatchCenter = () => {
+  const { canUseFeature } = usePlanLimits();
   const { matches, loading, calculating, runMatching } = useMatchCenter();
   const { clients, properties, users } = useData();
+
+  if (!canUseFeature('match_center')) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Card className="max-w-md">
+            <CardContent className="p-8 text-center space-y-4">
+              <Target className="w-12 h-12 text-muted-foreground mx-auto" />
+              <h2 className="text-xl font-bold text-foreground">Match Center no disponible</h2>
+              <p className="text-sm text-muted-foreground">
+                Esta funcionalidad está disponible a partir del plan Basic. Actualiza tu plan en Ajustes → Plan para acceder.
+              </p>
+              <Button variant="outline" onClick={() => window.location.href = '/ajustes'}>
+                Ver planes
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </Layout>
+    );
+  }
   const { toast } = useToast();
 
   const [search, setSearch] = useState("");
