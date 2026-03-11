@@ -164,6 +164,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     if (data) { setProperties(prev => [...prev, toProperty(data)]); logActivity(tenantId, user?.id, 'create', 'property', data.id, { title: p.title }); }
   };
   const updateProperty = async (p: Property) => {
+    const old = properties.find(x => x.id === p.id);
+    if (old) await saveSnapshot(tenantId, user?.id, 'property', p.id, 'update', old as any);
     await supabase.from('properties').update({
       title: p.title, address: p.address, type: p.type, status: p.status, price: p.price,
       surface: p.surface, bedrooms: p.bedrooms, bathrooms: p.bathrooms, photos: p.photos,
@@ -180,10 +182,11 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     logActivity(tenantId, user?.id, 'update', 'property', p.id, { title: p.title });
   };
   const deleteProperty = async (id: string) => {
-    const title = properties.find(x => x.id === id)?.title;
+    const old = properties.find(x => x.id === id);
+    if (old) await saveSnapshot(tenantId, user?.id, 'property', id, 'delete', old as any);
     await supabase.from('properties').update({ deleted_at: new Date().toISOString() } as any).eq('id', id);
     setProperties(prev => prev.filter(x => x.id !== id));
-    logActivity(tenantId, user?.id, 'delete', 'property', id, { title });
+    logActivity(tenantId, user?.id, 'delete', 'property', id, { title: old?.title });
   };
 
   // --- TEAM MEMBERS (Users) ---
