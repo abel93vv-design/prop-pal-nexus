@@ -15,7 +15,7 @@ const MAX_ATTEMPTS = 5;
 
 const Auth = () => {
   const { user, loading } = useAuth();
-  const [mode, setMode] = useState<"login" | "register" | "forgot">("login");
+  const [mode, setMode] = useState<"login" | "forgot">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
