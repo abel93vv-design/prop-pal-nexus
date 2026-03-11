@@ -4,7 +4,7 @@ import { Agency, Client, Document, Property, User, Task } from "@/types/crm";
 import { monthlyData } from "@/data/mockData";
 import { useAuth } from "@/hooks/useAuth";
 import { useTenant } from "@/context/TenantContext";
-import { useCallback as useCallbackReact } from "react";
+import { saveSnapshot } from "@/hooks/useSnapshots";
 
 const logActivity = async (tenantId: string | null, userId: string | undefined, action: string, entityType: string, entityId?: string, metadata?: Record<string, any>) => {
   if (!tenantId || !userId) return;
