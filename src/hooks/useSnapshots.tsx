@@ -35,13 +35,13 @@ export interface Snapshot {
 }
 
 export const getSnapshots = async (entityType: string, entityId: string): Promise<Snapshot[]> => {
-  const { data } = await supabase
-    .from('entity_snapshots' as any)
+  const { data } = await (supabase as any)
+    .from('entity_snapshots')
     .select('*')
     .eq('entity_type', entityType)
     .eq('entity_id', entityId)
     .order('created_at', { ascending: false });
-  return (data || []) as Snapshot[];
+  return (data || []) as unknown as Snapshot[];
 };
 
 export const getAllDeletedSnapshots = async (entityType?: string): Promise<Snapshot[]> => {
