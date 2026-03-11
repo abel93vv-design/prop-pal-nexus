@@ -103,15 +103,18 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     if (data) { setAgencies(prev => [...prev, toAgency(data)]); logActivity(tenantId, user?.id, 'create', 'agency', data.id, { name: a.name }); }
   };
   const updateAgency = async (a: Agency) => {
+    const old = agencies.find(x => x.id === a.id);
+    if (old) await saveSnapshot(tenantId, user?.id, 'agency', a.id, 'update', old as any);
     await supabase.from('agencies').update({ name: a.name, address: a.address, phone: a.phone, email: a.email, logo: a.logo, color: a.color }).eq('id', a.id);
     setAgencies(prev => prev.map(x => x.id === a.id ? a : x));
     logActivity(tenantId, user?.id, 'update', 'agency', a.id, { name: a.name });
   };
   const deleteAgency = async (id: string) => {
-    const name = agencies.find(x => x.id === id)?.name;
+    const old = agencies.find(x => x.id === id);
+    if (old) await saveSnapshot(tenantId, user?.id, 'agency', id, 'delete', old as any);
     await supabase.from('agencies').update({ deleted_at: new Date().toISOString() } as any).eq('id', id);
     setAgencies(prev => prev.filter(x => x.id !== id));
-    logActivity(tenantId, user?.id, 'delete', 'agency', id, { name });
+    logActivity(tenantId, user?.id, 'delete', 'agency', id, { name: old?.name });
   };
 
   // --- CLIENTS ---
