@@ -27,7 +27,7 @@ export const PLAN_LIMITS: Record<PlanName, PlanLimits> = {
     api_keys: 0,
     pipelines: 10,
     storage_mb: 100,
-    match_center: false,
+    match_center: true,
     activity_logs_days: 7,
   },
   basic: {
