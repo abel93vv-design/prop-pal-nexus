@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { Navigate } from "react-router-dom";
+import { Navigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,16 +15,15 @@ const MAX_ATTEMPTS = 5;
 
 const Auth = () => {
   const { user, loading } = useAuth();
-  const [mode, setMode] = useState<"login" | "register" | "forgot">("login");
+  const [mode, setMode] = useState<"login" | "forgot">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [locked, setLocked] = useState(false);
   const [minutesLeft, setMinutesLeft] = useState(0);
   const [attemptsRemaining, setAttemptsRemaining] = useState(MAX_ATTEMPTS);
-  const { signIn, signUp } = useAuth();
+  const { signIn } = useAuth();
   const { toast } = useToast();
 
   const checkAttempts = async (emailToCheck: string) => {
@@ -109,32 +108,21 @@ const Auth = () => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      if (mode === "login") {
-        const canProceed = await checkAttempts(email);
-        if (!canProceed) {
-          toast({ title: "Cuenta bloqueada", description: `Demasiados intentos. Intenta de nuevo en ${minutesLeft} minutos.`, variant: "destructive" });
-          setSubmitting(false);
-          return;
-        }
-        const { error } = await signIn(email, password);
-        if (error) {
-          await recordFailure(email);
-          const msg = attemptsRemaining <= 1
-            ? "Contraseña incorrecta. Cuenta bloqueada por 2 horas."
-            : `Contraseña incorrecta. Te quedan ${Math.max(0, attemptsRemaining - 1)} intentos.`;
-          toast({ title: "Error", description: msg, variant: "destructive" });
-        } else {
-          await resetAttempts(email);
-        }
-      } else if (mode === "register") {
-        if (!fullName.trim()) {
-          toast({ title: "Error", description: "El nombre es obligatorio", variant: "destructive" });
-          setSubmitting(false);
-          return;
-        }
-        const { error } = await signUp(email, password, fullName);
-        if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
-        else toast({ title: "Registro exitoso", description: "Revisa tu email para confirmar tu cuenta." });
+      const canProceed = await checkAttempts(email);
+      if (!canProceed) {
+        toast({ title: "Cuenta bloqueada", description: `Demasiados intentos. Intenta de nuevo en ${minutesLeft} minutos.`, variant: "destructive" });
+        setSubmitting(false);
+        return;
+      }
+      const { error } = await signIn(email, password);
+      if (error) {
+        await recordFailure(email);
+        const msg = attemptsRemaining <= 1
+          ? "Contraseña incorrecta. Cuenta bloqueada por 2 horas."
+          : `Contraseña incorrecta. Te quedan ${Math.max(0, attemptsRemaining - 1)} intentos.`;
+        toast({ title: "Error", description: msg, variant: "destructive" });
+      } else {
+        await resetAttempts(email);
       }
     } finally {
       setSubmitting(false);
@@ -181,10 +169,8 @@ const Auth = () => {
           <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mx-auto">
             <Building2 className="w-7 h-7 text-primary" />
           </div>
-          <CardTitle className="text-xl">{mode === "login" ? "Iniciar Sesión" : "Crear Cuenta"}</CardTitle>
-          <CardDescription>
-            {mode === "login" ? "Accede a tu CRM inmobiliario" : "Regístrate para empezar a gestionar tu inmobiliaria"}
-          </CardDescription>
+          <CardTitle className="text-xl">Iniciar Sesión</CardTitle>
+          <CardDescription>Accede a tu CRM inmobiliario</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Button
@@ -210,12 +196,6 @@ const Auth = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {mode === "register" && (
-              <div>
-                <Label className="text-xs">Nombre completo</Label>
-                <Input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Tu nombre" />
-              </div>
-            )}
             <div>
               <Label className="text-xs">Email</Label>
               <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="tu@email.com" required />
@@ -241,19 +221,17 @@ const Auth = () => {
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </Button>
               </div>
-              {mode === "login" && (
-                <div className="text-right mt-1">
-                  <button
-                    type="button"
-                    className="text-xs text-primary hover:underline"
-                    onClick={() => setMode("forgot")}
-                  >
-                    ¿Olvidaste la contraseña?
-                  </button>
-                </div>
-              )}
+              <div className="text-right mt-1">
+                <button
+                  type="button"
+                  className="text-xs text-primary hover:underline"
+                  onClick={() => setMode("forgot")}
+                >
+                  ¿Olvidaste la contraseña?
+                </button>
+              </div>
             </div>
-            {locked && mode === "login" && (
+            {locked && (
               <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-center">
                 <p className="text-sm text-destructive font-medium">Cuenta bloqueada temporalmente</p>
                 <p className="text-xs text-muted-foreground mt-1">
@@ -261,16 +239,16 @@ const Auth = () => {
                 </p>
               </div>
             )}
-            <Button type="submit" className="w-full" disabled={submitting || (locked && mode === "login")}>
+            <Button type="submit" className="w-full" disabled={submitting || locked}>
               {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {mode === "login" ? "Iniciar sesión" : "Registrarse"}
+              Iniciar sesión
             </Button>
           </form>
           <p className="text-center text-sm text-muted-foreground">
-            {mode === "login" ? "¿No tienes cuenta?" : "¿Ya tienes cuenta?"}{" "}
-            <button className="text-primary hover:underline font-medium" onClick={() => setMode(mode === "login" ? "register" : "login")}>
-              {mode === "login" ? "Regístrate" : "Inicia sesión"}
-            </button>
+            ¿No tienes cuenta?{" "}
+            <Link to="/signup" className="text-primary hover:underline font-medium">
+              Regístrate
+            </Link>
           </p>
         </CardContent>
       </Card>
