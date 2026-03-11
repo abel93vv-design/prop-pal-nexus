@@ -223,7 +223,7 @@ const Tenants = () => {
                 <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 z-10">
                   <Button variant="secondary" size="icon" className="h-7 w-7" onClick={() => openDetail(t)} title="Ver usuarios"><Users className="w-3 h-3" /></Button>
                   <Button variant="secondary" size="icon" className="h-7 w-7" onClick={() => openEdit(t)}><Pencil className="w-3 h-3" /></Button>
-                  <Button variant="secondary" size="icon" className="h-7 w-7 text-warning hover:text-warning" onClick={() => setDeleteTarget(t)}><Trash2 className="w-3 h-3" /></Button>
+                  <Button variant="outline" size="icon" className="h-7 w-7 border-destructive/50 bg-destructive/10 text-destructive hover:bg-destructive hover:text-destructive-foreground" onClick={() => setDeleteTarget(t)}><Trash2 className="w-3 h-3" /></Button>
                 </div>
                 <CardContent className="p-5 space-y-3">
                   <div className="flex items-center gap-3">
