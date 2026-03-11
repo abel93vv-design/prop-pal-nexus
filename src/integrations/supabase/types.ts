@@ -504,6 +504,30 @@ export type Database = {
           },
         ]
       }
+      login_attempts: {
+        Row: {
+          attempts: number
+          email: string
+          id: string
+          locked_until: string | null
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          email: string
+          id?: string
+          locked_until?: string | null
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          email?: string
+          id?: string
+          locked_until?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       match_scores: {
         Row: {
           agency_id: string | null
