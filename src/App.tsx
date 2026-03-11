@@ -21,6 +21,7 @@ import Tenants from "./pages/Tenants";
 import Pipeline from "./pages/Pipeline";
 import MatchCenter from "./pages/MatchCenter";
 import ResetPassword from "./pages/ResetPassword";
+import SignUp from "./pages/SignUp";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
