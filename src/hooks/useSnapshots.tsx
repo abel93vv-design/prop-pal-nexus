@@ -45,12 +45,12 @@ export const getSnapshots = async (entityType: string, entityId: string): Promis
 };
 
 export const getAllDeletedSnapshots = async (entityType?: string): Promise<Snapshot[]> => {
-  let query = supabase
-    .from('entity_snapshots' as any)
+  let query = (supabase as any)
+    .from('entity_snapshots')
     .select('*')
     .eq('action', 'delete')
     .order('created_at', { ascending: false });
   if (entityType) query = query.eq('entity_type', entityType);
   const { data } = await query;
-  return (data || []) as Snapshot[];
+  return (data || []) as unknown as Snapshot[];
 };

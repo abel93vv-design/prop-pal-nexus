@@ -148,14 +148,14 @@ function HistorySection() {
   useEffect(() => {
     const load = async () => {
       setLoading(true);
-      let query = supabase
-        .from('entity_snapshots' as any)
+      let query = (supabase as any)
+        .from('entity_snapshots')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(50);
       if (filter !== "all") query = query.eq('entity_type', filter);
       const { data } = await query;
-      setHistory((data || []) as Snapshot[]);
+      setHistory((data || []) as unknown as Snapshot[]);
       setLoading(false);
     };
     load();
