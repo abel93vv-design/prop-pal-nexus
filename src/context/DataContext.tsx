@@ -200,6 +200,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     if (data) { setUsers(prev => [...prev, toUser(data)]); logActivity(tenantId, user?.id, 'create', 'team_member', data.id, { name: u.name }); }
   };
   const updateUser = async (u: User) => {
+    const old = users.find(x => x.id === u.id);
+    if (old) await saveSnapshot(tenantId, user?.id, 'team_member', u.id, 'update', old as any);
     await supabase.from('team_members').update({
       name: u.name, email: u.email, role: u.role, phone: u.phone, property_ids: u.propertyIds,
       client_ids: u.clientIds, avatar: u.avatar, agency_id: u.agencyId || null,
@@ -209,10 +211,11 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     logActivity(tenantId, user?.id, 'update', 'team_member', u.id, { name: u.name });
   };
   const deleteUser = async (id: string) => {
-    const name = users.find(x => x.id === id)?.name;
+    const old = users.find(x => x.id === id);
+    if (old) await saveSnapshot(tenantId, user?.id, 'team_member', id, 'delete', old as any);
     await supabase.from('team_members').update({ deleted_at: new Date().toISOString() } as any).eq('id', id);
     setUsers(prev => prev.filter(x => x.id !== id));
-    logActivity(tenantId, user?.id, 'delete', 'team_member', id, { name });
+    logActivity(tenantId, user?.id, 'delete', 'team_member', id, { name: old?.name });
   };
 
   // --- TASKS ---
