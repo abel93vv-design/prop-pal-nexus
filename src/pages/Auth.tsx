@@ -169,10 +169,8 @@ const Auth = () => {
           <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mx-auto">
             <Building2 className="w-7 h-7 text-primary" />
           </div>
-          <CardTitle className="text-xl">{mode === "login" ? "Iniciar Sesión" : "Crear Cuenta"}</CardTitle>
-          <CardDescription>
-            {mode === "login" ? "Accede a tu CRM inmobiliario" : "Regístrate para empezar a gestionar tu inmobiliaria"}
-          </CardDescription>
+          <CardTitle className="text-xl">Iniciar Sesión</CardTitle>
+          <CardDescription>Accede a tu CRM inmobiliario</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Button
