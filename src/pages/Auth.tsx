@@ -196,12 +196,6 @@ const Auth = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {mode === "register" && (
-              <div>
-                <Label className="text-xs">Nombre completo</Label>
-                <Input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Tu nombre" />
-              </div>
-            )}
             <div>
               <Label className="text-xs">Email</Label>
               <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="tu@email.com" required />
@@ -227,19 +221,17 @@ const Auth = () => {
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </Button>
               </div>
-              {mode === "login" && (
-                <div className="text-right mt-1">
-                  <button
-                    type="button"
-                    className="text-xs text-primary hover:underline"
-                    onClick={() => setMode("forgot")}
-                  >
-                    ¿Olvidaste la contraseña?
-                  </button>
-                </div>
-              )}
+              <div className="text-right mt-1">
+                <button
+                  type="button"
+                  className="text-xs text-primary hover:underline"
+                  onClick={() => setMode("forgot")}
+                >
+                  ¿Olvidaste la contraseña?
+                </button>
+              </div>
             </div>
-            {locked && mode === "login" && (
+            {locked && (
               <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-center">
                 <p className="text-sm text-destructive font-medium">Cuenta bloqueada temporalmente</p>
                 <p className="text-xs text-muted-foreground mt-1">
@@ -247,16 +239,16 @@ const Auth = () => {
                 </p>
               </div>
             )}
-            <Button type="submit" className="w-full" disabled={submitting || (locked && mode === "login")}>
+            <Button type="submit" className="w-full" disabled={submitting || locked}>
               {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {mode === "login" ? "Iniciar sesión" : "Registrarse"}
+              Iniciar sesión
             </Button>
           </form>
           <p className="text-center text-sm text-muted-foreground">
-            {mode === "login" ? "¿No tienes cuenta?" : "¿Ya tienes cuenta?"}{" "}
-            <button className="text-primary hover:underline font-medium" onClick={() => setMode(mode === "login" ? "register" : "login")}>
-              {mode === "login" ? "Regístrate" : "Inicia sesión"}
-            </button>
+            ¿No tienes cuenta?{" "}
+            <Link to="/signup" className="text-primary hover:underline font-medium">
+              Regístrate
+            </Link>
           </p>
         </CardContent>
       </Card>
