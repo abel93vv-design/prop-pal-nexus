@@ -31,6 +31,25 @@ const MatchCenter = () => {
   const { canUseFeature } = usePlanLimits();
   const { matches, loading, calculating, runMatching } = useMatchCenter();
   const { clients, properties, users } = useData();
+  const { toast } = useToast();
+
+  const [search, setSearch] = useState("");
+  const [filterCategory, setFilterCategory] = useState("all");
+  const [filterViability, setFilterViability] = useState("all");
+  const [filterAgent, setFilterAgent] = useState("all");
+  const [sortField, setSortField] = useState<"total_score" | "property_score" | "financial_score">("total_score");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [page, setPage] = useState(0);
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+
+  const toggleExpanded = (id: string) => {
+    setExpandedRows((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   if (!canUseFeature('match_center')) {
     return (
@@ -52,25 +71,6 @@ const MatchCenter = () => {
       </Layout>
     );
   }
-  const { toast } = useToast();
-
-  const [search, setSearch] = useState("");
-  const [filterCategory, setFilterCategory] = useState("all");
-  const [filterViability, setFilterViability] = useState("all");
-  const [filterAgent, setFilterAgent] = useState("all");
-  const [sortField, setSortField] = useState<"total_score" | "property_score" | "financial_score">("total_score");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
-  const [page, setPage] = useState(0);
-  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
-
-  const toggleExpanded = (id: string) => {
-    setExpandedRows((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
 
   const filtered = useMemo(() => {
     return matches
