@@ -13,12 +13,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import {
   User, Lock, Plug, Palette, Bell, Shield,
-  Save, RefreshCw, Settings2, Crown
+  Save, RefreshCw, Settings2, Crown, Database
 } from "lucide-react";
 import { SubscriptionTab } from "@/components/settings/SubscriptionTab";
 import { CustomFieldsAdmin } from "@/components/CustomFieldsAdmin";
 import { ConnectionsTab } from "@/components/settings/ConnectionsTab";
 import { SecurityTab } from "@/components/settings/SecurityTab";
+import { BackupTab } from "@/components/settings/BackupTab";
 
 function GeneralTab() {
   const { user } = useAuth();
@@ -246,7 +247,7 @@ export default function Settings() {
         </div>
 
         <Tabs defaultValue="general" className="space-y-6">
-          <TabsList className="grid grid-cols-7 w-full">
+          <TabsList className="grid grid-cols-8 w-full">
             <TabsTrigger value="general" className="text-xs sm:text-sm">
               <User className="w-4 h-4 mr-1 hidden sm:inline" /> General
             </TabsTrigger>
@@ -258,6 +259,9 @@ export default function Settings() {
             </TabsTrigger>
             <TabsTrigger value="connections" className="text-xs sm:text-sm">
               <Plug className="w-4 h-4 mr-1 hidden sm:inline" /> Conexiones
+            </TabsTrigger>
+            <TabsTrigger value="backup" className="text-xs sm:text-sm">
+              <Database className="w-4 h-4 mr-1 hidden sm:inline" /> Backup
             </TabsTrigger>
             <TabsTrigger value="personalization" className="text-xs sm:text-sm">
               <Palette className="w-4 h-4 mr-1 hidden sm:inline" /> Colores
@@ -274,6 +278,7 @@ export default function Settings() {
           <TabsContent value="subscription"><SubscriptionTab /></TabsContent>
           <TabsContent value="custom-fields"><CustomFieldsAdmin /></TabsContent>
           <TabsContent value="connections"><ConnectionsTab /></TabsContent>
+          <TabsContent value="backup"><BackupTab /></TabsContent>
           <TabsContent value="personalization"><PersonalizationTab /></TabsContent>
           <TabsContent value="notifications"><NotificationsTab /></TabsContent>
           <TabsContent value="security"><SecurityTab /></TabsContent>

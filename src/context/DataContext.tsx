@@ -4,7 +4,7 @@ import { Agency, Client, Document, Property, User, Task } from "@/types/crm";
 import { monthlyData } from "@/data/mockData";
 import { useAuth } from "@/hooks/useAuth";
 import { useTenant } from "@/context/TenantContext";
-import { useCallback as useCallbackReact } from "react";
+import { saveSnapshot } from "@/hooks/useSnapshots";
 
 const logActivity = async (tenantId: string | null, userId: string | undefined, action: string, entityType: string, entityId?: string, metadata?: Record<string, any>) => {
   if (!tenantId || !userId) return;
@@ -103,15 +103,18 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     if (data) { setAgencies(prev => [...prev, toAgency(data)]); logActivity(tenantId, user?.id, 'create', 'agency', data.id, { name: a.name }); }
   };
   const updateAgency = async (a: Agency) => {
+    const old = agencies.find(x => x.id === a.id);
+    if (old) await saveSnapshot(tenantId, user?.id, 'agency', a.id, 'update', old as any);
     await supabase.from('agencies').update({ name: a.name, address: a.address, phone: a.phone, email: a.email, logo: a.logo, color: a.color }).eq('id', a.id);
     setAgencies(prev => prev.map(x => x.id === a.id ? a : x));
     logActivity(tenantId, user?.id, 'update', 'agency', a.id, { name: a.name });
   };
   const deleteAgency = async (id: string) => {
-    const name = agencies.find(x => x.id === id)?.name;
+    const old = agencies.find(x => x.id === id);
+    if (old) await saveSnapshot(tenantId, user?.id, 'agency', id, 'delete', old as any);
     await supabase.from('agencies').update({ deleted_at: new Date().toISOString() } as any).eq('id', id);
     setAgencies(prev => prev.filter(x => x.id !== id));
-    logActivity(tenantId, user?.id, 'delete', 'agency', id, { name });
+    logActivity(tenantId, user?.id, 'delete', 'agency', id, { name: old?.name });
   };
 
   // --- CLIENTS ---
@@ -125,6 +128,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     if (data) { setClients(prev => [...prev, toClient(data)]); logActivity(tenantId, user?.id, 'create', 'client', data.id, { name: c.name }); }
   };
   const updateClient = async (c: Client) => {
+    const old = clients.find(x => x.id === c.id);
+    if (old) await saveSnapshot(tenantId, user?.id, 'client', c.id, 'update', old as any);
     await supabase.from('clients').update({
       name: c.name, email: c.email, phone: c.phone, address: c.address, type: c.type,
       lead_status: c.leadStatus, property_ids: c.propertyIds, notes: c.notes,
@@ -135,10 +140,11 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     logActivity(tenantId, user?.id, 'update', 'client', c.id, { name: c.name });
   };
   const deleteClient = async (id: string) => {
-    const name = clients.find(x => x.id === id)?.name;
+    const old = clients.find(x => x.id === id);
+    if (old) await saveSnapshot(tenantId, user?.id, 'client', id, 'delete', old as any);
     await supabase.from('clients').update({ deleted_at: new Date().toISOString() } as any).eq('id', id);
     setClients(prev => prev.filter(x => x.id !== id));
-    logActivity(tenantId, user?.id, 'delete', 'client', id, { name });
+    logActivity(tenantId, user?.id, 'delete', 'client', id, { name: old?.name });
   };
 
   // --- PROPERTIES ---
@@ -158,6 +164,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     if (data) { setProperties(prev => [...prev, toProperty(data)]); logActivity(tenantId, user?.id, 'create', 'property', data.id, { title: p.title }); }
   };
   const updateProperty = async (p: Property) => {
+    const old = properties.find(x => x.id === p.id);
+    if (old) await saveSnapshot(tenantId, user?.id, 'property', p.id, 'update', old as any);
     await supabase.from('properties').update({
       title: p.title, address: p.address, type: p.type, status: p.status, price: p.price,
       surface: p.surface, bedrooms: p.bedrooms, bathrooms: p.bathrooms, photos: p.photos,
@@ -174,10 +182,11 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     logActivity(tenantId, user?.id, 'update', 'property', p.id, { title: p.title });
   };
   const deleteProperty = async (id: string) => {
-    const title = properties.find(x => x.id === id)?.title;
+    const old = properties.find(x => x.id === id);
+    if (old) await saveSnapshot(tenantId, user?.id, 'property', id, 'delete', old as any);
     await supabase.from('properties').update({ deleted_at: new Date().toISOString() } as any).eq('id', id);
     setProperties(prev => prev.filter(x => x.id !== id));
-    logActivity(tenantId, user?.id, 'delete', 'property', id, { title });
+    logActivity(tenantId, user?.id, 'delete', 'property', id, { title: old?.title });
   };
 
   // --- TEAM MEMBERS (Users) ---
@@ -191,6 +200,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     if (data) { setUsers(prev => [...prev, toUser(data)]); logActivity(tenantId, user?.id, 'create', 'team_member', data.id, { name: u.name }); }
   };
   const updateUser = async (u: User) => {
+    const old = users.find(x => x.id === u.id);
+    if (old) await saveSnapshot(tenantId, user?.id, 'team_member', u.id, 'update', old as any);
     await supabase.from('team_members').update({
       name: u.name, email: u.email, role: u.role, phone: u.phone, property_ids: u.propertyIds,
       client_ids: u.clientIds, avatar: u.avatar, agency_id: u.agencyId || null,
@@ -200,10 +211,11 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     logActivity(tenantId, user?.id, 'update', 'team_member', u.id, { name: u.name });
   };
   const deleteUser = async (id: string) => {
-    const name = users.find(x => x.id === id)?.name;
+    const old = users.find(x => x.id === id);
+    if (old) await saveSnapshot(tenantId, user?.id, 'team_member', id, 'delete', old as any);
     await supabase.from('team_members').update({ deleted_at: new Date().toISOString() } as any).eq('id', id);
     setUsers(prev => prev.filter(x => x.id !== id));
-    logActivity(tenantId, user?.id, 'delete', 'team_member', id, { name });
+    logActivity(tenantId, user?.id, 'delete', 'team_member', id, { name: old?.name });
   };
 
   // --- TASKS ---
@@ -217,6 +229,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     if (data) { setTasks(prev => [...prev, toTask(data)]); logActivity(tenantId, user?.id, 'create', 'task', data.id, { title: t.title }); }
   };
   const updateTask = async (t: Task) => {
+    const old = tasks.find(x => x.id === t.id);
+    if (old) await saveSnapshot(tenantId, user?.id, 'task', t.id, 'update', old as any);
     await supabase.from('tasks').update({
       title: t.title, type: t.type, status: t.status, priority: t.priority,
       due_date: t.dueDate || null, agent_id: t.agentId || null, client_id: t.clientId || null,
@@ -227,10 +241,11 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     logActivity(tenantId, user?.id, 'update', 'task', t.id, { title: t.title });
   };
   const deleteTask = async (id: string) => {
-    const title = tasks.find(x => x.id === id)?.title;
+    const old = tasks.find(x => x.id === id);
+    if (old) await saveSnapshot(tenantId, user?.id, 'task', id, 'delete', old as any);
     await supabase.from('tasks').update({ deleted_at: new Date().toISOString() } as any).eq('id', id);
     setTasks(prev => prev.filter(x => x.id !== id));
-    logActivity(tenantId, user?.id, 'delete', 'task', id, { title });
+    logActivity(tenantId, user?.id, 'delete', 'task', id, { title: old?.title });
   };
 
   // --- DOCUMENTS ---
@@ -242,6 +257,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     if (data) { setDocuments(prev => [...prev, toDocument(data)]); logActivity(tenantId, user?.id, 'create', 'document', data.id, { name: d.name }); }
   };
   const updateDocument = async (d: Document) => {
+    const old = documents.find(x => x.id === d.id);
+    if (old) await saveSnapshot(tenantId, user?.id, 'document', d.id, 'update', old as any);
     await supabase.from('documents').update({
       name: d.name, type: d.type, file: d.file, property_id: d.propertyId || null,
     }).eq('id', d.id);
@@ -249,10 +266,11 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     logActivity(tenantId, user?.id, 'update', 'document', d.id, { name: d.name });
   };
   const deleteDocument = async (id: string) => {
-    const name = documents.find(x => x.id === id)?.name;
+    const old = documents.find(x => x.id === id);
+    if (old) await saveSnapshot(tenantId, user?.id, 'document', id, 'delete', old as any);
     await supabase.from('documents').update({ deleted_at: new Date().toISOString() } as any).eq('id', id);
     setDocuments(prev => prev.filter(x => x.id !== id));
-    logActivity(tenantId, user?.id, 'delete', 'document', id, { name });
+    logActivity(tenantId, user?.id, 'delete', 'document', id, { name: old?.name });
   };
 
   return (
