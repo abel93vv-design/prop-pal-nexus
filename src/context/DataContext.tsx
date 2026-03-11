@@ -229,6 +229,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     if (data) { setTasks(prev => [...prev, toTask(data)]); logActivity(tenantId, user?.id, 'create', 'task', data.id, { title: t.title }); }
   };
   const updateTask = async (t: Task) => {
+    const old = tasks.find(x => x.id === t.id);
+    if (old) await saveSnapshot(tenantId, user?.id, 'task', t.id, 'update', old as any);
     await supabase.from('tasks').update({
       title: t.title, type: t.type, status: t.status, priority: t.priority,
       due_date: t.dueDate || null, agent_id: t.agentId || null, client_id: t.clientId || null,
@@ -239,10 +241,11 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     logActivity(tenantId, user?.id, 'update', 'task', t.id, { title: t.title });
   };
   const deleteTask = async (id: string) => {
-    const title = tasks.find(x => x.id === id)?.title;
+    const old = tasks.find(x => x.id === id);
+    if (old) await saveSnapshot(tenantId, user?.id, 'task', id, 'delete', old as any);
     await supabase.from('tasks').update({ deleted_at: new Date().toISOString() } as any).eq('id', id);
     setTasks(prev => prev.filter(x => x.id !== id));
-    logActivity(tenantId, user?.id, 'delete', 'task', id, { title });
+    logActivity(tenantId, user?.id, 'delete', 'task', id, { title: old?.title });
   };
 
   // --- DOCUMENTS ---
