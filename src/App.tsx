@@ -20,6 +20,7 @@ import Settings from "./pages/Settings";
 import Tenants from "./pages/Tenants";
 import Pipeline from "./pages/Pipeline";
 import MatchCenter from "./pages/MatchCenter";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 const AppRoutes = () => (
   <Routes>
     <Route path="/auth" element={<Auth />} />
+    <Route path="/reset-password" element={<ResetPassword />} />
     <Route path="/publica" element={<PublicProperties />} />
     <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
     <Route path="/propiedades" element={<ProtectedRoute><Properties /></ProtectedRoute>} />
