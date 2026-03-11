@@ -9,6 +9,7 @@ interface Tenant {
   plan: string;
   is_active: boolean;
   is_demo: boolean;
+  subscription_status: string;
 }
 
 interface TenantContextType {
