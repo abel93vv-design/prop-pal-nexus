@@ -60,7 +60,7 @@ function TrashSection() {
     };
     const table = tableMap[snap.entity_type];
     if (table) {
-      await supabase.from(table).update({ deleted_at: null } as any).eq('id', snap.entity_id);
+      await (supabase as any).from(table).update({ deleted_at: null }).eq('id', snap.entity_id);
       toast({ title: "Restaurado", description: `${ENTITY_LABELS[snap.entity_type]?.label || snap.entity_type} restaurado correctamente` });
       load();
     }
