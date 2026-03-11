@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Building2, Loader2, Eye, EyeOff } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
+import logoIsotipo from "@/assets/logo-isotipo.png";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
@@ -134,9 +135,7 @@ const Auth = () => {
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center space-y-3">
-            <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mx-auto">
-              <Building2 className="w-7 h-7 text-primary" />
-            </div>
+            <img src={logoIsotipo} alt="KageSan CRM" className="w-14 h-14 rounded-xl mx-auto" />
             <CardTitle className="text-xl">Recuperar contraseña</CardTitle>
             <CardDescription>Te enviaremos un enlace para restablecer tu contraseña</CardDescription>
           </CardHeader>
@@ -166,11 +165,9 @@ const Auth = () => {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-3">
-          <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mx-auto">
-            <Building2 className="w-7 h-7 text-primary" />
-          </div>
+          <img src={logoIsotipo} alt="KageSan CRM" className="w-14 h-14 rounded-xl mx-auto" />
           <CardTitle className="text-xl">Iniciar Sesión</CardTitle>
-          <CardDescription>Accede a tu CRM inmobiliario</CardDescription>
+          <CardDescription>Accede a KageSan CRM</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Button

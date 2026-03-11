@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Building2, Loader2, Eye, EyeOff, Check, X } from "lucide-react";
+import { Loader2, Eye, EyeOff, Check, X } from "lucide-react";
+import logoIsotipo from "@/assets/logo-isotipo.png";
 import { useToast } from "@/hooks/use-toast";
 import { lovable } from "@/integrations/lovable/index";
 import { Separator } from "@/components/ui/separator";
@@ -76,11 +77,9 @@ const SignUp = () => {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-3">
-          <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mx-auto">
-            <Building2 className="w-7 h-7 text-primary" />
-          </div>
+          <img src={logoIsotipo} alt="KageSan CRM" className="w-14 h-14 rounded-xl mx-auto" />
           <CardTitle className="text-xl">Crear Cuenta</CardTitle>
-          <CardDescription>Regístrate para empezar a gestionar tu inmobiliaria</CardDescription>
+          <CardDescription>Regístrate en KageSan CRM</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Button
@@ -157,7 +156,7 @@ const SignUp = () => {
                 className="mt-0.5"
               />
               <label htmlFor="newsletter" className="text-xs text-muted-foreground leading-tight cursor-pointer">
-                Recibir novedades y consejos inmobiliarios de InmoCRM
+                Recibir novedades y consejos inmobiliarios de KageSan CRM
               </label>
             </div>
 
