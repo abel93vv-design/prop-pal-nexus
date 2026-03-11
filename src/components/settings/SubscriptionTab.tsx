@@ -1,11 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { usePlanLimits, ResourceUsage } from "@/hooks/usePlanLimits";
 import { PLAN_ORDER, PLAN_LABELS, PLAN_PRICES, getPlanLimits, isUnlimited, PlanName, ResourceKey } from "@/config/planLimits";
-import { Crown, Zap, Building2, Users, ClipboardList, Landmark, Plug, Settings2, KeyRound, Kanban, CheckCircle2, Lock, FileText, Download, Loader2 } from "lucide-react";
+import { Crown, Zap, Building2, Users, ClipboardList, Landmark, Plug, Settings2, KeyRound, Kanban, CheckCircle2, Lock, FileText, Download, Loader2, Eye, X } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -126,9 +127,77 @@ const STATUS_MAP: Record<string, { label: string; variant: "default" | "secondar
   overdue: { label: "Vencida", variant: "destructive" },
 };
 
+function generateInvoiceHTML(inv: Invoice) {
+  const formatDate = (d: string) =>
+    new Date(d).toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric" });
+  const formatCurrency = (n: number) =>
+    new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(n);
+  const statusLabel = STATUS_MAP[inv.status]?.label || inv.status;
+  const base = Number(inv.amount) / 1.21;
+  const iva = Number(inv.amount) - base;
+
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Factura ${inv.invoice_number}</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;color:#1a1a1a;padding:40px;max-width:800px;margin:0 auto}
+.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:40px;border-bottom:3px solid #16a34a;padding-bottom:20px}
+.logo{font-size:24px;font-weight:700;color:#16a34a}
+.logo span{color:#64748b;font-weight:400;font-size:14px;display:block}
+.invoice-info{text-align:right}
+.invoice-info h2{font-size:28px;color:#16a34a;margin-bottom:4px}
+.invoice-info p{font-size:13px;color:#64748b}
+.status{display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;margin-top:8px}
+.status-paid{background:#dcfce7;color:#16a34a}
+.status-pending{background:#fef3c7;color:#d97706}
+.status-overdue{background:#fee2e2;color:#dc2626}
+.details{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-bottom:30px}
+.detail-block h3{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#94a3b8;margin-bottom:8px}
+.detail-block p{font-size:14px;line-height:1.6}
+table{width:100%;border-collapse:collapse;margin-bottom:30px}
+th{background:#f1f5f9;padding:10px 16px;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;border-bottom:2px solid #e2e8f0}
+td{padding:12px 16px;border-bottom:1px solid #f1f5f9;font-size:14px}
+.text-right{text-align:right}
+.total-row td{font-weight:700;font-size:16px;border-top:2px solid #16a34a;color:#16a34a}
+.footer{text-align:center;margin-top:40px;padding-top:20px;border-top:1px solid #e2e8f0;font-size:12px;color:#94a3b8}
+@media print{body{padding:20px}button,.no-print{display:none!important}}
+</style></head><body>
+<div class="header">
+  <div class="logo">KageSan CRM<span>Software Inmobiliario</span></div>
+  <div class="invoice-info">
+    <h2>${inv.invoice_number}</h2>
+    <p>Emitida: ${formatDate(inv.created_at)}</p>
+    <span class="status status-${inv.status}">${statusLabel}</span>
+  </div>
+</div>
+<div class="details">
+  <div class="detail-block">
+    <h3>Período de facturación</h3>
+    <p>${formatDate(inv.period_start)} — ${formatDate(inv.period_end)}</p>
+  </div>
+  <div class="detail-block">
+    <h3>Plan contratado</h3>
+    <p style="text-transform:capitalize">${inv.plan}</p>
+  </div>
+</div>
+<table>
+  <thead><tr><th>Concepto</th><th class="text-right">Importe</th></tr></thead>
+  <tbody>
+    <tr><td>Suscripción plan ${inv.plan} — ${formatDate(inv.period_start).split(' de ').slice(1).join(' de ')}</td><td class="text-right">${formatCurrency(base)}</td></tr>
+    <tr><td>IVA (21%)</td><td class="text-right">${formatCurrency(iva)}</td></tr>
+    <tr class="total-row"><td>Total</td><td class="text-right">${formatCurrency(inv.amount)}</td></tr>
+  </tbody>
+</table>
+<div class="footer">
+  <p>KageSan CRM · CIF: B12345678 · info@kagesan.com</p>
+  <p style="margin-top:4px">Este documento es una factura simplificada generada automáticamente.</p>
+</div>
+</body></html>`;
+}
+
 function InvoicesList() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
+  const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null);
 
   useEffect(() => {
     const fetchInvoices = async () => {
@@ -148,67 +217,105 @@ function InvoicesList() {
   const formatCurrency = (n: number) =>
     new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(n);
 
+  const handleDownload = (inv: Invoice) => {
+    const html = generateInvoiceHTML(inv);
+    const blob = new Blob([html], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${inv.invoice_number}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "Factura descargada", description: inv.invoice_number });
+  };
+
+  const handlePreview = (inv: Invoice) => {
+    setPreviewInvoice(inv);
+  };
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <FileText className="w-5 h-5 text-primary" /> Facturas
-        </CardTitle>
-        <CardDescription>Historial de facturación mensual</CardDescription>
-      </CardHeader>
-      <CardContent>
-        {loading ? (
-          <div className="flex justify-center py-8">
-            <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-          </div>
-        ) : invoices.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <FileText className="w-10 h-10 mx-auto mb-2 opacity-40" />
-            <p className="text-sm">No hay facturas disponibles todavía</p>
-            <p className="text-xs mt-1">Las facturas se generan mensualmente</p>
-          </div>
-        ) : (
-          <div className="divide-y divide-border">
-            {invoices.map((inv) => {
-              const statusInfo = STATUS_MAP[inv.status] || STATUS_MAP.paid;
-              return (
-                <div key={inv.id} className="flex items-center justify-between py-3 gap-3">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                      <FileText className="w-4 h-4 text-primary" />
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <FileText className="w-5 h-5 text-primary" /> Facturas
+          </CardTitle>
+          <CardDescription>Historial de facturación mensual</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : invoices.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <FileText className="w-10 h-10 mx-auto mb-2 opacity-40" />
+              <p className="text-sm">No hay facturas disponibles todavía</p>
+              <p className="text-xs mt-1">Las facturas se generan mensualmente</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-border">
+              {invoices.map((inv) => {
+                const statusInfo = STATUS_MAP[inv.status] || STATUS_MAP.paid;
+                return (
+                  <div key={inv.id} className="flex items-center justify-between py-3 gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                        <FileText className="w-4 h-4 text-primary" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">
+                          {inv.invoice_number}
+                        </p>
+                        <p className="text-xs text-muted-foreground capitalize">
+                          {formatDate(inv.period_start)}
+                        </p>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">
-                        {inv.invoice_number}
-                      </p>
-                      <p className="text-xs text-muted-foreground capitalize">
-                        {formatDate(inv.period_start)}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <Badge variant="outline" className="capitalize text-xs">{inv.plan}</Badge>
-                    <span className="text-sm font-semibold text-foreground w-20 text-right">
-                      {formatCurrency(inv.amount)}
-                    </span>
-                    <Badge variant={statusInfo.variant} className="text-xs">
-                      {statusInfo.label}
-                    </Badge>
-                    {inv.pdf_url && (
-                      <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
-                        <a href={inv.pdf_url} target="_blank" rel="noopener noreferrer">
-                          <Download className="w-3.5 h-3.5" />
-                        </a>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Badge variant="outline" className="capitalize text-xs hidden sm:inline-flex">{inv.plan}</Badge>
+                      <span className="text-sm font-semibold text-foreground w-20 text-right">
+                        {formatCurrency(inv.amount)}
+                      </span>
+                      <Badge variant={statusInfo.variant} className="text-xs">
+                        {statusInfo.label}
+                      </Badge>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" title="Ver factura" onClick={() => handlePreview(inv)}>
+                        <Eye className="w-3.5 h-3.5" />
                       </Button>
-                    )}
+                      <Button variant="ghost" size="icon" className="h-7 w-7" title="Descargar factura" onClick={() => handleDownload(inv)}>
+                        <Download className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog open={!!previewInvoice} onOpenChange={() => setPreviewInvoice(null)}>
+        <DialogContent className="max-w-3xl max-h-[85vh] p-0 overflow-hidden">
+          <DialogHeader className="px-6 pt-4 pb-2 flex flex-row items-center justify-between">
+            <DialogTitle className="text-base">
+              {previewInvoice?.invoice_number}
+            </DialogTitle>
+            <Button variant="outline" size="sm" onClick={() => previewInvoice && handleDownload(previewInvoice)}>
+              <Download className="w-3.5 h-3.5 mr-1" /> Descargar
+            </Button>
+          </DialogHeader>
+          {previewInvoice && (
+            <iframe
+              srcDoc={generateInvoiceHTML(previewInvoice)}
+              className="w-full border-0"
+              style={{ height: "70vh" }}
+              title="Vista previa de factura"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
