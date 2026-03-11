@@ -1,11 +1,13 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { usePlanLimits, ResourceUsage } from "@/hooks/usePlanLimits";
 import { PLAN_ORDER, PLAN_LABELS, PLAN_PRICES, getPlanLimits, isUnlimited, PlanName, ResourceKey } from "@/config/planLimits";
-import { Crown, Zap, Building2, Users, ClipboardList, Landmark, Plug, Settings2, KeyRound, Kanban, CheckCircle2, Lock } from "lucide-react";
+import { Crown, Zap, Building2, Users, ClipboardList, Landmark, Plug, Settings2, KeyRound, Kanban, CheckCircle2, Lock, FileText, Download, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const RESOURCE_LABELS: Record<ResourceKey, { label: string; icon: React.ComponentType<any> }> = {
   properties: { label: "Propiedades", icon: Building2 },
@@ -106,6 +108,110 @@ function PlanCard({ planName, currentPlan }: { planName: PlanName; currentPlan: 
   );
 }
 
+interface Invoice {
+  id: string;
+  invoice_number: string;
+  period_start: string;
+  period_end: string;
+  amount: number;
+  status: string;
+  plan: string;
+  created_at: string;
+  pdf_url: string | null;
+}
+
+const STATUS_MAP: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
+  paid: { label: "Pagada", variant: "default" },
+  pending: { label: "Pendiente", variant: "secondary" },
+  overdue: { label: "Vencida", variant: "destructive" },
+};
+
+function InvoicesList() {
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchInvoices = async () => {
+      const { data, error } = await supabase
+        .from("invoices")
+        .select("*")
+        .order("period_start", { ascending: false });
+      if (!error && data) setInvoices(data as Invoice[]);
+      setLoading(false);
+    };
+    fetchInvoices();
+  }, []);
+
+  const formatDate = (d: string) =>
+    new Date(d).toLocaleDateString("es-ES", { month: "long", year: "numeric" });
+
+  const formatCurrency = (n: number) =>
+    new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(n);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <FileText className="w-5 h-5 text-primary" /> Facturas
+        </CardTitle>
+        <CardDescription>Historial de facturación mensual</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="flex justify-center py-8">
+            <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+          </div>
+        ) : invoices.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <FileText className="w-10 h-10 mx-auto mb-2 opacity-40" />
+            <p className="text-sm">No hay facturas disponibles todavía</p>
+            <p className="text-xs mt-1">Las facturas se generan mensualmente</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-border">
+            {invoices.map((inv) => {
+              const statusInfo = STATUS_MAP[inv.status] || STATUS_MAP.paid;
+              return (
+                <div key={inv.id} className="flex items-center justify-between py-3 gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                      <FileText className="w-4 h-4 text-primary" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {inv.invoice_number}
+                      </p>
+                      <p className="text-xs text-muted-foreground capitalize">
+                        {formatDate(inv.period_start)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <Badge variant="outline" className="capitalize text-xs">{inv.plan}</Badge>
+                    <span className="text-sm font-semibold text-foreground w-20 text-right">
+                      {formatCurrency(inv.amount)}
+                    </span>
+                    <Badge variant={statusInfo.variant} className="text-xs">
+                      {statusInfo.label}
+                    </Badge>
+                    {inv.pdf_url && (
+                      <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
+                        <a href={inv.pdf_url} target="_blank" rel="noopener noreferrer">
+                          <Download className="w-3.5 h-3.5" />
+                        </a>
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export function SubscriptionTab() {
   const { plan, planLabel, usage } = usePlanLimits();
 
@@ -128,6 +234,8 @@ export function SubscriptionTab() {
           ))}
         </CardContent>
       </Card>
+
+      <InvoicesList />
 
       <div>
         <h3 className="text-sm font-semibold text-foreground mb-3">Planes disponibles</h3>
