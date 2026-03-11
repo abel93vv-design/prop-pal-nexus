@@ -110,8 +110,22 @@ const Auth = () => {
     setSubmitting(true);
     try {
       if (mode === "login") {
+        const canProceed = await checkAttempts(email);
+        if (!canProceed) {
+          toast({ title: "Cuenta bloqueada", description: `Demasiados intentos. Intenta de nuevo en ${minutesLeft} minutos.`, variant: "destructive" });
+          setSubmitting(false);
+          return;
+        }
         const { error } = await signIn(email, password);
-        if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
+        if (error) {
+          await recordFailure(email);
+          const msg = attemptsRemaining <= 1
+            ? "Contraseña incorrecta. Cuenta bloqueada por 2 horas."
+            : `Contraseña incorrecta. Te quedan ${Math.max(0, attemptsRemaining - 1)} intentos.`;
+          toast({ title: "Error", description: msg, variant: "destructive" });
+        } else {
+          await resetAttempts(email);
+        }
       } else if (mode === "register") {
         if (!fullName.trim()) {
           toast({ title: "Error", description: "El nombre es obligatorio", variant: "destructive" });
