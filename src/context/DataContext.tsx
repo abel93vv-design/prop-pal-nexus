@@ -257,6 +257,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     if (data) { setDocuments(prev => [...prev, toDocument(data)]); logActivity(tenantId, user?.id, 'create', 'document', data.id, { name: d.name }); }
   };
   const updateDocument = async (d: Document) => {
+    const old = documents.find(x => x.id === d.id);
+    if (old) await saveSnapshot(tenantId, user?.id, 'document', d.id, 'update', old as any);
     await supabase.from('documents').update({
       name: d.name, type: d.type, file: d.file, property_id: d.propertyId || null,
     }).eq('id', d.id);
@@ -264,10 +266,11 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     logActivity(tenantId, user?.id, 'update', 'document', d.id, { name: d.name });
   };
   const deleteDocument = async (id: string) => {
-    const name = documents.find(x => x.id === id)?.name;
+    const old = documents.find(x => x.id === id);
+    if (old) await saveSnapshot(tenantId, user?.id, 'document', id, 'delete', old as any);
     await supabase.from('documents').update({ deleted_at: new Date().toISOString() } as any).eq('id', id);
     setDocuments(prev => prev.filter(x => x.id !== id));
-    logActivity(tenantId, user?.id, 'delete', 'document', id, { name });
+    logActivity(tenantId, user?.id, 'delete', 'document', id, { name: old?.name });
   };
 
   return (
