@@ -10,7 +10,7 @@ export const saveSnapshot = async (
 ) => {
   if (!tenantId || !userId) return;
   try {
-    await supabase.from('entity_snapshots' as any).insert({
+    await (supabase as any).from('entity_snapshots').insert({
       tenant_id: tenantId,
       entity_type: entityType,
       entity_id: entityId,
