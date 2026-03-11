@@ -13,8 +13,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import {
   User, Lock, Plug, Palette, Bell, Shield,
-  Save, RefreshCw, Settings2
+  Save, RefreshCw, Settings2, Crown
 } from "lucide-react";
+import { SubscriptionTab } from "@/components/settings/SubscriptionTab";
 import { CustomFieldsAdmin } from "@/components/CustomFieldsAdmin";
 import { ConnectionsTab } from "@/components/settings/ConnectionsTab";
 import { SecurityTab } from "@/components/settings/SecurityTab";
