@@ -117,17 +117,54 @@ function GeneralTab() {
 
 function PersonalizationTab() {
   const colorOptions = [
-    { name: "Azul Corporativo", primary: "201 96% 32%", accent: "38 85% 55%" },
-    { name: "Verde Natural", primary: "152 60% 42%", accent: "38 85% 55%" },
-    { name: "Rojo Elegante", primary: "0 72% 45%", accent: "38 85% 55%" },
-    { name: "Púrpura Moderno", primary: "270 60% 50%", accent: "38 85% 55%" },
+    {
+      name: "Verde KageSan",
+      primary: "160 70% 25%",
+      accent: "155 55% 35%",
+      sidebar: "160 40% 14%",
+      sidebarAccent: "160 35% 20%",
+      ring: "160 70% 25%",
+    },
+    {
+      name: "Azul Corporativo",
+      primary: "201 96% 32%",
+      accent: "210 80% 55%",
+      sidebar: "220 40% 16%",
+      sidebarAccent: "220 35% 22%",
+      ring: "220 40% 22%",
+    },
+    {
+      name: "Rojo Elegante",
+      primary: "0 72% 45%",
+      accent: "0 60% 55%",
+      sidebar: "0 30% 16%",
+      sidebarAccent: "0 25% 22%",
+      ring: "0 72% 45%",
+    },
+    {
+      name: "Púrpura Moderno",
+      primary: "270 60% 50%",
+      accent: "270 50% 60%",
+      sidebar: "270 30% 16%",
+      sidebarAccent: "270 25% 22%",
+      ring: "270 60% 50%",
+    },
   ];
 
   const [selected, setSelected] = useState(0);
 
   const applyTheme = (index: number) => {
     setSelected(index);
-    toast({ title: "Tema aplicado", description: `Se aplicó "${colorOptions[index].name}"` });
+    const opt = colorOptions[index];
+    const root = document.documentElement;
+    root.style.setProperty("--primary", opt.primary);
+    root.style.setProperty("--accent", opt.accent);
+    root.style.setProperty("--ring", opt.ring);
+    root.style.setProperty("--sidebar-background", opt.sidebar);
+    root.style.setProperty("--sidebar-accent", opt.sidebarAccent);
+    root.style.setProperty("--sidebar-primary", opt.accent);
+    root.style.setProperty("--sidebar-ring", opt.accent);
+    toast({ title: "Tema aplicado", description: `Se aplicó "${opt.name}"` });
   };
 
   return (
