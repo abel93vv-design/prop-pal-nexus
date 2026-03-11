@@ -13,8 +13,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import {
   User, Lock, Plug, Palette, Bell, Shield,
-  Save, RefreshCw, Settings2
+  Save, RefreshCw, Settings2, Crown
 } from "lucide-react";
+import { SubscriptionTab } from "@/components/settings/SubscriptionTab";
 import { CustomFieldsAdmin } from "@/components/CustomFieldsAdmin";
 import { ConnectionsTab } from "@/components/settings/ConnectionsTab";
 import { SecurityTab } from "@/components/settings/SecurityTab";
@@ -208,9 +209,12 @@ export default function Settings() {
         </div>
 
         <Tabs defaultValue="general" className="space-y-6">
-          <TabsList className="grid grid-cols-6 w-full">
+          <TabsList className="grid grid-cols-7 w-full">
             <TabsTrigger value="general" className="text-xs sm:text-sm">
               <User className="w-4 h-4 mr-1 hidden sm:inline" /> General
+            </TabsTrigger>
+            <TabsTrigger value="subscription" className="text-xs sm:text-sm">
+              <Crown className="w-4 h-4 mr-1 hidden sm:inline" /> Plan
             </TabsTrigger>
             <TabsTrigger value="custom-fields" className="text-xs sm:text-sm">
               <Settings2 className="w-4 h-4 mr-1 hidden sm:inline" /> Campos
@@ -230,6 +234,7 @@ export default function Settings() {
           </TabsList>
 
           <TabsContent value="general"><GeneralTab /></TabsContent>
+          <TabsContent value="subscription"><SubscriptionTab /></TabsContent>
           <TabsContent value="custom-fields"><CustomFieldsAdmin /></TabsContent>
           <TabsContent value="connections"><ConnectionsTab /></TabsContent>
           <TabsContent value="personalization"><PersonalizationTab /></TabsContent>

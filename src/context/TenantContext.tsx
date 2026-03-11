@@ -9,6 +9,7 @@ interface Tenant {
   plan: string;
   is_active: boolean;
   is_demo: boolean;
+  subscription_status: string;
 }
 
 interface TenantContextType {
@@ -66,6 +67,7 @@ const mapTenant = (r: any): Tenant => ({
   plan: r.plan,
   is_active: r.is_active,
   is_demo: r.is_demo,
+  subscription_status: r.subscription_status || 'active',
 });
 
 export const TenantProvider = ({ children }: { children: ReactNode }) => {

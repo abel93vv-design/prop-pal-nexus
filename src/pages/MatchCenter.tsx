@@ -2,6 +2,8 @@ import { useState, useMemo, Fragment } from "react";
 import { Layout } from "@/components/Layout";
 import { useMatchCenter, MatchScore, CriteriaDetail } from "@/hooks/useMatchCenter";
 import { useData } from "@/context/DataContext";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +28,7 @@ const viabilityColors: Record<string, string> = {
 const PAGE_SIZE = 25;
 
 const MatchCenter = () => {
+  const { canUseFeature } = usePlanLimits();
   const { matches, loading, calculating, runMatching } = useMatchCenter();
   const { clients, properties, users } = useData();
   const { toast } = useToast();
@@ -47,6 +50,27 @@ const MatchCenter = () => {
       return next;
     });
   };
+
+  if (!canUseFeature('match_center')) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Card className="max-w-md">
+            <CardContent className="p-8 text-center space-y-4">
+              <Target className="w-12 h-12 text-muted-foreground mx-auto" />
+              <h2 className="text-xl font-bold text-foreground">Match Center no disponible</h2>
+              <p className="text-sm text-muted-foreground">
+                Esta funcionalidad está disponible a partir del plan Basic. Actualiza tu plan en Ajustes → Plan para acceder.
+              </p>
+              <Button variant="outline" onClick={() => window.location.href = '/ajustes'}>
+                Ver planes
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </Layout>
+    );
+  }
 
   const filtered = useMemo(() => {
     return matches
