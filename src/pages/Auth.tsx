@@ -23,7 +23,7 @@ const Auth = () => {
   const [locked, setLocked] = useState(false);
   const [minutesLeft, setMinutesLeft] = useState(0);
   const [attemptsRemaining, setAttemptsRemaining] = useState(MAX_ATTEMPTS);
-  const { signIn, signUp } = useAuth();
+  const { signIn } = useAuth();
   const { toast } = useToast();
 
   const checkAttempts = async (emailToCheck: string) => {
