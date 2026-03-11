@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { usePlanLimits, ResourceUsage } from "@/hooks/usePlanLimits";
 import { PLAN_ORDER, PLAN_LABELS, PLAN_PRICES, getPlanLimits, isUnlimited, PlanName, ResourceKey } from "@/config/planLimits";
 import { Crown, Zap, Building2, Users, ClipboardList, Landmark, Plug, Settings2, KeyRound, Kanban, CheckCircle2, Lock, FileText, Download, Loader2, Eye, X } from "lucide-react";
