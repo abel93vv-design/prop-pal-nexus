@@ -11,6 +11,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { Separator } from "@/components/ui/separator";
 
+const MAX_ATTEMPTS = 5;
+
 const Auth = () => {
   const { user, loading } = useAuth();
   const [mode, setMode] = useState<"login" | "register" | "forgot">("login");
@@ -19,8 +21,51 @@ const Auth = () => {
   const [fullName, setFullName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [locked, setLocked] = useState(false);
+  const [minutesLeft, setMinutesLeft] = useState(0);
+  const [attemptsRemaining, setAttemptsRemaining] = useState(MAX_ATTEMPTS);
   const { signIn, signUp } = useAuth();
   const { toast } = useToast();
+
+  const checkAttempts = async (emailToCheck: string) => {
+    try {
+      const { data } = await supabase.functions.invoke("login-attempts", {
+        body: { action: "check", email: emailToCheck },
+      });
+      if (data?.locked) {
+        setLocked(true);
+        setMinutesLeft(data.minutes_left || 0);
+        return false;
+      }
+      setLocked(false);
+      setAttemptsRemaining(data?.remaining ?? MAX_ATTEMPTS);
+      return true;
+    } catch { return true; }
+  };
+
+  const recordFailure = async (emailToRecord: string) => {
+    try {
+      const { data } = await supabase.functions.invoke("login-attempts", {
+        body: { action: "record_failure", email: emailToRecord },
+      });
+      if (data?.locked) {
+        setLocked(true);
+        setMinutesLeft(120);
+      } else {
+        setAttemptsRemaining(data?.remaining ?? 0);
+      }
+    } catch {}
+  };
+
+  const resetAttempts = async (emailToReset: string) => {
+    try {
+      await supabase.functions.invoke("login-attempts", {
+        body: { action: "reset", email: emailToReset },
+      });
+      setLocked(false);
+      setAttemptsRemaining(MAX_ATTEMPTS);
+    } catch {}
+  };
 
   if (loading) {
     return (
@@ -65,8 +110,22 @@ const Auth = () => {
     setSubmitting(true);
     try {
       if (mode === "login") {
+        const canProceed = await checkAttempts(email);
+        if (!canProceed) {
+          toast({ title: "Cuenta bloqueada", description: `Demasiados intentos. Intenta de nuevo en ${minutesLeft} minutos.`, variant: "destructive" });
+          setSubmitting(false);
+          return;
+        }
         const { error } = await signIn(email, password);
-        if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
+        if (error) {
+          await recordFailure(email);
+          const msg = attemptsRemaining <= 1
+            ? "Contraseña incorrecta. Cuenta bloqueada por 2 horas."
+            : `Contraseña incorrecta. Te quedan ${Math.max(0, attemptsRemaining - 1)} intentos.`;
+          toast({ title: "Error", description: msg, variant: "destructive" });
+        } else {
+          await resetAttempts(email);
+        }
       } else if (mode === "register") {
         if (!fullName.trim()) {
           toast({ title: "Error", description: "El nombre es obligatorio", variant: "destructive" });
@@ -194,7 +253,15 @@ const Auth = () => {
                 </div>
               )}
             </div>
-            <Button type="submit" className="w-full" disabled={submitting}>
+            {locked && mode === "login" && (
+              <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-center">
+                <p className="text-sm text-destructive font-medium">Cuenta bloqueada temporalmente</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Demasiados intentos fallidos. Intenta de nuevo en {minutesLeft} minutos.
+                </p>
+              </div>
+            )}
+            <Button type="submit" className="w-full" disabled={submitting || (locked && mode === "login")}>
               {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               {mode === "login" ? "Iniciar sesión" : "Registrarse"}
             </Button>
