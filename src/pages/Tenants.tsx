@@ -47,7 +47,7 @@ const emptyForm = { name: "", slug: "", plan: "free", is_active: true, is_demo: 
 const emptyProvision = { admin_email: "", admin_name: "", admin_password: generatePassword() };
 
 const Tenants = () => {
-  const { user } = useAuth();
+  const { isAdmin } = useUserRole();
   const { toast } = useToast();
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(true);
