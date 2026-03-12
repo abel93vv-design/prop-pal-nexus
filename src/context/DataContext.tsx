@@ -194,7 +194,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     const { data } = await supabase.from('team_members').insert({
       name: u.name, email: u.email, role: u.role, phone: u.phone, property_ids: u.propertyIds,
       client_ids: u.clientIds, avatar: u.avatar, agency_id: u.agencyId || null,
-      access_type: u.accessType, permissions: u.permissions, password: u.password,
+      access_type: u.accessType, permissions: u.permissions,
       tenant_id: tenantId,
     }).select().single();
     if (data) { setUsers(prev => [...prev, toUser(data)]); logActivity(tenantId, user?.id, 'create', 'team_member', data.id, { name: u.name }); }
