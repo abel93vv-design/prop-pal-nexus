@@ -1277,7 +1277,6 @@ export type Database = {
           email: string | null
           id: string
           name: string
-          password: string | null
           permissions: string[] | null
           phone: string | null
           property_ids: string[] | null
@@ -1294,7 +1293,6 @@ export type Database = {
           email?: string | null
           id?: string
           name: string
-          password?: string | null
           permissions?: string[] | null
           phone?: string | null
           property_ids?: string[] | null
@@ -1311,7 +1309,6 @@ export type Database = {
           email?: string | null
           id?: string
           name?: string
-          password?: string | null
           permissions?: string[] | null
           phone?: string | null
           property_ids?: string[] | null
