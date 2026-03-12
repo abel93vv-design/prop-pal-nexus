@@ -24,7 +24,7 @@ interface TenantUser {
   last_sign_in_at: string | null;
 }
 
-const SUPER_ADMIN_EMAIL = "avelascocorpo@gmail.com";
+
 
 interface Tenant {
   id: string;
