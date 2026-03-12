@@ -30,8 +30,7 @@ const settingsItems = [
 ];
 
 export function AppSidebar() {
-  const { user } = useAuth();
-  const isSuperAdmin = user?.email === "avelascocorpo@gmail.com";
+  const { isAdmin } = useUserRole();
 
   return (
     <Sidebar className="sidebar-gradient border-r-0">
