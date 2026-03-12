@@ -205,7 +205,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     await supabase.from('team_members').update({
       name: u.name, email: u.email, role: u.role, phone: u.phone, property_ids: u.propertyIds,
       client_ids: u.clientIds, avatar: u.avatar, agency_id: u.agencyId || null,
-      access_type: u.accessType, permissions: u.permissions, password: u.password,
+      access_type: u.accessType, permissions: u.permissions,
     }).eq('id', u.id);
     setUsers(prev => prev.map(x => x.id === u.id ? u : x));
     logActivity(tenantId, user?.id, 'update', 'team_member', u.id, { name: u.name });
