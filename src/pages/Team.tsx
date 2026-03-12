@@ -236,7 +236,7 @@ const Team = () => {
                 <div><Label className="text-xs">Teléfono</Label><Input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} /></div>
                 <div>
                   <Label className="text-xs">Contraseña {!editing && "(auto si vacío)"}</Label>
-                  <Input type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} placeholder={editing ? "Sin cambios" : "Auto-generada"} />
+                  <Input type="password" value={form.tempPassword} onChange={e => setForm({ ...form, tempPassword: e.target.value })} placeholder={editing ? "Sin cambios" : "Auto-generada"} />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
