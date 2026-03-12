@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Layout } from "@/components/Layout";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
 import { Navigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
