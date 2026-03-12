@@ -106,7 +106,7 @@ const Team = () => {
 
   const handleSave = async () => {
     if (!form.name.trim() || !form.email.trim()) { toast({ title: "Error", description: "Nombre y email son obligatorios", variant: "destructive" }); return; }
-    if (form.role === 'admin_global' && !isSuperAdmin) { toast({ title: "Error", description: "No tienes permisos para asignar el rol Admin Global", variant: "destructive" }); return; }
+    if (form.role === 'admin_global' && !isAdmin) { toast({ title: "Error", description: "No tienes permisos para asignar el rol Admin Global", variant: "destructive" }); return; }
 
     if (editing) {
       updateUser({ ...editing, ...form });
