@@ -127,7 +127,7 @@ const Team = () => {
           agency_id: form.agencyId || null,
           access_type: form.accessType,
           permissions: form.permissions,
-          password: form.password || undefined,
+          password: form.tempPassword || undefined,
         },
       });
 
