@@ -67,7 +67,7 @@ const Team = () => {
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<User | null>(null);
-  const [form, setForm] = useState<Omit<User, "id">>(emptyUser);
+  const [form, setForm] = useState<Omit<User, "id"> & { tempPassword: string }>(emptyUser);
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [creating, setCreating] = useState(false);
