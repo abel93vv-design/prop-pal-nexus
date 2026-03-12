@@ -63,7 +63,7 @@ interface CreatedCredentials {
 const Team = () => {
   const { users, agencies, updateUser, deleteUser } = useData();
   const { user: authUser } = useAuth();
-  const isSuperAdmin = authUser?.email === SUPER_ADMIN_EMAIL;
+  const { isAdmin } = useUserRole();
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<User | null>(null);
