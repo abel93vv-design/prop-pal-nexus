@@ -15,7 +15,7 @@ import { Mail, Phone, Building2, Users, Plus, Pencil, Trash2, ShieldCheck, Key, 
 import { User, UserRole, AccessType, Permission } from "@/types/crm";
 import { useToast } from "@/hooks/use-toast";
 
-const SUPER_ADMIN_EMAIL = "avelascocorpo@gmail.com";
+import { useUserRole } from "@/hooks/useUserRole";
 
 const roleLabels: Record<UserRole, string> = {
   admin_global: 'Admin Global',
@@ -48,9 +48,9 @@ const ALL_PERMISSIONS: { key: Permission; label: string }[] = [
 
 const ALL_PERMS: Permission[] = ALL_PERMISSIONS.map(p => p.key);
 
-const emptyUser: Omit<User, "id"> = {
+const emptyUser: Omit<User, "id"> & { tempPassword: string } = {
   name: "", email: "", role: "agente", phone: "", propertyIds: [], clientIds: [],
-  avatar: "", agencyId: "", accessType: "solo_inmobiliaria", permissions: ['ver_clientes','ver_propiedades','ver_tareas'], password: "",
+  avatar: "", agencyId: "", accessType: "solo_inmobiliaria", permissions: ['ver_clientes','ver_propiedades','ver_tareas'], tempPassword: "",
 };
 
 interface CreatedCredentials {
@@ -63,11 +63,11 @@ interface CreatedCredentials {
 const Team = () => {
   const { users, agencies, updateUser, deleteUser } = useData();
   const { user: authUser } = useAuth();
-  const isSuperAdmin = authUser?.email === SUPER_ADMIN_EMAIL;
+  const { isAdmin } = useUserRole();
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<User | null>(null);
-  const [form, setForm] = useState<Omit<User, "id">>(emptyUser);
+  const [form, setForm] = useState<Omit<User, "id"> & { tempPassword: string }>(emptyUser);
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [creating, setCreating] = useState(false);
@@ -79,7 +79,7 @@ const Team = () => {
   const openCreate = () => { setEditing(null); setForm(emptyUser); setDialogOpen(true); };
   const openEdit = (u: User) => {
     setEditing(u);
-    setForm({ name: u.name, email: u.email, role: u.role, phone: u.phone, propertyIds: u.propertyIds, clientIds: u.clientIds, avatar: u.avatar, agencyId: u.agencyId, accessType: u.accessType, permissions: u.permissions, password: "" });
+    setForm({ name: u.name, email: u.email, role: u.role, phone: u.phone, propertyIds: u.propertyIds, clientIds: u.clientIds, avatar: u.avatar, agencyId: u.agencyId, accessType: u.accessType, permissions: u.permissions, tempPassword: "" });
     setDialogOpen(true);
   };
 
@@ -106,7 +106,7 @@ const Team = () => {
 
   const handleSave = async () => {
     if (!form.name.trim() || !form.email.trim()) { toast({ title: "Error", description: "Nombre y email son obligatorios", variant: "destructive" }); return; }
-    if (form.role === 'admin_global' && !isSuperAdmin) { toast({ title: "Error", description: "No tienes permisos para asignar el rol Admin Global", variant: "destructive" }); return; }
+    if (form.role === 'admin_global' && !isAdmin) { toast({ title: "Error", description: "No tienes permisos para asignar el rol Admin Global", variant: "destructive" }); return; }
 
     if (editing) {
       updateUser({ ...editing, ...form });
@@ -127,7 +127,7 @@ const Team = () => {
           agency_id: form.agencyId || null,
           access_type: form.accessType,
           permissions: form.permissions,
-          password: form.password || undefined,
+          password: form.tempPassword || undefined,
         },
       });
 
@@ -236,7 +236,7 @@ const Team = () => {
                 <div><Label className="text-xs">Teléfono</Label><Input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} /></div>
                 <div>
                   <Label className="text-xs">Contraseña {!editing && "(auto si vacío)"}</Label>
-                  <Input type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} placeholder={editing ? "Sin cambios" : "Auto-generada"} />
+                  <Input type="password" value={form.tempPassword} onChange={e => setForm({ ...form, tempPassword: e.target.value })} placeholder={editing ? "Sin cambios" : "Auto-generada"} />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -244,7 +244,7 @@ const Team = () => {
                   <Label className="text-xs">Rol *</Label>
                   <Select value={form.role} onValueChange={(v) => handleRoleChange(v as UserRole)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>{Object.entries(roleLabels).filter(([k]) => k !== 'admin_global' || isSuperAdmin).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
+                    <SelectContent>{Object.entries(roleLabels).filter(([k]) => k !== 'admin_global' || isAdmin).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
                 <div>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Layout } from "@/components/Layout";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
 import { Navigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -24,7 +24,7 @@ interface TenantUser {
   last_sign_in_at: string | null;
 }
 
-const SUPER_ADMIN_EMAIL = "avelascocorpo@gmail.com";
+
 
 interface Tenant {
   id: string;
@@ -47,7 +47,7 @@ const emptyForm = { name: "", slug: "", plan: "free", is_active: true, is_demo: 
 const emptyProvision = { admin_email: "", admin_name: "", admin_password: generatePassword() };
 
 const Tenants = () => {
-  const { user } = useAuth();
+  const { isAdmin } = useUserRole();
   const { toast } = useToast();
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,7 +67,7 @@ const Tenants = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [resettingPassword, setResettingPassword] = useState(false);
 
-  const isSuperAdmin = user?.email === SUPER_ADMIN_EMAIL;
+  const isSuperAdmin = isAdmin;
 
   const fetchTenants = useCallback(async () => {
     setLoading(true);

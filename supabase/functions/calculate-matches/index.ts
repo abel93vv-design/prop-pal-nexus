@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 interface ClientFinancials {
@@ -74,8 +74,6 @@ interface ScoreDetails {
   financial: { total: number; criteria: CriteriaDetail[] };
 }
 
-// ======== WEIGHTS: Financial 40%, Location 30%, Price 20%, Features 10% ========
-
 function calculatePropertyScore(
   prefs: ClientPreferences | null,
   prop: Property
@@ -89,7 +87,6 @@ function calculatePropertyScore(
     };
   }
 
-  // === PRICE MATCH (20%) ===
   let priceScore = 50;
   let priceMet = false;
   let priceDetail = "";
@@ -98,7 +95,6 @@ function calculatePropertyScore(
       priceScore = 100; priceMet = true;
       priceDetail = `Precio ${prop.price.toLocaleString()}€ dentro del rango`;
     } else if (prop.price > prefs.max_price) {
-      // Hard filter: if exceeds budget, score = 0
       priceScore = 0;
       priceDetail = `Precio ${prop.price.toLocaleString()}€ supera presupuesto máximo ${prefs.max_price.toLocaleString()}€`;
     } else {
@@ -111,30 +107,22 @@ function calculatePropertyScore(
   }
   criteria.push({ label: "Precio", weight: 20, score: Math.round(priceScore), met: priceMet, detail: priceDetail });
 
-  // === LOCATION MATCH (30%) ===
   let locationScore = 50;
   let locationMet = false;
   let locationDetail = "";
 
   const propZoneId = (prop.neighborhood || "").trim();
 
-  // Primary: check if property's zone ID is in client's selected_zones
   if (prefs.selected_zones && prefs.selected_zones.length > 0 && propZoneId) {
-    // Direct match: property zone ID is in selected zones
     if (prefs.selected_zones.includes(propZoneId)) {
       locationScore = 100; locationMet = true;
       locationDetail = `Zona "${propZoneId}" coincide con zona de interés`;
     } else {
-      // Check if property is in a selected district
-      // e.g. property is "barrio:huelin", check if "distrito:cruz-humilladero" is selected
       const [propType, propId] = propZoneId.split(":");
       if (propType === "barrio") {
         const districtMatch = prefs.selected_zones.find(z => {
           if (!z.startsWith("distrito:")) return false;
-          // We need to check if this barrio belongs to that distrito
-          // Since we don't have the full hierarchy in the edge function, 
-          // we store distrito: IDs in selected_zones when a full district is selected
-          return false; // District-level matching handled by client storing all barrio IDs
+          return false;
         });
       }
       locationScore = 10;
@@ -144,7 +132,6 @@ function calculatePropertyScore(
     locationScore = 0;
     locationDetail = "Propiedad sin zona asignada, cliente tiene zonas definidas";
   } else if (!prefs.selected_zones || prefs.selected_zones.length === 0) {
-    // Fallback: old neighborhood text match
     if (prefs.neighborhood && prop.neighborhood) {
       if (prop.neighborhood.toLowerCase() === prefs.neighborhood.toLowerCase()) {
         locationScore = 100; locationMet = true;
@@ -169,7 +156,6 @@ function calculatePropertyScore(
   }
   criteria.push({ label: "Ubicación", weight: 30, score: Math.round(locationScore), met: locationMet, detail: locationDetail });
 
-  // === FEATURES MATCH (10%) ===
   let featureHits = 0;
   let featureTotal = 0;
   const featureDetails: string[] = [];
@@ -195,7 +181,6 @@ function calculatePropertyScore(
     else featureDetails.push(`Tipo ${prop.type} ✗`);
   }
 
-  // Required extras check
   if (prefs.required_extras && prefs.required_extras.length > 0) {
     const extrasMap: Record<string, boolean> = {
       ascensor: prop.has_elevator, terraza: prop.has_terrace, piscina: prop.has_pool,
@@ -214,8 +199,6 @@ function calculatePropertyScore(
     met: featuresScore >= 75, detail: featureDetails.join("; ") || "Sin requisitos",
   });
 
-  // Weighted total for property part: Price 20% + Location 30% + Features 10% = 60% of total
-  // But we normalize within property score
   const propertyScore = priceScore * (20/60) + locationScore * (30/60) + featuresScore * (10/60);
 
   return { score: Math.round(Math.min(100, Math.max(0, propertyScore))), criteria };
@@ -235,16 +218,13 @@ function calculateFinancialScore(
     };
   }
 
-  // Real costs calculation
-  const entryRequired = propPrice * 0.2; // 20% down
-  const taxesAndFees = propPrice * 0.10; // ~10% taxes/fees
+  const entryRequired = propPrice * 0.2;
+  const taxesAndFees = propPrice * 0.10;
   const totalCashNeeded = entryRequired + taxesAndFees;
   const annualMaintenance = (Number(prop.community_fees) * 12) + Number(prop.ibi_annual);
 
   let totalScore = 0;
-  const maxScore = 100;
 
-  // 1. Cash coverage (30 points max)
   let cashScore = 0;
   let cashMet = false;
   let cashDetail = "";
@@ -261,13 +241,12 @@ function calculateFinancialScore(
   totalScore += cashScore;
   criteria.push({ label: "Cobertura efectivo", weight: 30, score: Math.round((cashScore/30)*100), met: cashMet, detail: cashDetail });
 
-  // 2. Debt ratio / affordability (30 points max)
   let debtScore = 0;
   let debtMet = false;
   let debtDetail = "";
   if (financials.monthly_income > 0) {
     const mortgageAmount = Math.max(0, propPrice - financials.available_cash);
-    const estimatedMonthly = mortgageAmount / (25 * 12); // 25yr mortgage
+    const estimatedMonthly = mortgageAmount / (25 * 12);
     const totalMonthlyDebt = estimatedMonthly + (financials.monthly_debts || 0);
     const debtRatio = (totalMonthlyDebt / financials.monthly_income) * 100;
 
@@ -290,7 +269,6 @@ function calculateFinancialScore(
   totalScore += debtScore;
   criteria.push({ label: "Capacidad endeudamiento", weight: 30, score: Math.round((debtScore/30)*100), met: debtMet, detail: debtDetail });
 
-  // 3. Mortgage capacity (25 points max)
   let mortgageScore = 0;
   let mortgageMet = false;
   let mortgageDetail = "";
@@ -302,7 +280,6 @@ function calculateFinancialScore(
     mortgageDetail = "Hipoteca pre-aprobada ✓ (+15% confianza)";
   } else if (financials.monthly_income > 0) {
     const needed = Math.max(0, propPrice - financials.available_cash);
-    // Banks typically lend max 80% of property value
     if (needed <= propPrice * 0.8) {
       mortgageScore = 15;
       mortgageDetail = `Necesita ${needed.toLocaleString()}€ (≤80% del valor)`;
@@ -316,7 +293,6 @@ function calculateFinancialScore(
   totalScore += mortgageScore;
   criteria.push({ label: "Viabilidad hipotecaria", weight: 25, score: Math.round((mortgageScore/25)*100), met: mortgageMet, detail: mortgageDetail });
 
-  // 4. Maintenance sustainability (15 points max)
   let maintScore = 0;
   let maintMet = false;
   let maintDetail = "";
@@ -353,7 +329,29 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Authenticate the caller
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "No autorizado" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const callerClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const { data: claimsData, error: claimsError } = await callerClient.auth.getClaims(authHeader.replace("Bearer ", ""));
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "No autorizado" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
@@ -440,7 +438,6 @@ Deno.serve(async (req) => {
       const prefs = prefsMap.get(client.id) || null;
 
       for (const prop of properties as Property[]) {
-        // HARD FILTER: Operation type mismatch
         const clientOp = client.operation_type || 'compra';
         const propOp = prop.operation_type || 'venta';
         const opMatch = clientOp === 'ambos' || propOp === 'ambos' ||
@@ -448,82 +445,61 @@ Deno.serve(async (req) => {
           (clientOp === 'alquiler' && propOp === 'alquiler');
 
         if (!opMatch) {
-          // Operation mismatch → score 0
           upserts.push({
             tenant_id, agency_id: client.agency_id || prop.agency_id || null,
             client_id: client.id, property_id: prop.id,
             property_score: 0, financial_score: 0, total_score: 0,
             category: "low", viability_status: "Not Viable",
-            score_details: { property: { total: 0, criteria: [{ label: "Tipo operación", weight: 100, score: 0, met: false, detail: `Cliente busca ${clientOp}, propiedad es ${propOp}` }] }, financial: { total: 0, criteria: [] } },
+            score_details: { property: { total: 0, criteria: [{ label: "Tipo operación", weight: 100, score: 0, met: false, detail: `${clientOp} ≠ ${propOp}` }] }, financial: { total: 0, criteria: [] } },
             last_calculated_at: now, updated_at: now,
           });
           continue;
         }
 
-        // Determine if rental match
-        const isRental = (clientOp === 'alquiler') || (propOp === 'alquiler' && clientOp !== 'compra');
-
         const propResult = calculatePropertyScore(prefs, prop);
-        let finResult;
+        const finResult = calculateFinancialScore(financials, prop);
 
-        if (isRental && financials && financials.monthly_income > 0) {
-          // Rental: financial score based on rent ≤ 35% of income
-          const rent = Number(prop.monthly_rent) || 0;
-          const ratio = rent > 0 ? (rent / financials.monthly_income) * 100 : 0;
-          let rentScore = 0;
-          let rentMet = false;
-          let rentDetail = "";
-          if (rent <= 0) { rentScore = 50; rentDetail = "Sin renta mensual configurada"; }
-          else if (ratio <= 25) { rentScore = 100; rentMet = true; rentDetail = `Renta ${rent}€ = ${Math.round(ratio)}% ingresos (≤25%, excelente)`; }
-          else if (ratio <= 35) { rentScore = 70; rentMet = true; rentDetail = `Renta ${rent}€ = ${Math.round(ratio)}% ingresos (≤35%, aceptable)`; }
-          else if (ratio <= 45) { rentScore = 30; rentDetail = `Renta ${rent}€ = ${Math.round(ratio)}% ingresos (35-45%, riesgo)`; }
-          else { rentScore = 0; rentDetail = `Renta ${rent}€ = ${Math.round(ratio)}% ingresos (>45%, no viable)`; }
-          finResult = { score: rentScore, criteria: [{ label: "Solvencia alquiler", weight: 100, score: rentScore, met: rentMet, detail: rentDetail }] };
-        } else {
-          finResult = calculateFinancialScore(financials, prop);
-        }
-
-        // HARD FILTER: if price exceeds budget, total = 0
-        const priceExceeds = prefs && prefs.max_price > 0 && Number(prop.price) > prefs.max_price;
-
-        let totalScore: number;
-        if (priceExceeds) {
-          totalScore = 0;
-        } else {
-          totalScore = Math.round(finResult.score * 0.4 + propResult.score * 0.6);
-        }
-
+        const totalScore = Math.round(propResult.score * 0.6 + finResult.score * 0.4);
         const category = getCategory(totalScore);
         const viability = getViability(finResult.score);
 
         upserts.push({
-          tenant_id, agency_id: client.agency_id || prop.agency_id || null,
-          client_id: client.id, property_id: prop.id,
-          property_score: propResult.score, financial_score: finResult.score,
-          total_score: totalScore, category, viability_status: viability,
-          score_details: { property: { total: propResult.score, criteria: propResult.criteria }, financial: { total: finResult.score, criteria: finResult.criteria } },
-          last_calculated_at: now, updated_at: now,
+          tenant_id,
+          agency_id: client.agency_id || prop.agency_id || null,
+          client_id: client.id,
+          property_id: prop.id,
+          property_score: propResult.score,
+          financial_score: finResult.score,
+          total_score: totalScore,
+          category,
+          viability_status: viability,
+          score_details: {
+            property: { total: propResult.score, criteria: propResult.criteria },
+            financial: { total: finResult.score, criteria: finResult.criteria },
+          },
+          last_calculated_at: now,
+          updated_at: now,
         });
       }
     }
 
+    const BATCH_SIZE = 200;
     let totalUpserted = 0;
-    const chunkSize = 500;
-    for (let i = 0; i < upserts.length; i += chunkSize) {
-      const chunk = upserts.slice(i, i + chunkSize);
+    for (let i = 0; i < upserts.length; i += BATCH_SIZE) {
+      const batch = upserts.slice(i, i + BATCH_SIZE);
       const { error } = await supabase
         .from("match_scores")
-        .upsert(chunk, { onConflict: "client_id,property_id" });
+        .upsert(batch, { onConflict: "tenant_id,client_id,property_id" });
       if (error) {
-        console.error("Upsert error:", error);
+        console.error("Upsert error:", error.message);
       } else {
-        totalUpserted += chunk.length;
+        totalUpserted += batch.length;
       }
     }
 
     return new Response(
       JSON.stringify({
-        message: "Matching completed",
+        success: true,
         matches: totalUpserted,
         clients: clients.length,
         properties: (properties as Property[]).length,
@@ -531,9 +507,9 @@ Deno.serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
-    console.error("Error:", err);
+    console.error("Calculate matches error:", err);
     return new Response(
-      JSON.stringify({ error: (err as Error).message }),
+      JSON.stringify({ error: err.message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

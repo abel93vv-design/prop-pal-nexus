@@ -98,7 +98,6 @@ export interface User {
   agencyId: string;
   accessType: AccessType;
   permissions: Permission[];
-  password: string;
 }
 
 export interface Task {

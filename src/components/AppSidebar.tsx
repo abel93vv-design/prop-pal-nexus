@@ -1,5 +1,5 @@
 import { Building2, Users, ClipboardList, LayoutDashboard, UserCog, Landmark, Settings, ShieldCheck, Kanban, Target } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
 import { NavLink } from "@/components/NavLink";
 import logoIsotipo from "@/assets/logo-isotipo.png";
 import {
@@ -30,8 +30,7 @@ const settingsItems = [
 ];
 
 export function AppSidebar() {
-  const { user } = useAuth();
-  const isSuperAdmin = user?.email === "avelascocorpo@gmail.com";
+  const { isAdmin } = useUserRole();
 
   return (
     <Sidebar className="sidebar-gradient border-r-0">
@@ -69,7 +68,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {isSuperAdmin && (
+        {isAdmin && (
           <SidebarGroup className="mt-4">
             <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] uppercase tracking-widest mb-1 px-3">Admin</SidebarGroupLabel>
             <SidebarGroupContent>
