@@ -15,7 +15,7 @@ import { Mail, Phone, Building2, Users, Plus, Pencil, Trash2, ShieldCheck, Key, 
 import { User, UserRole, AccessType, Permission } from "@/types/crm";
 import { useToast } from "@/hooks/use-toast";
 
-const SUPER_ADMIN_EMAIL = "avelascocorpo@gmail.com";
+import { useUserRole } from "@/hooks/useUserRole";
 
 const roleLabels: Record<UserRole, string> = {
   admin_global: 'Admin Global',
