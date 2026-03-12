@@ -79,7 +79,7 @@ const Team = () => {
   const openCreate = () => { setEditing(null); setForm(emptyUser); setDialogOpen(true); };
   const openEdit = (u: User) => {
     setEditing(u);
-    setForm({ name: u.name, email: u.email, role: u.role, phone: u.phone, propertyIds: u.propertyIds, clientIds: u.clientIds, avatar: u.avatar, agencyId: u.agencyId, accessType: u.accessType, permissions: u.permissions, password: "" });
+    setForm({ name: u.name, email: u.email, role: u.role, phone: u.phone, propertyIds: u.propertyIds, clientIds: u.clientIds, avatar: u.avatar, agencyId: u.agencyId, accessType: u.accessType, permissions: u.permissions, tempPassword: "" });
     setDialogOpen(true);
   };
 
