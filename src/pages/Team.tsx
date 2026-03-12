@@ -244,7 +244,7 @@ const Team = () => {
                   <Label className="text-xs">Rol *</Label>
                   <Select value={form.role} onValueChange={(v) => handleRoleChange(v as UserRole)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>{Object.entries(roleLabels).filter(([k]) => k !== 'admin_global' || isSuperAdmin).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
+                    <SelectContent>{Object.entries(roleLabels).filter(([k]) => k !== 'admin_global' || isAdmin).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
                 <div>
