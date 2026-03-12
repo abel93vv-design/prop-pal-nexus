@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 const DEFAULT_PIPELINE_STAGES = [
@@ -17,10 +17,8 @@ const DEFAULT_PIPELINE_STAGES = [
 ];
 
 const DEFAULT_CUSTOM_FIELDS = [
-  // Client fields
   { entity_type: "client", field_type: "select", name: "Urgencia", key: "urgencia", position: 0, required: false, filterable: true, used_in_matching: false, weight_in_matching: 0, options: ["baja", "media", "alta", "inmediata"] },
   { entity_type: "client", field_type: "text", name: "Observaciones internas", key: "observaciones_internas", position: 1, required: false, filterable: false, used_in_matching: false, weight_in_matching: 0, options: [] },
-  // Property fields
   { entity_type: "property", field_type: "select", name: "Estado de reforma", key: "estado_reforma", position: 0, required: false, filterable: true, used_in_matching: true, weight_in_matching: 10, options: ["a_reformar", "semi_reformado", "reformado", "obra_nueva"] },
   { entity_type: "property", field_type: "boolean", name: "Amueblado", key: "amueblado", position: 1, required: false, filterable: true, used_in_matching: true, weight_in_matching: 5, options: [] },
 ];
@@ -33,18 +31,29 @@ serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const adminClient = createClient(supabaseUrl, serviceKey);
 
-    // Verify caller is authenticated
+    // Verify caller is authenticated and has admin role
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No autorizado");
+    if (!authHeader?.startsWith("Bearer ")) throw new Error("No autorizado");
 
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const callerClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
-    const { data: { user: caller } } = await callerClient.auth.getUser();
-    if (!caller || caller.email !== "avelascocorpo@gmail.com") {
-      throw new Error("Solo el super-admin puede provisionar tenants");
-    }
+
+    const { data: claimsData, error: claimsError } = await callerClient.auth.getClaims(authHeader.replace("Bearer ", ""));
+    if (claimsError || !claimsData?.claims) throw new Error("No autorizado");
+
+    const callerId = claimsData.claims.sub;
+
+    // Check admin role server-side
+    const { data: roleData } = await adminClient
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", callerId)
+      .eq("role", "admin")
+      .maybeSingle();
+
+    if (!roleData) throw new Error("Solo los administradores pueden provisionar tenants");
 
     const { name, slug, plan, is_active, is_demo, admin_email, admin_password, admin_name } = await req.json();
 
@@ -72,7 +81,6 @@ serve(async (req) => {
     });
     if (authErr) {
       if (authErr.message.includes("already been registered")) {
-        // User exists — find them and reuse
         const { data: { users }, error: listErr } = await adminClient.auth.admin.listUsers();
         if (listErr) {
           await adminClient.from("tenants").delete().eq("id", tenantId);

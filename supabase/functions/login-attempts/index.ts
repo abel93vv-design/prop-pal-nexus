@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 const MAX_ATTEMPTS = 5;
@@ -32,7 +32,6 @@ serve(async (req) => {
       });
     }
 
-    // Check if lockout has expired
     if (data.locked_until && new Date(data.locked_until) > new Date()) {
       const minutesLeft = Math.ceil((new Date(data.locked_until).getTime() - Date.now()) / 60000);
       return new Response(JSON.stringify({ locked: true, attempts: data.attempts, remaining: 0, minutes_left: minutesLeft }), {
@@ -40,7 +39,6 @@ serve(async (req) => {
       });
     }
 
-    // If lockout expired, reset
     if (data.locked_until && new Date(data.locked_until) <= new Date()) {
       await supabase.from("login_attempts").update({ attempts: 0, locked_until: null, updated_at: new Date().toISOString() }).eq("email", email.toLowerCase());
       return new Response(JSON.stringify({ locked: false, attempts: 0, remaining: MAX_ATTEMPTS }), {
@@ -89,6 +87,28 @@ serve(async (req) => {
   }
 
   if (action === "reset") {
+    // Reset requires authentication — only authenticated users can reset login attempts
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "No autorizado" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const callerClient = createClient(Deno.env.get("SUPABASE_URL")!, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const { data: claimsData, error: claimsError } = await callerClient.auth.getClaims(authHeader.replace("Bearer ", ""));
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "No autorizado" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     await supabase.from("login_attempts").update({
       attempts: 0, locked_until: null, updated_at: new Date().toISOString(),
     }).eq("email", email.toLowerCase());

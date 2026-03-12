@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 serve(async (req) => {
@@ -14,23 +14,33 @@ serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const adminClient = createClient(supabaseUrl, serviceKey);
 
-    // Verify caller is super-admin
+    // Verify caller is authenticated and has admin role
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No autorizado");
+    if (!authHeader?.startsWith("Bearer ")) throw new Error("No autorizado");
 
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const callerClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
-    const { data: { user: caller } } = await callerClient.auth.getUser();
-    if (!caller || caller.email !== "avelascocorpo@gmail.com") {
-      throw new Error("Solo el super-admin puede gestionar tenants");
-    }
+
+    const { data: claimsData, error: claimsError } = await callerClient.auth.getClaims(authHeader.replace("Bearer ", ""));
+    if (claimsError || !claimsData?.claims) throw new Error("No autorizado");
+
+    const callerId = claimsData.claims.sub;
+
+    // Check admin role server-side
+    const { data: roleData } = await adminClient
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", callerId)
+      .eq("role", "admin")
+      .maybeSingle();
+
+    if (!roleData) throw new Error("Solo los administradores pueden gestionar tenants");
 
     const { action, tenant_id, user_id, new_password } = await req.json();
 
     if (action === "get_admin_users") {
-      // Get all profiles linked to this tenant
       const { data: profiles, error: profErr } = await adminClient
         .from("profiles")
         .select("user_id, full_name, tenant_id")
@@ -38,7 +48,6 @@ serve(async (req) => {
 
       if (profErr) throw new Error(profErr.message);
 
-      // Get auth user details for each profile
       const users = [];
       for (const p of profiles || []) {
         const { data: { user }, error } = await adminClient.auth.admin.getUserById(p.user_id);
@@ -66,7 +75,6 @@ serve(async (req) => {
       });
       if (error) throw new Error(`Error actualizando contraseña: ${error.message}`);
 
-      // Set must_change_password flag
       await adminClient.from("profiles").update({ must_change_password: true }).eq("user_id", user_id);
 
       return new Response(JSON.stringify({ success: true, message: "Contraseña actualizada" }), {

@@ -68,7 +68,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {isSuperAdmin && (
+        {isAdmin && (
           <SidebarGroup className="mt-4">
             <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] uppercase tracking-widest mb-1 px-3">Admin</SidebarGroupLabel>
             <SidebarGroupContent>
