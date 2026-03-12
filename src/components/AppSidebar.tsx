@@ -1,5 +1,5 @@
 import { Building2, Users, ClipboardList, LayoutDashboard, UserCog, Landmark, Settings, ShieldCheck, Kanban, Target } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
 import { NavLink } from "@/components/NavLink";
 import logoIsotipo from "@/assets/logo-isotipo.png";
 import {
