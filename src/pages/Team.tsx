@@ -48,9 +48,9 @@ const ALL_PERMISSIONS: { key: Permission; label: string }[] = [
 
 const ALL_PERMS: Permission[] = ALL_PERMISSIONS.map(p => p.key);
 
-const emptyUser: Omit<User, "id"> = {
+const emptyUser: Omit<User, "id"> & { tempPassword: string } = {
   name: "", email: "", role: "agente", phone: "", propertyIds: [], clientIds: [],
-  avatar: "", agencyId: "", accessType: "solo_inmobiliaria", permissions: ['ver_clientes','ver_propiedades','ver_tareas'], password: "",
+  avatar: "", agencyId: "", accessType: "solo_inmobiliaria", permissions: ['ver_clientes','ver_propiedades','ver_tareas'], tempPassword: "",
 };
 
 interface CreatedCredentials {
