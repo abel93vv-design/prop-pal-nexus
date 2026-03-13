@@ -8,6 +8,9 @@ import { DataProvider } from "@/context/DataContext";
 import { TenantProvider } from "@/context/TenantContext";
 import { Loader2 } from "lucide-react";
 import { ForcePasswordChange } from "@/components/ForcePasswordChange";
+import { OnboardingWizard } from "@/components/OnboardingWizard";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import Index from "./pages/Index";
 import Properties from "./pages/Properties";
 import Clients from "./pages/Clients";
@@ -31,6 +34,37 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
   if (!user) return <Navigate to="/auth" replace />;
   return <>{children}</>;
+};
+
+const OnboardingGuard = () => {
+  const { user } = useAuth();
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [checked, setChecked] = useState(false);
+
+  useEffect(() => {
+    if (!user) { setChecked(true); return; }
+    const checkOnboarding = async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("onboarding_completed")
+        .eq("user_id", user.id)
+        .single();
+      if (data && !(data as any).onboarding_completed) {
+        setShowOnboarding(true);
+      }
+      setChecked(true);
+    };
+    checkOnboarding();
+  }, [user]);
+
+  if (!checked) return null;
+
+  return (
+    <OnboardingWizard
+      open={showOnboarding}
+      onComplete={() => setShowOnboarding(false)}
+    />
+  );
 };
 
 const AppRoutes = () => (
@@ -63,6 +97,7 @@ const App = () => (
             <Sonner />
             <BrowserRouter>
               <ForcePasswordChange />
+              <OnboardingGuard />
               <AppRoutes />
             </BrowserRouter>
           </DataProvider>

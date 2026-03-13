@@ -907,6 +907,7 @@ export type Database = {
           full_name: string | null
           id: string
           must_change_password: boolean
+          onboarding_completed: boolean
           tenant_id: string | null
           user_id: string
         }
@@ -916,6 +917,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           must_change_password?: boolean
+          onboarding_completed?: boolean
           tenant_id?: string | null
           user_id: string
         }
@@ -925,6 +927,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           must_change_password?: boolean
+          onboarding_completed?: boolean
           tenant_id?: string | null
           user_id?: string
         }
