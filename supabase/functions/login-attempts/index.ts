@@ -9,21 +9,77 @@ const corsHeaders = {
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_HOURS = 2;
 
+// In-memory rate limiter (per isolate)
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
+const RATE_LIMIT_MAX_REQUESTS = 10; // max 10 requests per minute per IP
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return false;
+  }
+  entry.count++;
+  if (entry.count > RATE_LIMIT_MAX_REQUESTS) return true;
+  return false;
+}
+
+// Cleanup old entries periodically
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, val] of rateLimitMap) {
+    if (now > val.resetAt) rateLimitMap.delete(key);
+  }
+}, 60_000);
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  // Rate limit by IP
+  const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || 
+                   req.headers.get("cf-connecting-ip") || 
+                   "unknown";
+  
+  if (isRateLimited(clientIp)) {
+    return new Response(JSON.stringify({ error: "Demasiadas solicitudes. Intenta de nuevo en un minuto." }), {
+      status: 429,
+      headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "60" },
+    });
+  }
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
   );
 
-  const { action, email } = await req.json();
+  let body: any;
+  try {
+    body = await req.json();
+  } catch {
+    return new Response(JSON.stringify({ error: "Invalid request body" }), {
+      status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  const { action, email } = body;
+
+  if (!email || typeof email !== "string") {
+    return new Response(JSON.stringify({ error: "Email is required" }), {
+      status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  const normalizedEmail = email.toLowerCase().trim();
 
   if (action === "check") {
     const { data } = await supabase
       .from("login_attempts")
       .select("*")
-      .eq("email", email.toLowerCase())
+      .eq("email", normalizedEmail)
       .maybeSingle();
 
     if (!data) {
@@ -40,7 +96,7 @@ serve(async (req) => {
     }
 
     if (data.locked_until && new Date(data.locked_until) <= new Date()) {
-      await supabase.from("login_attempts").update({ attempts: 0, locked_until: null, updated_at: new Date().toISOString() }).eq("email", email.toLowerCase());
+      await supabase.from("login_attempts").update({ attempts: 0, locked_until: null, updated_at: new Date().toISOString() }).eq("email", normalizedEmail);
       return new Response(JSON.stringify({ locked: false, attempts: 0, remaining: MAX_ATTEMPTS }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -55,7 +111,7 @@ serve(async (req) => {
     const { data: existing } = await supabase
       .from("login_attempts")
       .select("*")
-      .eq("email", email.toLowerCase())
+      .eq("email", normalizedEmail)
       .maybeSingle();
 
     const newAttempts = (existing?.attempts || 0) + 1;
@@ -68,10 +124,10 @@ serve(async (req) => {
         attempts: newAttempts,
         locked_until,
         updated_at: new Date().toISOString(),
-      }).eq("email", email.toLowerCase());
+      }).eq("email", normalizedEmail);
     } else {
       await supabase.from("login_attempts").insert({
-        email: email.toLowerCase(),
+        email: normalizedEmail,
         attempts: newAttempts,
         locked_until,
       });
@@ -87,7 +143,6 @@ serve(async (req) => {
   }
 
   if (action === "reset") {
-    // Reset requires authentication — only authenticated users can reset login attempts
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "No autorizado" }), {
@@ -101,7 +156,8 @@ serve(async (req) => {
       global: { headers: { Authorization: authHeader } },
     });
 
-    const { data: claimsData, error: claimsError } = await callerClient.auth.getClaims(authHeader.replace("Bearer ", ""));
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await callerClient.auth.getClaims(token);
     if (claimsError || !claimsData?.claims) {
       return new Response(JSON.stringify({ error: "No autorizado" }), {
         status: 401,
@@ -111,7 +167,7 @@ serve(async (req) => {
 
     await supabase.from("login_attempts").update({
       attempts: 0, locked_until: null, updated_at: new Date().toISOString(),
-    }).eq("email", email.toLowerCase());
+    }).eq("email", normalizedEmail);
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
