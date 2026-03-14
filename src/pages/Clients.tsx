@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Search, Mail, Phone, Plus, Pencil, Trash2, PhoneCall, ArrowUpDown, Kanban } from "lucide-react";
+import { Search, Mail, Phone, Plus, Pencil, Trash2, PhoneCall, ArrowUpDown, Kanban, Download } from "lucide-react";
 import { Client, ClientType, LeadStatus, OperationType } from "@/types/crm";
 import { useToast } from "@/hooks/use-toast";
 import { useCustomFieldDefinitions, useCustomFieldValues } from "@/hooks/useCustomFields";
@@ -258,6 +258,29 @@ const Clients = () => {
     setContactSort(prev => prev === "none" ? "desc" : prev === "desc" ? "asc" : "none");
   };
 
+  const exportCSV = () => {
+    const headers = ['Nombre', 'Email', 'Teléfono', 'Dirección', 'Tipo', 'Operación', 'Categoría', 'Estado Lead', 'Últ. Contacto', 'Nº Contactos', 'Notas'];
+    const rows = filtered.map(c => [
+      c.name, c.email, c.phone, c.address,
+      typeLabels[c.type] || c.type,
+      operationLabels[c.operationType] || c.operationType,
+      c.category || '',
+      statusLabels[c.leadStatus] || c.leadStatus,
+      c.lastContactedAt || '',
+      String(c.contactCount || 0),
+      (c.notes || '').replace(/"/g, '""'),
+    ]);
+    const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `clientes_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "CSV exportado", description: `${filtered.length} clientes exportados.` });
+  };
+
   const sortLabel = contactSort === "desc" ? "↓ Reciente" : contactSort === "asc" ? "↑ Antiguo" : "";
 
   return (
@@ -268,7 +291,10 @@ const Clients = () => {
             <h1 className="text-2xl font-bold text-foreground">Clientes</h1>
             <p className="text-sm text-muted-foreground mt-1">{clients.length} clientes registrados</p>
           </div>
-          <Button onClick={openCreate} size="sm"><Plus className="w-4 h-4 mr-1" />Nuevo Cliente</Button>
+          <div className="flex gap-2">
+            <Button onClick={exportCSV} variant="outline" size="sm"><Download className="w-4 h-4 mr-1" />Exportar CSV</Button>
+            <Button onClick={openCreate} size="sm"><Plus className="w-4 h-4 mr-1" />Nuevo Cliente</Button>
+          </div>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
