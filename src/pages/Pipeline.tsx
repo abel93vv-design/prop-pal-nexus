@@ -434,10 +434,7 @@ function OpportunityCard({ opp, index, clients, properties, users, stage, onEdit
               </Badge>
             </div>
 
-            <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-              <span className="flex items-center gap-0.5">
-                <DollarSign className="w-3 h-3" />{opp.probability}%
-              </span>
+            <div className="flex items-center justify-end text-[10px] text-muted-foreground">
               <span className={`flex items-center gap-0.5 ${isStale ? 'text-destructive font-medium' : ''}`}>
                 {isStale && <AlertTriangle className="w-3 h-3" />}
                 <Clock className="w-3 h-3" />{daysInStage}d
