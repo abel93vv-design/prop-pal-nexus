@@ -31,6 +31,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </main>
         </div>
         <HelpChat />
+        <FeedbackTab />
       </div>
     </SidebarProvider>
   );
