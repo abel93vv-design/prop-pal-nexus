@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import { HelpChat } from "@/components/HelpChat";
+import { FeedbackTab } from "@/components/FeedbackTab";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { user, signOut } = useAuth();
@@ -30,6 +31,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </main>
         </div>
         <HelpChat />
+        <FeedbackTab />
       </div>
     </SidebarProvider>
   );
