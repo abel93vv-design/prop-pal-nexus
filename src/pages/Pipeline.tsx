@@ -246,9 +246,8 @@ const Pipeline = () => {
                         <h3 className="text-xs font-semibold text-foreground truncate flex-1">{stage.name}</h3>
                         <Badge variant="outline" className="text-[10px] h-5">{stageOpps.length}</Badge>
                       </div>
-                      <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                      <div className="text-[10px] text-muted-foreground">
                         <span>{totalValue.toLocaleString('es-ES')} €</span>
-                        <span>Prev: {forecast.toLocaleString('es-ES', { maximumFractionDigits: 0 })} €</span>
                       </div>
                     </div>
 
@@ -348,9 +347,8 @@ const Pipeline = () => {
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <div><Label className="text-xs">Valor (€)</Label><Input type="number" value={form.deal_value || ''} onChange={e => setForm({ ...form, deal_value: Number(e.target.value) })} /></div>
-              <div><Label className="text-xs">Probabilidad %</Label><Input type="number" min={0} max={100} value={form.probability} onChange={e => setForm({ ...form, probability: Number(e.target.value) })} /></div>
               <div><Label className="text-xs">Cierre esperado</Label><Input type="date" value={form.expected_close_date} onChange={e => setForm({ ...form, expected_close_date: e.target.value })} /></div>
             </div>
             <div><Label className="text-xs">Notas</Label><Textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={2} /></div>
@@ -435,10 +433,7 @@ function OpportunityCard({ opp, index, clients, properties, users, stage, onEdit
               </Badge>
             </div>
 
-            <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-              <span className="flex items-center gap-0.5">
-                <DollarSign className="w-3 h-3" />{opp.probability}%
-              </span>
+            <div className="flex items-center justify-end text-[10px] text-muted-foreground">
               <span className={`flex items-center gap-0.5 ${isStale ? 'text-destructive font-medium' : ''}`}>
                 {isStale && <AlertTriangle className="w-3 h-3" />}
                 <Clock className="w-3 h-3" />{daysInStage}d
