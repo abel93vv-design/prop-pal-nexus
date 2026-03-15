@@ -246,9 +246,8 @@ const Pipeline = () => {
                         <h3 className="text-xs font-semibold text-foreground truncate flex-1">{stage.name}</h3>
                         <Badge variant="outline" className="text-[10px] h-5">{stageOpps.length}</Badge>
                       </div>
-                      <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                      <div className="text-[10px] text-muted-foreground">
                         <span>{totalValue.toLocaleString('es-ES')} €</span>
-                        <span>Prev: {forecast.toLocaleString('es-ES', { maximumFractionDigits: 0 })} €</span>
                       </div>
                     </div>
 
