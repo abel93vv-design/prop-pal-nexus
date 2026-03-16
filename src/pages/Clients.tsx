@@ -526,6 +526,14 @@ const Clients = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <CsvImportDialog
+        open={csvDialogOpen}
+        onOpenChange={setCsvDialogOpen}
+        onImport={handleCsvImport}
+        fieldMap={CSV_FIELD_MAP}
+        entityName="clientes"
+      />
     </Layout>
   );
 };
