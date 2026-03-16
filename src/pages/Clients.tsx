@@ -22,6 +22,7 @@ import { useMatchCenter, useClientFinancials, useClientPreferences } from "@/hoo
 import { TopPropertyMatches } from "@/components/MatchScoreWidgets";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
+import { CsvImportDialog } from "@/components/CsvImportDialog";
 
 const EXTRAS_OPTIONS = ['ascensor', 'terraza', 'piscina', 'garaje', 'aire_acondicionado'] as const;
 
