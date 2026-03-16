@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Search, Mail, Phone, Plus, Pencil, Trash2, PhoneCall, ArrowUpDown, Kanban, Download } from "lucide-react";
+import { Search, Mail, Phone, Plus, Pencil, Trash2, PhoneCall, ArrowUpDown, Kanban, Download, Upload } from "lucide-react";
 import { Client, ClientType, LeadStatus, OperationType } from "@/types/crm";
 import { useToast } from "@/hooks/use-toast";
 import { useCustomFieldDefinitions, useCustomFieldValues } from "@/hooks/useCustomFields";
@@ -22,6 +22,7 @@ import { useMatchCenter, useClientFinancials, useClientPreferences } from "@/hoo
 import { TopPropertyMatches } from "@/components/MatchScoreWidgets";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
+import { CsvImportDialog } from "@/components/CsvImportDialog";
 
 const EXTRAS_OPTIONS = ['ascensor', 'terraza', 'piscina', 'garaje', 'aire_acondicionado'] as const;
 
@@ -207,6 +208,40 @@ const Clients = () => {
   const [deleteTarget, setDeleteTarget] = useState<Client | null>(null);
   const [cfValues, setCfValues] = useState<Record<string, any>>({});
   const { values: loadedCfValues, saveValues: saveCfValues } = useCustomFieldValues(editing?.id ?? null);
+  const [csvDialogOpen, setCsvDialogOpen] = useState(false);
+
+  const CSV_FIELD_MAP = [
+    { key: "name", label: "Nombre", required: true },
+    { key: "email", label: "Email", required: true },
+    { key: "phone", label: "Teléfono" },
+    { key: "address", label: "Dirección" },
+    { key: "type", label: "Tipo (comprador/vendedor/inquilino/propietario)" },
+    { key: "operationType", label: "Operación (compra/alquiler/venta)" },
+    { key: "category", label: "Categoría" },
+    { key: "leadStatus", label: "Estado Lead" },
+    { key: "notes", label: "Notas" },
+  ];
+
+  const handleCsvImport = async (rows: Record<string, string>[]) => {
+    for (const row of rows) {
+      await addClient({
+        name: row.name || "Sin nombre",
+        email: row.email || "",
+        phone: row.phone || "",
+        address: row.address || "",
+        type: (["comprador", "vendedor", "inquilino", "propietario"].includes(row.type?.toLowerCase()) ? row.type.toLowerCase() : "comprador") as ClientType,
+        operationType: (["compra", "alquiler", "venta", "ambos"].includes(row.operationType?.toLowerCase()) ? row.operationType.toLowerCase() : "compra") as OperationType,
+        leadStatus: (["nuevo", "contactado", "en_negociacion", "cerrado"].includes(row.leadStatus?.toLowerCase()) ? row.leadStatus.toLowerCase() : "nuevo") as LeadStatus,
+        category: row.category || "estandar",
+        notes: row.notes || "",
+        propertyIds: [],
+        registeredAt: new Date().toISOString().split("T")[0],
+        agencyId: "",
+        lastContactedAt: "",
+        contactCount: 0,
+      });
+    }
+  };
 
   const filtered = clients
     .filter(c => {
@@ -291,8 +326,9 @@ const Clients = () => {
             <h1 className="text-2xl font-bold text-foreground">Clientes</h1>
             <p className="text-sm text-muted-foreground mt-1">{clients.length} clientes registrados</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button onClick={exportCSV} variant="outline" size="sm"><Download className="w-4 h-4 mr-1" />Exportar CSV</Button>
+            <Button onClick={() => setCsvDialogOpen(true)} variant="outline" size="sm"><Upload className="w-4 h-4 mr-1" />Importar CSV</Button>
             <Button onClick={openCreate} size="sm"><Plus className="w-4 h-4 mr-1" />Nuevo Cliente</Button>
           </div>
         </div>
@@ -490,6 +526,14 @@ const Clients = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <CsvImportDialog
+        open={csvDialogOpen}
+        onOpenChange={setCsvDialogOpen}
+        onImport={handleCsvImport}
+        fieldMap={CSV_FIELD_MAP}
+        entityName="clientes"
+      />
     </Layout>
   );
 };
