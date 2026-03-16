@@ -208,6 +208,40 @@ const Clients = () => {
   const [deleteTarget, setDeleteTarget] = useState<Client | null>(null);
   const [cfValues, setCfValues] = useState<Record<string, any>>({});
   const { values: loadedCfValues, saveValues: saveCfValues } = useCustomFieldValues(editing?.id ?? null);
+  const [csvDialogOpen, setCsvDialogOpen] = useState(false);
+
+  const CSV_FIELD_MAP = [
+    { key: "name", label: "Nombre", required: true },
+    { key: "email", label: "Email", required: true },
+    { key: "phone", label: "Teléfono" },
+    { key: "address", label: "Dirección" },
+    { key: "type", label: "Tipo (comprador/vendedor/inquilino/propietario)" },
+    { key: "operationType", label: "Operación (compra/alquiler/venta)" },
+    { key: "category", label: "Categoría" },
+    { key: "leadStatus", label: "Estado Lead" },
+    { key: "notes", label: "Notas" },
+  ];
+
+  const handleCsvImport = async (rows: Record<string, string>[]) => {
+    for (const row of rows) {
+      await addClient({
+        name: row.name || "Sin nombre",
+        email: row.email || "",
+        phone: row.phone || "",
+        address: row.address || "",
+        type: (["comprador", "vendedor", "inquilino", "propietario"].includes(row.type?.toLowerCase()) ? row.type.toLowerCase() : "comprador") as ClientType,
+        operationType: (["compra", "alquiler", "venta", "ambos"].includes(row.operationType?.toLowerCase()) ? row.operationType.toLowerCase() : "compra") as OperationType,
+        leadStatus: (["nuevo", "contactado", "en_negociacion", "cerrado"].includes(row.leadStatus?.toLowerCase()) ? row.leadStatus.toLowerCase() : "nuevo") as LeadStatus,
+        category: row.category || "estandar",
+        notes: row.notes || "",
+        propertyIds: [],
+        registeredAt: new Date().toISOString().split("T")[0],
+        agencyId: "",
+        lastContactedAt: "",
+        contactCount: 0,
+      });
+    }
+  };
 
   const filtered = clients
     .filter(c => {
