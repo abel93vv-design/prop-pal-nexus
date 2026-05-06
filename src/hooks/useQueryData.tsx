@@ -111,40 +111,43 @@ export const useAgencies = () => {
 
 export const useTeamMembers = () => {
   const { session } = useAuth();
+  const { tenantId } = useTenant();
   return useQuery({
-    queryKey: ['team_members'],
+    queryKey: ['team_members', session?.user?.id, tenantId],
     queryFn: async () => {
-      const { data, error } = await supabase.from('team_members').select('*');
+      const { data, error } = await supabase.from('team_members').select('*').eq('tenant_id', tenantId);
       if (error) throw error;
       return (data || []).map(toUser);
     },
-    enabled: !!session,
+    enabled: !!session && !!tenantId,
   });
 };
 
 export const useTasks = () => {
   const { session } = useAuth();
+  const { tenantId } = useTenant();
   return useQuery({
-    queryKey: ['tasks'],
+    queryKey: ['tasks', session?.user?.id, tenantId],
     queryFn: async () => {
-      const { data, error } = await supabase.from('tasks').select('*');
+      const { data, error } = await supabase.from('tasks').select('*').eq('tenant_id', tenantId);
       if (error) throw error;
       return (data || []).map(toTask);
     },
-    enabled: !!session,
+    enabled: !!session && !!tenantId,
   });
 };
 
 export const useDocuments = () => {
   const { session } = useAuth();
+  const { tenantId } = useTenant();
   return useQuery({
-    queryKey: ['documents'],
+    queryKey: ['documents', session?.user?.id, tenantId],
     queryFn: async () => {
-      const { data, error } = await supabase.from('documents').select('*');
+      const { data, error } = await supabase.from('documents').select('*').eq('tenant_id', tenantId);
       if (error) throw error;
       return (data || []).map(toDocument);
     },
-    enabled: !!session,
+    enabled: !!session && !!tenantId,
   });
 };
 
