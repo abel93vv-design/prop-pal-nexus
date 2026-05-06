@@ -489,7 +489,7 @@ Deno.serve(async (req) => {
       const batch = upserts.slice(i, i + BATCH_SIZE);
       const { error } = await supabase
         .from("match_scores")
-        .upsert(batch, { onConflict: "tenant_id,client_id,property_id" });
+        .upsert(batch, { onConflict: "client_id,property_id" });
       if (error) {
         console.error("Upsert error:", error.message);
       } else {
