@@ -55,6 +55,9 @@ export interface ClientPreferences {
   min_bathrooms: number;
   preferred_types: string[];
   preferred_locations: string[];
+  selected_zones: string[];
+  required_extras: string[];
+  neighborhood: string;
 }
 
 export function useMatchCenter() {
