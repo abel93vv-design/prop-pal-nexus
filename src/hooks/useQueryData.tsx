@@ -3,7 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useTenant } from "@/context/TenantContext";
 import { Agency, Client, Property, User, Task, Document } from "@/types/crm";
-import { saveSnapshot } from "@/hooks/useSnapshots";
 import { useToast } from "@/hooks/use-toast";
 
 // ---- Mappers ----
@@ -36,8 +35,6 @@ const softDeleteRecord = async <T extends Record<string, any>>(
   id: string,
   tenantId: string | null,
   userId: string | undefined,
-  entityType: string,
-  snapshotMapper: (row: T) => Record<string, any>,
 ) => {
   if (!tenantId) throw new Error('No se pudo identificar la inmobiliaria activa');
   if (!userId) throw new Error('Debes iniciar sesión para mover registros a la papelera');
@@ -185,7 +182,7 @@ export const usePropertyMutations = () => {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      await softDeleteRecord('properties', id, tenantId, user?.id, 'property', toProperty);
+      await softDeleteRecord('properties', id, tenantId, user?.id);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['properties'] }),
     onError: (e: any) => toast({ title: "Error al eliminar", description: e.message, variant: "destructive" }),
@@ -231,7 +228,7 @@ export const useClientMutations = () => {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      await softDeleteRecord('clients', id, tenantId, user?.id, 'client', toClient);
+      await softDeleteRecord('clients', id, tenantId, user?.id);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['clients'] }),
     onError: (e: any) => toast({ title: "Error al eliminar", description: e.message, variant: "destructive" }),
