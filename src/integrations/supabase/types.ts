@@ -1460,6 +1460,82 @@ export type Database = {
         }
         Returns: undefined
       }
+      soft_delete_client: {
+        Args: { _id: string }
+        Returns: {
+          address: string | null
+          agency_id: string | null
+          category: string | null
+          contact_count: number | null
+          created_at: string
+          deleted_at: string | null
+          email: string | null
+          id: string
+          last_contacted_at: string | null
+          lead_status: string
+          name: string
+          notes: string | null
+          operation_type: string
+          phone: string | null
+          property_ids: string[] | null
+          registered_at: string
+          tenant_id: string | null
+          type: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "clients"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      soft_delete_property: {
+        Args: { _id: string }
+        Returns: {
+          address: string | null
+          agency_id: string | null
+          agent_id: string | null
+          bathrooms: number | null
+          bedrooms: number | null
+          built_surface: number | null
+          category: string | null
+          community_fees: number | null
+          created_at: string
+          deleted_at: string | null
+          description: string | null
+          energy_cert: string | null
+          floor: number | null
+          has_air_conditioning: boolean | null
+          has_elevator: boolean | null
+          has_garage: boolean | null
+          has_pool: boolean | null
+          has_terrace: boolean | null
+          ibi_annual: number | null
+          id: string
+          interested_client_ids: string[] | null
+          latitude: number | null
+          longitude: number | null
+          monthly_rent: number | null
+          neighborhood: string | null
+          operation_type: string
+          photos: string[] | null
+          plot_surface: number | null
+          postal_code: string | null
+          price: number | null
+          published_at: string | null
+          status: string
+          surface: number | null
+          tenant_id: string | null
+          title: string
+          type: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "properties"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
     }
     Enums: {
       app_role: "admin" | "agent" | "viewer"
