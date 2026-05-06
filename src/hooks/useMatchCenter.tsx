@@ -55,6 +55,9 @@ export interface ClientPreferences {
   min_bathrooms: number;
   preferred_types: string[];
   preferred_locations: string[];
+  selected_zones: string[];
+  required_extras: string[];
+  neighborhood: string;
 }
 
 export function useMatchCenter() {
@@ -211,6 +214,9 @@ export function useClientPreferences(clientId: string | null) {
           min_bathrooms: data.min_bathrooms ?? 0,
           preferred_types: data.preferred_types || [],
           preferred_locations: data.preferred_locations || [],
+          selected_zones: (data as any).selected_zones || [],
+          required_extras: (data as any).required_extras || [],
+          neighborhood: (data as any).neighborhood || '',
         });
       }
       setLoading(false);
