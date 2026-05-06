@@ -42,28 +42,12 @@ const softDeleteRecord = async <T extends Record<string, any>>(
   if (!tenantId) throw new Error('No se pudo identificar la inmobiliaria activa');
   if (!userId) throw new Error('Debes iniciar sesión para mover registros a la papelera');
 
-  const { data: existing, error: selectError } = await (supabase as any)
-    .from(table)
-    .select('*')
-    .eq('id', id)
-    .eq('tenant_id', tenantId)
-    .is('deleted_at', null)
-    .maybeSingle();
+  const rpcName = table === 'clients' ? 'soft_delete_client' : table === 'properties' ? 'soft_delete_property' : null;
+  if (!rpcName) throw new Error('Este tipo de registro no tiene papelera configurada');
 
-  if (selectError) throw selectError;
-  if (!existing) throw new Error('No se pudo mover a la papelera (sin permisos o no existe)');
-
-  const { error } = await (supabase as any)
-    .from(table)
-    .update({ deleted_at: new Date().toISOString() })
-    .eq('id', id)
-    .eq('tenant_id', tenantId)
-    .is('deleted_at', null);
+  const { error } = await (supabase as any).rpc(rpcName, { _id: id });
 
   if (error) throw error;
-
-  await saveSnapshot(tenantId, userId, entityType, id, 'delete', snapshotMapper(existing as T));
-  await logActivity(tenantId, userId, 'delete', entityType, id);
 };
 
 // ---- Query Hooks ----
