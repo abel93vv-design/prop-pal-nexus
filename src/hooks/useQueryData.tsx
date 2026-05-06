@@ -3,7 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useTenant } from "@/context/TenantContext";
 import { Agency, Client, Property, User, Task, Document } from "@/types/crm";
-import { saveSnapshot } from "@/hooks/useSnapshots";
 import { useToast } from "@/hooks/use-toast";
 
 // ---- Mappers ----
@@ -31,39 +30,21 @@ const logActivity = async (tenantId: string | null, userId: string | undefined, 
   }
 };
 
-const softDeleteRecord = async <T extends Record<string, any>>(
+const softDeleteRecord = async (
   table: string,
   id: string,
   tenantId: string | null,
   userId: string | undefined,
-  entityType: string,
-  snapshotMapper: (row: T) => Record<string, any>,
 ) => {
   if (!tenantId) throw new Error('No se pudo identificar la inmobiliaria activa');
   if (!userId) throw new Error('Debes iniciar sesión para mover registros a la papelera');
 
-  const { data: existing, error: selectError } = await (supabase as any)
-    .from(table)
-    .select('*')
-    .eq('id', id)
-    .eq('tenant_id', tenantId)
-    .is('deleted_at', null)
-    .maybeSingle();
+  const rpcName = table === 'clients' ? 'soft_delete_client' : table === 'properties' ? 'soft_delete_property' : null;
+  if (!rpcName) throw new Error('Este tipo de registro no tiene papelera configurada');
 
-  if (selectError) throw selectError;
-  if (!existing) throw new Error('No se pudo mover a la papelera (sin permisos o no existe)');
-
-  const { error } = await (supabase as any)
-    .from(table)
-    .update({ deleted_at: new Date().toISOString() })
-    .eq('id', id)
-    .eq('tenant_id', tenantId)
-    .is('deleted_at', null);
+  const { error } = await (supabase as any).rpc(rpcName, { _id: id });
 
   if (error) throw error;
-
-  await saveSnapshot(tenantId, userId, entityType, id, 'delete', snapshotMapper(existing as T));
-  await logActivity(tenantId, userId, 'delete', entityType, id);
 };
 
 // ---- Query Hooks ----
@@ -201,7 +182,7 @@ export const usePropertyMutations = () => {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      await softDeleteRecord('properties', id, tenantId, user?.id, 'property', toProperty);
+      await softDeleteRecord('properties', id, tenantId, user?.id);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['properties'] }),
     onError: (e: any) => toast({ title: "Error al eliminar", description: e.message, variant: "destructive" }),
@@ -247,7 +228,7 @@ export const useClientMutations = () => {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      await softDeleteRecord('clients', id, tenantId, user?.id, 'client', toClient);
+      await softDeleteRecord('clients', id, tenantId, user?.id);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['clients'] }),
     onError: (e: any) => toast({ title: "Error al eliminar", description: e.message, variant: "destructive" }),
