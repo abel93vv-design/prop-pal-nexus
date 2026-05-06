@@ -69,39 +69,43 @@ const softDeleteRecord = async <T extends Record<string, any>>(
 // ---- Query Hooks ----
 export const useProperties = () => {
   const { session } = useAuth();
+  const { tenantId } = useTenant();
   return useQuery({
-    queryKey: ['properties', !!session],
+    queryKey: ['properties', session?.user?.id, tenantId],
     queryFn: async () => {
-      const { data, error } = await supabase.from('properties').select('*');
+      const { data, error } = await supabase.from('properties').select('*').eq('tenant_id', tenantId);
       if (error) throw error;
       return (data || []).map(toProperty);
     },
+    enabled: !!session && !!tenantId,
   });
 };
 
 export const useClients = () => {
   const { session } = useAuth();
+  const { tenantId } = useTenant();
   return useQuery({
-    queryKey: ['clients'],
+    queryKey: ['clients', session?.user?.id, tenantId],
     queryFn: async () => {
-      const { data, error } = await supabase.from('clients').select('*');
+      const { data, error } = await supabase.from('clients').select('*').eq('tenant_id', tenantId);
       if (error) throw error;
       return (data || []).map(toClient);
     },
-    enabled: !!session,
+    enabled: !!session && !!tenantId,
   });
 };
 
 export const useAgencies = () => {
   const { session } = useAuth();
+  const { tenantId } = useTenant();
   return useQuery({
-    queryKey: ['agencies'],
+    queryKey: ['agencies', session?.user?.id, tenantId],
     queryFn: async () => {
-      const { data, error } = await supabase.from('agencies').select('*');
+      const { data, error } = await supabase.from('agencies').select('*').eq('tenant_id', tenantId);
       if (error) throw error;
       return (data || []).map(toAgency);
     },
-    enabled: !!session,
+    enabled: !!session && !!tenantId,
   });
 };
 
