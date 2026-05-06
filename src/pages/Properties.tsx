@@ -110,8 +110,11 @@ const Properties = () => {
     setDialogOpen(false);
   };
 
-  const handleDelete = () => {
-    if (deleteTarget) { deleteProperty(deleteTarget.id); toast({ title: "Propiedad eliminada" }); setDeleteTarget(null); }
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    await deleteProperty(deleteTarget.id);
+    toast({ title: "Propiedad movida a la papelera" });
+    setDeleteTarget(null);
   };
 
   const openDocs = (p: Property) => {
@@ -425,7 +428,7 @@ const Properties = () => {
       <Dialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle>¿Eliminar propiedad?</DialogTitle></DialogHeader>
-          <p className="text-sm text-muted-foreground">Se eliminará <strong>{deleteTarget?.title}</strong>. Esta acción no se puede deshacer.</p>
+          <p className="text-sm text-muted-foreground">Se moverá <strong>{deleteTarget?.title}</strong> a la papelera de reciclaje y podrás restaurarla desde Ajustes.</p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteTarget(null)}>Cancelar</Button>
             <Button variant="destructive" onClick={handleDelete}>Eliminar</Button>
