@@ -80,6 +80,16 @@ export function usePipeline() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  useEffect(() => {
+    if (!tenantId) return;
+    const channel = supabase
+      .channel(`pipeline-${tenantId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'pipeline_stages', filter: `tenant_id=eq.${tenantId}` }, () => fetchData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'opportunities', filter: `tenant_id=eq.${tenantId}` }, () => fetchData())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [tenantId, fetchData]);
+
   // Seed default stages if none exist
   const seedDefaultStages = async (agencyId?: string) => {
     if (!tenantId) return;
