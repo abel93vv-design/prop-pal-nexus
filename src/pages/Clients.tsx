@@ -279,8 +279,11 @@ const Clients = () => {
     }
   };
 
-  const handleDelete = () => {
-    if (deleteTarget) { deleteClient(deleteTarget.id); toast({ title: "Cliente eliminado" }); setDeleteTarget(null); }
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    await deleteClient(deleteTarget.id);
+    toast({ title: "Cliente movido a la papelera" });
+    setDeleteTarget(null);
   };
 
   const markContacted = (c: Client) => {
@@ -519,7 +522,7 @@ const Clients = () => {
       <Dialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle>¿Eliminar cliente?</DialogTitle></DialogHeader>
-          <p className="text-sm text-muted-foreground">Se eliminará a <strong>{deleteTarget?.name}</strong>. Esta acción no se puede deshacer.</p>
+          <p className="text-sm text-muted-foreground">Se moverá a <strong>{deleteTarget?.name}</strong> a la papelera de reciclaje y podrás restaurarlo desde Ajustes.</p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteTarget(null)}>Cancelar</Button>
             <Button variant="destructive" onClick={handleDelete}>Eliminar</Button>
