@@ -281,9 +281,13 @@ const Clients = () => {
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
-    await deleteClient(deleteTarget.id);
-    toast({ title: "Cliente movido a la papelera" });
-    setDeleteTarget(null);
+    try {
+      await deleteClient(deleteTarget.id);
+      toast({ title: "Cliente movido a la papelera" });
+      setDeleteTarget(null);
+    } catch {
+      // El hook muestra el error concreto.
+    }
   };
 
   const markContacted = (c: Client) => {
