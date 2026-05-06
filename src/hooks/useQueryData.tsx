@@ -30,7 +30,7 @@ const logActivity = async (tenantId: string | null, userId: string | undefined, 
   }
 };
 
-const softDeleteRecord = async <T extends Record<string, any>>(
+const softDeleteRecord = async (
   table: string,
   id: string,
   tenantId: string | null,
