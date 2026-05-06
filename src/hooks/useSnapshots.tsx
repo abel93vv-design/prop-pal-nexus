@@ -9,8 +9,7 @@ export const saveSnapshot = async (
   snapshotData: Record<string, any>
 ) => {
   if (!tenantId || !userId) return;
-  try {
-    await (supabase as any).from('entity_snapshots').insert({
+  const { error } = await (supabase as any).from('entity_snapshots').insert({
       tenant_id: tenantId,
       entity_type: entityType,
       entity_id: entityId,
@@ -18,9 +17,7 @@ export const saveSnapshot = async (
       snapshot: snapshotData,
       changed_by: userId,
     });
-  } catch (e) {
-    console.error('Snapshot save error:', e);
-  }
+  if (error) throw error;
 };
 
 export interface Snapshot {

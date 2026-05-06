@@ -31,6 +31,41 @@ const logActivity = async (tenantId: string | null, userId: string | undefined, 
   }
 };
 
+const softDeleteRecord = async <T extends Record<string, any>>(
+  table: string,
+  id: string,
+  tenantId: string | null,
+  userId: string | undefined,
+  entityType: string,
+  snapshotMapper: (row: T) => Record<string, any>,
+) => {
+  if (!tenantId) throw new Error('No se pudo identificar la inmobiliaria activa');
+  if (!userId) throw new Error('Debes iniciar sesión para mover registros a la papelera');
+
+  const { data: existing, error: selectError } = await (supabase as any)
+    .from(table)
+    .select('*')
+    .eq('id', id)
+    .eq('tenant_id', tenantId)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (selectError) throw selectError;
+  if (!existing) throw new Error('No se pudo mover a la papelera (sin permisos o no existe)');
+
+  const { error } = await (supabase as any)
+    .from(table)
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', id)
+    .eq('tenant_id', tenantId)
+    .is('deleted_at', null);
+
+  if (error) throw error;
+
+  await saveSnapshot(tenantId, userId, entityType, id, 'delete', snapshotMapper(existing as T));
+  await logActivity(tenantId, userId, 'delete', entityType, id);
+};
+
 // ---- Query Hooks ----
 export const useProperties = () => {
   const { session } = useAuth();
@@ -159,10 +194,10 @@ export const usePropertyMutations = () => {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      await supabase.from('properties').update({ deleted_at: new Date().toISOString() } as any).eq('id', id);
-      logActivity(tenantId, user?.id, 'delete', 'property', id);
+      await softDeleteRecord('properties', id, tenantId, user?.id, 'property', toProperty);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['properties'] }),
+    onError: (e: any) => toast({ title: "Error al eliminar", description: e.message, variant: "destructive" }),
   });
 
   return { addProperty: add.mutateAsync, updateProperty: update.mutateAsync, deleteProperty: remove.mutateAsync };
@@ -205,10 +240,7 @@ export const useClientMutations = () => {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      const { data, error } = await supabase.from('clients').update({ deleted_at: new Date().toISOString() } as any).eq('id', id).select();
-      if (error) throw error;
-      if (!data || data.length === 0) throw new Error('No se pudo eliminar el cliente (sin permisos o no existe)');
-      logActivity(tenantId, user?.id, 'delete', 'client', id);
+      await softDeleteRecord('clients', id, tenantId, user?.id, 'client', toClient);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['clients'] }),
     onError: (e: any) => toast({ title: "Error al eliminar", description: e.message, variant: "destructive" }),
