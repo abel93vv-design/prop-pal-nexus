@@ -40,6 +40,7 @@ const softDeleteRecord = async <T extends Record<string, any>>(
   snapshotMapper: (row: T) => Record<string, any>,
 ) => {
   if (!tenantId) throw new Error('No se pudo identificar la inmobiliaria activa');
+  if (!userId) throw new Error('Debes iniciar sesión para mover registros a la papelera');
 
   const { data: existing, error: selectError } = await (supabase as any)
     .from(table)
