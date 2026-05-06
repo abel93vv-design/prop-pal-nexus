@@ -112,9 +112,13 @@ const Properties = () => {
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
-    await deleteProperty(deleteTarget.id);
-    toast({ title: "Propiedad movida a la papelera" });
-    setDeleteTarget(null);
+    try {
+      await deleteProperty(deleteTarget.id);
+      toast({ title: "Propiedad movida a la papelera" });
+      setDeleteTarget(null);
+    } catch {
+      // El hook muestra el error concreto.
+    }
   };
 
   const openDocs = (p: Property) => {
