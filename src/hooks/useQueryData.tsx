@@ -41,19 +41,27 @@ const softDeleteRecord = async <T extends Record<string, any>>(
 ) => {
   if (!tenantId) throw new Error('No se pudo identificar la inmobiliaria activa');
 
-  const { data, error } = await (supabase as any)
+  const { data: existing, error: selectError } = await (supabase as any)
+    .from(table)
+    .select('*')
+    .eq('id', id)
+    .eq('tenant_id', tenantId)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (selectError) throw selectError;
+  if (!existing) throw new Error('No se pudo mover a la papelera (sin permisos o no existe)');
+
+  const { error } = await (supabase as any)
     .from(table)
     .update({ deleted_at: new Date().toISOString() })
     .eq('id', id)
     .eq('tenant_id', tenantId)
-    .is('deleted_at', null)
-    .select('*')
-    .maybeSingle();
+    .is('deleted_at', null);
 
   if (error) throw error;
-  if (!data) throw new Error('No se pudo mover a la papelera (sin permisos o no existe)');
 
-  await saveSnapshot(tenantId, userId, entityType, id, 'delete', snapshotMapper(data as T));
+  await saveSnapshot(tenantId, userId, entityType, id, 'delete', snapshotMapper(existing as T));
   await logActivity(tenantId, userId, 'delete', entityType, id);
 };
 
