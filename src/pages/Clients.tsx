@@ -266,7 +266,7 @@ const Clients = () => {
   };
 
   const handleSave = async () => {
-    if (!form.name.trim() || !form.email.trim()) { toast({ title: "Error", description: "Nombre y email son obligatorios", variant: "destructive" }); return; }
+    if (!form.name.trim()) { toast({ title: "Error", description: "El nombre es obligatorio", variant: "destructive" }); return; }
     if (editing) {
       await updateClient({ ...editing, ...form });
       await saveCfValues(editing.id, cfValues);
