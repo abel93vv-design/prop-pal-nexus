@@ -205,10 +205,13 @@ export const useClientMutations = () => {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      await supabase.from('clients').update({ deleted_at: new Date().toISOString() } as any).eq('id', id);
+      const { data, error } = await supabase.from('clients').update({ deleted_at: new Date().toISOString() } as any).eq('id', id).select();
+      if (error) throw error;
+      if (!data || data.length === 0) throw new Error('No se pudo eliminar el cliente (sin permisos o no existe)');
       logActivity(tenantId, user?.id, 'delete', 'client', id);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['clients'] }),
+    onError: (e: any) => toast({ title: "Error al eliminar", description: e.message, variant: "destructive" }),
   });
 
   return { addClient: add.mutateAsync, updateClient: update.mutateAsync, deleteClient: remove.mutateAsync };
