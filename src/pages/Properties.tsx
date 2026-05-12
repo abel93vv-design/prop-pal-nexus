@@ -215,7 +215,6 @@ const Properties = () => {
                     <h3 className="font-semibold text-sm text-foreground leading-tight">{p.title}</h3>
                     <div className="flex flex-col gap-1 items-end shrink-0">
                       <Badge variant="outline" className={`text-[10px] ${statusColors[p.status]}`}>{statusLabels[p.status]}</Badge>
-                      <Badge variant="outline" className="text-[10px] capitalize">{p.category}</Badge>
                     </div>
                   </div>
                   <div className="flex items-center gap-1 text-xs text-muted-foreground"><MapPin className="w-3 h-3" />{p.address}</div>
