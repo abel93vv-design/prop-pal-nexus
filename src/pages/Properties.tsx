@@ -32,7 +32,7 @@ const statusColors: Record<PropertyStatus, string> = {
   no_disponible: 'bg-destructive/10 text-destructive border-destructive/20',
 };
 
-const PROP_CATEGORIES = ['residencial', 'comercial', 'lujo', 'suelo', 'industrial', 'otro'];
+
 
 const conditionLabels: Record<string, string> = {
   '': 'Sin especificar',
