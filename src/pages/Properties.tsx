@@ -79,6 +79,7 @@ const Properties = () => {
   const [editing, setEditing] = useState<Property | null>(null);
   const [form, setForm] = useState<Omit<Property, "id">>(emptyProperty);
   const [deleteTarget, setDeleteTarget] = useState<Property | null>(null);
+  const [convertTarget, setConvertTarget] = useState<Property | null>(null);
   const [unavailableDialogOpen, setUnavailableDialogOpen] = useState(false);
   const [unavailableReasonDraft, setUnavailableReasonDraft] = useState("");
   const [docsProperty, setDocsProperty] = useState<Property | null>(null);
@@ -220,11 +221,7 @@ const Properties = () => {
                     size="icon"
                     className="h-7 w-7"
                     title={p.listing_type === 'ne' ? 'Convertir a Noticia' : 'Convertir a NE (firmada)'}
-                    onClick={async () => {
-                      const next = p.listing_type === 'ne' ? 'noticia' : 'ne';
-                      await updateProperty({ ...p, listing_type: next } as any);
-                      toast({ title: next === 'ne' ? 'Convertida a NE' : 'Convertida a Noticia' });
-                    }}
+                    onClick={() => setConvertTarget(p)}
                   >
                     <ArrowRightLeft className="w-3 h-3" />
                   </Button>
@@ -528,6 +525,46 @@ const Properties = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteTarget(null)}>Cancelar</Button>
             <Button variant="destructive" onClick={handleDelete}>Eliminar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Convert Listing Type Confirm */}
+      <Dialog open={!!convertTarget} onOpenChange={() => setConvertTarget(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>
+              {convertTarget?.listing_type === 'ne' ? '¿Convertir a Noticia?' : '¿Convertir a NE (firmada)?'}
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            {convertTarget?.listing_type === 'ne'
+              ? <>La propiedad <strong>{convertTarget?.title}</strong> pasará al apartado <strong>Noticias</strong> (sin firmar). Podrás volver a convertirla cuando quieras.</>
+              : <>La propiedad <strong>{convertTarget?.title}</strong> pasará al apartado <strong>NE (firmadas)</strong>. Confirma que la nota de encargo está firmada.</>}
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConvertTarget(null)}>Cancelar</Button>
+            <Button
+              onClick={async () => {
+                if (!convertTarget) return;
+                const next: 'ne' | 'noticia' = convertTarget.listing_type === 'ne' ? 'noticia' : 'ne';
+                try {
+                  await updateProperty({ ...convertTarget, listing_type: next } as any);
+                  toast({
+                    title: next === 'ne' ? 'Convertida a NE (firmada)' : 'Convertida a Noticia',
+                    description: next === 'ne'
+                      ? 'La propiedad ya aparece en el apartado NE.'
+                      : 'La propiedad ya aparece en el apartado Noticias.',
+                  });
+                  setConvertTarget(null);
+                  navigate(next === 'ne' ? '/propiedades/ne' : '/propiedades/noticias');
+                } catch (e: any) {
+                  toast({ title: 'Error al convertir', description: e?.message || '', variant: 'destructive' });
+                }
+              }}
+            >
+              Confirmar
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
