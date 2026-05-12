@@ -1,0 +1,1 @@
+ALTER TABLE public.properties ADD COLUMN IF NOT EXISTS accepts_pets boolean NOT NULL DEFAULT false;
