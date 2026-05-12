@@ -566,7 +566,7 @@ const Properties = () => {
                 if (!convertTarget) return;
                 const next: 'ne' | 'noticia' = convertTarget.listing_type === 'ne' ? 'noticia' : 'ne';
                 try {
-                  await updateProperty({ ...convertTarget, listing_type: next } as any);
+                  const updated = await updateProperty({ ...convertTarget, listing_type: next } as any);
                   toast({
                     title: next === 'ne' ? 'Convertida a NE (firmada)' : 'Convertida a Noticia',
                     description: next === 'ne'
@@ -574,6 +574,11 @@ const Properties = () => {
                       : 'La propiedad ya aparece en el apartado Noticias.',
                   });
                   setConvertTarget(null);
+                  qc.setQueryData(['properties'], (old: Property[] | undefined) => {
+                    if (!old) return old;
+                    return old.map((property) => property.id === convertTarget.id ? (updated as Property) : property);
+                  });
+                  await qc.refetchQueries({ queryKey: ['properties'] });
                   navigate(next === 'ne' ? '/propiedades/ne' : '/propiedades/noticias');
                 } catch (e: any) {
                   toast({ title: 'Error al convertir', description: e?.message || '', variant: 'destructive' });
