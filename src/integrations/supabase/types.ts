@@ -1424,7 +1424,10 @@ export type Database = {
       tenants: {
         Row: {
           created_at: string
+          custom_domain: string | null
           deleted_at: string | null
+          domain_verification_token: string | null
+          domain_verified: boolean
           id: string
           is_active: boolean
           is_demo: boolean
@@ -1438,7 +1441,10 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          custom_domain?: string | null
           deleted_at?: string | null
+          domain_verification_token?: string | null
+          domain_verified?: boolean
           id?: string
           is_active?: boolean
           is_demo?: boolean
@@ -1452,7 +1458,10 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          custom_domain?: string | null
           deleted_at?: string | null
+          domain_verification_token?: string | null
+          domain_verified?: boolean
           id?: string
           is_active?: boolean
           is_demo?: boolean
@@ -1492,6 +1501,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_tenant_by_domain: {
+        Args: { _host: string }
+        Returns: {
+          custom_domain: string
+          domain_verified: boolean
+          id: string
+          is_active: boolean
+          name: string
+          slug: string
+        }[]
+      }
       get_user_role_in_tenant: {
         Args: { _tenant_id: string; _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
