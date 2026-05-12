@@ -91,10 +91,16 @@ const Properties = () => {
     const matchType = typeFilter === "all" || p.type === typeFilter;
     const matchStatus = statusFilter === "all" || p.status === statusFilter;
     const matchOp = operationFilter === "all" || p.operationType === operationFilter || p.operationType === "ambos" || operationFilter === "ambos";
-    return matchSearch && matchType && matchStatus && matchOp;
+    const matchListing = activeListing === 'all' || (p.listing_type || 'noticia') === activeListing;
+    return matchSearch && matchType && matchStatus && matchOp && matchListing;
   });
 
-  const openCreate = () => { setEditing(null); setForm(emptyProperty); setCfValues({}); setDialogOpen(true); };
+  const openCreate = () => {
+    setEditing(null);
+    setForm({ ...emptyProperty, listing_type: activeListing === 'all' ? 'noticia' : activeListing });
+    setCfValues({});
+    setDialogOpen(true);
+  };
   const openEdit = (p: Property) => {
     setEditing(p);
     setForm({
