@@ -28,15 +28,14 @@ serve(async (req) => {
 
     const callerId = claimsData.claims.sub;
 
-    // Check admin role server-side
+    // Check admin role server-side (super_admin OR admin)
     const { data: roleData } = await adminClient
       .from("user_roles")
       .select("role")
       .eq("user_id", callerId)
-      .eq("role", "admin")
-      .maybeSingle();
+      .in("role", ["admin", "super_admin"]);
 
-    if (!roleData) throw new Error("Solo los administradores pueden gestionar tenants");
+    if (!roleData || roleData.length === 0) throw new Error("Solo los administradores pueden gestionar tenants");
 
     const { action, tenant_id, user_id, new_password } = await req.json();
 
@@ -48,6 +47,22 @@ serve(async (req) => {
 
       if (profErr) throw new Error(profErr.message);
 
+      const userIds = (profiles || []).map(p => p.user_id);
+      const { data: rolesRows } = await adminClient
+        .from("user_roles")
+        .select("user_id, role, tenant_id")
+        .in("user_id", userIds.length ? userIds : ["00000000-0000-0000-0000-000000000000"]);
+
+      const rolesByUser = new Map<string, string[]>();
+      for (const r of rolesRows || []) {
+        // Include role if global (super_admin) or matches this tenant
+        if (!r.tenant_id || r.tenant_id === tenant_id) {
+          const arr = rolesByUser.get(r.user_id) || [];
+          arr.push(r.role);
+          rolesByUser.set(r.user_id, arr);
+        }
+      }
+
       const users = [];
       for (const p of profiles || []) {
         const { data: { user }, error } = await adminClient.auth.admin.getUserById(p.user_id);
@@ -58,6 +73,7 @@ serve(async (req) => {
             full_name: p.full_name,
             created_at: user.created_at,
             last_sign_in_at: user.last_sign_in_at,
+            roles: rolesByUser.get(user.id) || [],
           });
         }
       }
