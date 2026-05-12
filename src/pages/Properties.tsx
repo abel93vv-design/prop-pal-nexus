@@ -466,6 +466,24 @@ const Properties = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Unavailable reason */}
+      <Dialog open={unavailableDialogOpen} onOpenChange={(o) => { if (!o) setUnavailableDialogOpen(false); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Motivo de no disponibilidad</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">Indica por qué esta propiedad pasa a estado "No disponible". Esta información se guardará junto con la propiedad.</p>
+          <Textarea
+            value={unavailableReasonDraft}
+            onChange={e => setUnavailableReasonDraft(e.target.value)}
+            rows={4}
+            placeholder="Ej.: retirada por el propietario, en obras, problemas legales..."
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setUnavailableDialogOpen(false); }}>Cancelar</Button>
+            <Button onClick={() => { setForm(prev => ({ ...prev, unavailable_reason: unavailableReasonDraft.trim() })); setUnavailableDialogOpen(false); }}>Guardar motivo</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Delete Confirm */}
       <Dialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
         <DialogContent className="max-w-sm">
