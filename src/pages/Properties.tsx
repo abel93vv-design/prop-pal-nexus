@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { useData } from "@/context/DataContext";
 import { Badge } from "@/components/ui/badge";
