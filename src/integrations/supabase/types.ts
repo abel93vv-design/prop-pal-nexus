@@ -1136,6 +1136,42 @@ export type Database = {
           },
         ]
       }
+      role_permissions: {
+        Row: {
+          can_delete: boolean
+          can_edit: boolean
+          can_view: boolean
+          created_at: string
+          id: string
+          module: string
+          role: Database["public"]["Enums"]["app_role"]
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          can_delete?: boolean
+          can_edit?: boolean
+          can_view?: boolean
+          created_at?: string
+          id?: string
+          module: string
+          role: Database["public"]["Enums"]["app_role"]
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          can_delete?: boolean
+          can_edit?: boolean
+          can_view?: boolean
+          created_at?: string
+          id?: string
+          module?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       stage_history: {
         Row: {
           changed_by: string
@@ -1434,16 +1470,19 @@ export type Database = {
         Row: {
           id: string
           role: Database["public"]["Enums"]["app_role"]
+          tenant_id: string | null
           user_id: string
         }
         Insert: {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          tenant_id?: string | null
           user_id: string
         }
         Update: {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          tenant_id?: string | null
           user_id?: string
         }
         Relationships: []
@@ -1453,12 +1492,25 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_user_role_in_tenant: {
+        Args: { _tenant_id: string; _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
       get_user_tenant_id: { Args: never; Returns: string }
+      has_module_access: {
+        Args: { _action: string; _module: string; _user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_tenant_admin: {
+        Args: { _tenant_id: string; _user_id: string }
         Returns: boolean
       }
       log_activity: {
@@ -1470,6 +1522,10 @@ export type Database = {
           _tenant_id: string
           _user_id: string
         }
+        Returns: undefined
+      }
+      seed_default_role_permissions: {
+        Args: { _tenant_id: string }
         Returns: undefined
       }
       soft_delete_client: {
