@@ -101,15 +101,29 @@ export function AppSidebar() {
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild className="h-10">
                     <NavLink
-                      to="/tenants"
+                      to="/roles"
                       className="flex items-center gap-3 px-3 rounded-lg text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors text-sm"
                       activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
                     >
-                      <ShieldCheck className="w-4 h-4 shrink-0" />
-                      <span>Tenants</span>
+                      <KeyRound className="w-4 h-4 shrink-0" />
+                      <span>Roles y permisos</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+                {isSuperAdmin && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild className="h-10">
+                      <NavLink
+                        to="/tenants"
+                        className="flex items-center gap-3 px-3 rounded-lg text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors text-sm"
+                        activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                      >
+                        <ShieldCheck className="w-4 h-4 shrink-0" />
+                        <span>Tenants</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
