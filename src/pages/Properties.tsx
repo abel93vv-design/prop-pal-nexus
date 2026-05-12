@@ -355,10 +355,6 @@ const Properties = () => {
             <div className="grid grid-cols-2 gap-3">
               <div><Label className="text-xs">Código Postal</Label><Input value={form.postal_code || ""} onChange={e => setForm({ ...form, postal_code: e.target.value })} /></div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><Label className="text-xs">Latitud</Label><Input type="number" step="any" value={form.latitude ?? ""} onChange={e => setForm({ ...form, latitude: e.target.value ? Number(e.target.value) : null })} /></div>
-              <div><Label className="text-xs">Longitud</Label><Input type="number" step="any" value={form.longitude ?? ""} onChange={e => setForm({ ...form, longitude: e.target.value ? Number(e.target.value) : null })} /></div>
-            </div>
             <div className="grid grid-cols-3 gap-3">
               <div>
                 <Label className="text-xs">Cert. Energético</Label>
