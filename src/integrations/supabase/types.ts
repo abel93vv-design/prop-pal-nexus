@@ -943,6 +943,7 @@ export type Database = {
       }
       properties: {
         Row: {
+          accepts_pets: boolean
           address: string | null
           agency_id: string | null
           agent_id: string | null
@@ -984,6 +985,7 @@ export type Database = {
           unavailable_reason: string | null
         }
         Insert: {
+          accepts_pets?: boolean
           address?: string | null
           agency_id?: string | null
           agent_id?: string | null
@@ -1025,6 +1027,7 @@ export type Database = {
           unavailable_reason?: string | null
         }
         Update: {
+          accepts_pets?: boolean
           address?: string | null
           agency_id?: string | null
           agent_id?: string | null
@@ -1501,6 +1504,7 @@ export type Database = {
       soft_delete_property: {
         Args: { _id: string }
         Returns: {
+          accepts_pets: boolean
           address: string | null
           agency_id: string | null
           agent_id: string | null

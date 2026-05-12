@@ -1,5 +1,5 @@
 export type ClientType = 'comprador' | 'vendedor' | 'arrendador' | 'arrendatario';
-export type LeadStatus = 'nuevo' | 'contactado' | 'en_negociacion' | 'cerrado';
+export type LeadStatus = 'nuevo' | 'contactado' | 'en_negociacion' | 'cerrado' | 'inactivo';
 export type PropertyType = 'piso' | 'casa' | 'local' | 'terreno' | 'parking';
 export type PropertyStatus = 'disponible' | 'reservado' | 'vendido_alquilado' | 'no_disponible';
 export type OperationType = 'venta' | 'alquiler' | 'ambos' | 'compra' | 'alquiler_opcion_compra';

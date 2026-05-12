@@ -23,8 +23,14 @@ import { TopPropertyMatches } from "@/components/MatchScoreWidgets";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CsvImportDialog } from "@/components/CsvImportDialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useTenant } from "@/context/TenantContext";
 
-const EXTRAS_OPTIONS = ['ascensor', 'terraza', 'piscina', 'garaje', 'aire_acondicionado'] as const;
+const EXTRAS_OPTIONS = ['ascensor', 'terraza', 'piscina', 'garaje', 'aire_acondicionado', 'acepta_mascotas'] as const;
+const EXTRA_LABELS: Record<string, string> = {
+  ascensor: 'Ascensor', terraza: 'Terraza', piscina: 'Piscina',
+  garaje: 'Garaje', aire_acondicionado: 'Aire acondicionado', acepta_mascotas: 'Acepta mascotas',
+};
 
 const operationLabels: Record<string, string> = { compra: 'Compra', alquiler: 'Alquiler', ambos: 'Ambos', venta: 'Venta' };
 const operationColors: Record<string, string> = {
@@ -34,106 +40,74 @@ const operationColors: Record<string, string> = {
   venta: 'bg-success/10 text-success border-success/20',
 };
 
-function ClientFinancialsForm({ clientId }: { clientId: string }) {
-  const { financials, loading, save } = useClientFinancials(clientId);
-  const [form, setForm] = useState({
-    available_cash: 0, monthly_income: 0, debt_ratio: 0,
-    monthly_debts: 0, mortgage_needed: false, mortgage_preapproved: false,
-  });
-  const [dirty, setDirty] = useState(false);
+type FinancialsState = {
+  available_cash: number; monthly_income: number; debt_ratio: number;
+  monthly_debts: number; mortgage_needed: boolean; mortgage_preapproved: boolean;
+};
+type PreferencesState = {
+  min_price: number; max_price: number; min_surface: number; max_surface: number;
+  min_bedrooms: number; min_bathrooms: number; preferred_types: string[];
+  preferred_locations: string[]; required_extras: string[]; neighborhood: string; selected_zones: string[];
+};
 
-  useEffect(() => {
-    if (financials) {
-      setForm({
-        available_cash: financials.available_cash,
-        monthly_income: financials.monthly_income,
-        debt_ratio: financials.debt_ratio,
-        monthly_debts: (financials as any).monthly_debts || 0,
-        mortgage_needed: financials.mortgage_needed,
-        mortgage_preapproved: financials.mortgage_preapproved,
-      });
-    }
-  }, [financials]);
+const emptyFinancials: FinancialsState = {
+  available_cash: 0, monthly_income: 0, debt_ratio: 0,
+  monthly_debts: 0, mortgage_needed: false, mortgage_preapproved: false,
+};
+const emptyPreferences: PreferencesState = {
+  min_price: 0, max_price: 0, min_surface: 0, max_surface: 0,
+  min_bedrooms: 0, min_bathrooms: 0, preferred_types: [],
+  preferred_locations: [], required_extras: [], neighborhood: '', selected_zones: [],
+};
 
-  const handleSave = () => { save(form); setDirty(false); };
-
-  if (loading) return null;
-
+function FinancialsFields({ value, onChange }: { value: FinancialsState; onChange: (v: FinancialsState) => void }) {
+  const set = (patch: Partial<FinancialsState>) => onChange({ ...value, ...patch });
   return (
     <div className="p-3 rounded-lg bg-muted/40 border border-border space-y-3">
       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Perfil Financiero</p>
       <div className="grid grid-cols-2 gap-3">
-        <div><Label className="text-xs">Ahorros disponibles (€)</Label><Input type="number" value={form.available_cash || ""} onChange={e => { setForm(f => ({ ...f, available_cash: Number(e.target.value) })); setDirty(true); }} /></div>
-        <div><Label className="text-xs">Ingresos netos/mes (€)</Label><Input type="number" value={form.monthly_income || ""} onChange={e => { setForm(f => ({ ...f, monthly_income: Number(e.target.value) })); setDirty(true); }} /></div>
+        <div><Label className="text-xs">Ahorros disponibles (€)</Label><Input type="number" value={value.available_cash || ""} onChange={e => set({ available_cash: Number(e.target.value) })} /></div>
+        <div><Label className="text-xs">Ingresos netos/mes (€)</Label><Input type="number" value={value.monthly_income || ""} onChange={e => set({ monthly_income: Number(e.target.value) })} /></div>
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <div><Label className="text-xs">Deudas mensuales (€)</Label><Input type="number" value={form.monthly_debts || ""} onChange={e => { setForm(f => ({ ...f, monthly_debts: Number(e.target.value) })); setDirty(true); }} /></div>
-        <div><Label className="text-xs">Ratio endeudamiento (%)</Label><Input type="number" value={form.debt_ratio || ""} onChange={e => { setForm(f => ({ ...f, debt_ratio: Number(e.target.value) })); setDirty(true); }} /></div>
+        <div><Label className="text-xs">Deudas mensuales (€)</Label><Input type="number" value={value.monthly_debts || ""} onChange={e => set({ monthly_debts: Number(e.target.value) })} /></div>
+        <div><Label className="text-xs">Ratio endeudamiento (%)</Label><Input type="number" value={value.debt_ratio || ""} onChange={e => set({ debt_ratio: Number(e.target.value) })} /></div>
       </div>
       <div className="flex items-center gap-4">
-        <label className="flex items-center gap-2 text-xs"><Switch checked={form.mortgage_needed} onCheckedChange={v => { setForm(f => ({ ...f, mortgage_needed: !!v })); setDirty(true); }} />Necesita hipoteca</label>
-        <label className="flex items-center gap-2 text-xs"><Switch checked={form.mortgage_preapproved} onCheckedChange={v => { setForm(f => ({ ...f, mortgage_preapproved: !!v })); setDirty(true); }} />Pre-aprobada</label>
+        <label className="flex items-center gap-2 text-xs"><Switch checked={value.mortgage_needed} onCheckedChange={v => set({ mortgage_needed: !!v })} />Necesita hipoteca</label>
+        <label className="flex items-center gap-2 text-xs"><Switch checked={value.mortgage_preapproved} onCheckedChange={v => set({ mortgage_preapproved: !!v })} />Pre-aprobada</label>
       </div>
-      {dirty && <Button size="sm" onClick={handleSave} className="w-full">Guardar financiero</Button>}
     </div>
   );
 }
 
-function ClientPreferencesForm({ clientId }: { clientId: string }) {
-  const { preferences, loading, save } = useClientPreferences(clientId);
-  const [form, setForm] = useState({
-    min_price: 0, max_price: 0, min_surface: 0, max_surface: 0,
-    min_bedrooms: 0, min_bathrooms: 0, preferred_types: [] as string[],
-    preferred_locations: [] as string[], required_extras: [] as string[],
-    neighborhood: '', selected_zones: [] as string[],
-  });
-  const [dirty, setDirty] = useState(false);
-
-  useEffect(() => {
-    if (preferences) {
-      setForm({
-        min_price: preferences.min_price, max_price: preferences.max_price,
-        min_surface: preferences.min_surface, max_surface: preferences.max_surface,
-        min_bedrooms: preferences.min_bedrooms, min_bathrooms: preferences.min_bathrooms,
-        preferred_types: preferences.preferred_types, preferred_locations: preferences.preferred_locations,
-        required_extras: (preferences as any).required_extras || [],
-        neighborhood: (preferences as any).neighborhood || '',
-        selected_zones: (preferences as any).selected_zones || [],
-      });
-    }
-  }, [preferences]);
-
-  const handleSave = () => { save(form); setDirty(false); };
+function PreferencesFields({ value, onChange }: { value: PreferencesState; onChange: (v: PreferencesState) => void }) {
+  const set = (patch: Partial<PreferencesState>) => onChange({ ...value, ...patch });
   const toggleExtra = (extra: string) => {
-    setForm(f => ({
-      ...f,
-      required_extras: f.required_extras.includes(extra)
-        ? f.required_extras.filter(e => e !== extra)
-        : [...f.required_extras, extra],
-    }));
-    setDirty(true);
+    set({
+      required_extras: value.required_extras.includes(extra)
+        ? value.required_extras.filter(e => e !== extra)
+        : [...value.required_extras, extra],
+    });
   };
-
-  if (loading) return null;
-
   return (
     <div className="p-3 rounded-lg bg-muted/40 border border-border space-y-3">
       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Preferencias de Búsqueda</p>
       <div className="grid grid-cols-2 gap-3">
-        <div><Label className="text-xs">Presup. mínimo (€)</Label><Input type="number" value={form.min_price || ""} onChange={e => { setForm(f => ({ ...f, min_price: Number(e.target.value) })); setDirty(true); }} /></div>
-        <div><Label className="text-xs">Presup. máximo (€)</Label><Input type="number" value={form.max_price || ""} onChange={e => { setForm(f => ({ ...f, max_price: Number(e.target.value) })); setDirty(true); }} /></div>
+        <div><Label className="text-xs">Presup. mínimo (€)</Label><Input type="number" value={value.min_price || ""} onChange={e => set({ min_price: Number(e.target.value) })} /></div>
+        <div><Label className="text-xs">Presup. máximo (€)</Label><Input type="number" value={value.max_price || ""} onChange={e => set({ max_price: Number(e.target.value) })} /></div>
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <div><Label className="text-xs">Sup. mínima (m²)</Label><Input type="number" value={form.min_surface || ""} onChange={e => { setForm(f => ({ ...f, min_surface: Number(e.target.value) })); setDirty(true); }} /></div>
-        <div><Label className="text-xs">Sup. máxima (m²)</Label><Input type="number" value={form.max_surface || ""} onChange={e => { setForm(f => ({ ...f, max_surface: Number(e.target.value) })); setDirty(true); }} /></div>
+        <div><Label className="text-xs">Sup. mínima (m²)</Label><Input type="number" value={value.min_surface || ""} onChange={e => set({ min_surface: Number(e.target.value) })} /></div>
+        <div><Label className="text-xs">Sup. máxima (m²)</Label><Input type="number" value={value.max_surface || ""} onChange={e => set({ max_surface: Number(e.target.value) })} /></div>
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <div><Label className="text-xs">Hab. mínimas</Label><Input type="number" value={form.min_bedrooms || ""} onChange={e => { setForm(f => ({ ...f, min_bedrooms: Number(e.target.value) })); setDirty(true); }} /></div>
-        <div><Label className="text-xs">Baños mínimos</Label><Input type="number" value={form.min_bathrooms || ""} onChange={e => { setForm(f => ({ ...f, min_bathrooms: Number(e.target.value) })); setDirty(true); }} /></div>
+        <div><Label className="text-xs">Hab. mínimas</Label><Input type="number" value={value.min_bedrooms || ""} onChange={e => set({ min_bedrooms: Number(e.target.value) })} /></div>
+        <div><Label className="text-xs">Baños mínimos</Label><Input type="number" value={value.min_bathrooms || ""} onChange={e => set({ min_bathrooms: Number(e.target.value) })} /></div>
       </div>
       <ZoneSelector
-        selectedZones={form.selected_zones || []}
-        onChange={(zones) => { setForm(f => ({ ...f, selected_zones: zones })); setDirty(true); }}
+        selectedZones={value.selected_zones || []}
+        onChange={(zones) => set({ selected_zones: zones })}
       />
       <div>
         <Label className="text-xs">Tipología deseada</Label>
@@ -141,16 +115,12 @@ function ClientPreferencesForm({ clientId }: { clientId: string }) {
           {['piso', 'casa', 'local', 'terreno'].map(t => (
             <label key={t} className="flex items-center gap-1.5 text-xs cursor-pointer">
               <Checkbox
-                checked={form.preferred_types.includes(t)}
-                onCheckedChange={() => {
-                  setForm(f => ({
-                    ...f,
-                    preferred_types: f.preferred_types.includes(t)
-                      ? f.preferred_types.filter(x => x !== t)
-                      : [...f.preferred_types, t],
-                  }));
-                  setDirty(true);
-                }}
+                checked={value.preferred_types.includes(t)}
+                onCheckedChange={() => set({
+                  preferred_types: value.preferred_types.includes(t)
+                    ? value.preferred_types.filter(x => x !== t)
+                    : [...value.preferred_types, t],
+                })}
               />
               {t.charAt(0).toUpperCase() + t.slice(1)}
             </label>
@@ -162,37 +132,88 @@ function ClientPreferencesForm({ clientId }: { clientId: string }) {
         <div className="flex flex-wrap gap-2 mt-1">
           {EXTRAS_OPTIONS.map(extra => (
             <label key={extra} className="flex items-center gap-1.5 text-xs cursor-pointer">
-              <Checkbox checked={form.required_extras.includes(extra)} onCheckedChange={() => toggleExtra(extra)} />
-              {extra.replace('_', ' ').replace(/^\w/, c => c.toUpperCase())}
+              <Checkbox checked={value.required_extras.includes(extra)} onCheckedChange={() => toggleExtra(extra)} />
+              {EXTRA_LABELS[extra] || extra}
             </label>
           ))}
         </div>
       </div>
-      {dirty && <Button size="sm" onClick={handleSave} className="w-full">Guardar preferencias</Button>}
     </div>
   );
 }
 
+function EditFinancialsForm({ clientId }: { clientId: string }) {
+  const { financials, loading, save } = useClientFinancials(clientId);
+  const [form, setForm] = useState<FinancialsState>(emptyFinancials);
+  const [dirty, setDirty] = useState(false);
+
+  useEffect(() => {
+    if (financials) setForm({
+      available_cash: financials.available_cash, monthly_income: financials.monthly_income,
+      debt_ratio: financials.debt_ratio, monthly_debts: (financials as any).monthly_debts || 0,
+      mortgage_needed: financials.mortgage_needed, mortgage_preapproved: financials.mortgage_preapproved,
+    });
+  }, [financials]);
+
+  if (loading) return null;
+  const handleSave = () => { save(form); setDirty(false); };
+
+  return (
+    <>
+      <FinancialsFields value={form} onChange={(v) => { setForm(v); setDirty(true); }} />
+      {dirty && <Button size="sm" onClick={handleSave} className="w-full">Guardar financiero</Button>}
+    </>
+  );
+}
+
+function EditPreferencesForm({ clientId }: { clientId: string }) {
+  const { preferences, loading, save } = useClientPreferences(clientId);
+  const [form, setForm] = useState<PreferencesState>(emptyPreferences);
+  const [dirty, setDirty] = useState(false);
+
+  useEffect(() => {
+    if (preferences) setForm({
+      min_price: preferences.min_price, max_price: preferences.max_price,
+      min_surface: preferences.min_surface, max_surface: preferences.max_surface,
+      min_bedrooms: preferences.min_bedrooms, min_bathrooms: preferences.min_bathrooms,
+      preferred_types: preferences.preferred_types, preferred_locations: preferences.preferred_locations,
+      required_extras: (preferences as any).required_extras || [],
+      neighborhood: (preferences as any).neighborhood || '',
+      selected_zones: (preferences as any).selected_zones || [],
+    });
+  }, [preferences]);
+
+  if (loading) return null;
+  const handleSave = () => { save(form); setDirty(false); };
+
+  return (
+    <>
+      <PreferencesFields value={form} onChange={(v) => { setForm(v); setDirty(true); }} />
+      {dirty && <Button size="sm" onClick={handleSave} className="w-full">Guardar preferencias</Button>}
+    </>
+  );
+}
+
 const typeLabels: Record<ClientType, string> = { comprador: 'Comprador', vendedor: 'Vendedor', arrendador: 'Arrendador', arrendatario: 'Arrendatario' };
-const statusLabels: Record<LeadStatus, string> = { nuevo: 'Nuevo', contactado: 'Contactado', en_negociacion: 'En negociación', cerrado: 'Cerrado' };
+const statusLabels: Record<LeadStatus, string> = { nuevo: 'Nuevo', contactado: 'Contactado', en_negociacion: 'En negociación', cerrado: 'Cerrado', inactivo: 'Inactivo' };
 const statusColors: Record<LeadStatus, string> = {
   nuevo: 'bg-info/10 text-info border-info/20',
   contactado: 'bg-secondary/20 text-secondary-foreground border-secondary/30',
   en_negociacion: 'bg-warning/10 text-warning border-warning/20',
   cerrado: 'bg-success/10 text-success border-success/20',
+  inactivo: 'bg-muted text-muted-foreground border-border',
 };
-
-const CATEGORIES = ['premium', 'estandar', 'comercial', 'inversor', 'otro'];
 
 const emptyClient: Omit<Client, "id"> = {
   name: "", email: "", phone: "", address: "", type: "comprador", leadStatus: "nuevo",
   propertyIds: [], registeredAt: new Date().toISOString().split("T")[0], notes: "",
-  agencyId: "", category: "estandar", lastContactedAt: "", contactCount: 0,
+  agencyId: "", category: "", lastContactedAt: "", contactCount: 0,
   operationType: "compra",
 };
 
 const Clients = () => {
   const { clients, agencies, properties, addClient, updateClient, deleteClient } = useData();
+  const { tenantId } = useTenant();
   const { toast } = useToast();
   const navigate = useNavigate();
   const { definitions: customFields } = useCustomFieldDefinitions('client');
@@ -200,11 +221,12 @@ const Clients = () => {
   const { getTopMatchesForClient } = useMatchCenter();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [contactSort, setContactSort] = useState<string>("none");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Client | null>(null);
   const [form, setForm] = useState<Omit<Client, "id">>(emptyClient);
+  const [createFinancials, setCreateFinancials] = useState<FinancialsState>(emptyFinancials);
+  const [createPreferences, setCreatePreferences] = useState<PreferencesState>(emptyPreferences);
   const [deleteTarget, setDeleteTarget] = useState<Client | null>(null);
   const [cfValues, setCfValues] = useState<Record<string, any>>({});
   const { values: loadedCfValues, saveValues: saveCfValues } = useCustomFieldValues(editing?.id ?? null);
@@ -212,12 +234,10 @@ const Clients = () => {
 
   const CSV_FIELD_MAP = [
     { key: "name", label: "Nombre", required: true },
-    { key: "email", label: "Email", required: true },
-    { key: "phone", label: "Teléfono" },
-    { key: "address", label: "Dirección" },
+    { key: "email", label: "Email" },
+    { key: "phone", label: "Teléfono", required: true },
     { key: "type", label: "Tipo (comprador/vendedor/inquilino/propietario)" },
     { key: "operationType", label: "Operación (compra/alquiler/venta)" },
-    { key: "category", label: "Categoría" },
     { key: "leadStatus", label: "Estado Lead" },
     { key: "notes", label: "Notas" },
   ];
@@ -228,11 +248,11 @@ const Clients = () => {
         name: row.name || "Sin nombre",
         email: row.email || "",
         phone: row.phone || "",
-        address: row.address || "",
+        address: "",
         type: (["comprador", "vendedor", "inquilino", "propietario"].includes(row.type?.toLowerCase()) ? row.type.toLowerCase() : "comprador") as ClientType,
         operationType: (["compra", "alquiler", "venta", "ambos"].includes(row.operationType?.toLowerCase()) ? row.operationType.toLowerCase() : "compra") as OperationType,
-        leadStatus: (["nuevo", "contactado", "en_negociacion", "cerrado"].includes(row.leadStatus?.toLowerCase()) ? row.leadStatus.toLowerCase() : "nuevo") as LeadStatus,
-        category: row.category || "estandar",
+        leadStatus: (["nuevo", "contactado", "en_negociacion", "cerrado", "inactivo"].includes(row.leadStatus?.toLowerCase()) ? row.leadStatus.toLowerCase() : "nuevo") as LeadStatus,
+        category: "",
         notes: row.notes || "",
         propertyIds: [],
         registeredAt: new Date().toISOString().split("T")[0],
@@ -243,12 +263,14 @@ const Clients = () => {
     }
   };
 
+  const normalizePhone = (p: string) => (p || "").replace(/\D/g, "");
+
   const filtered = clients
     .filter(c => {
-      const matchSearch = c.name.toLowerCase().includes(search.toLowerCase()) || c.email.toLowerCase().includes(search.toLowerCase());
+      const q = search.toLowerCase();
+      const matchSearch = !q || c.name.toLowerCase().includes(q) || (c.phone || "").toLowerCase().includes(q);
       const matchType = typeFilter === "all" || c.type === typeFilter;
-      const matchCat = categoryFilter === "all" || c.category === categoryFilter;
-      return matchSearch && matchType && matchCat;
+      return matchSearch && matchType;
     })
     .sort((a, b) => {
       if (contactSort === "none") return 0;
@@ -257,7 +279,14 @@ const Clients = () => {
       return contactSort === "desc" ? dateB - dateA : dateA - dateB;
     });
 
-  const openCreate = () => { setEditing(null); setForm(emptyClient); setCfValues({}); setDialogOpen(true); };
+  const openCreate = () => {
+    setEditing(null);
+    setForm(emptyClient);
+    setCfValues({});
+    setCreateFinancials(emptyFinancials);
+    setCreatePreferences(emptyPreferences);
+    setDialogOpen(true);
+  };
   const openEdit = (c: Client) => {
     setEditing(c);
     setForm({ name: c.name, email: c.email, phone: c.phone, address: c.address, type: c.type, leadStatus: c.leadStatus, propertyIds: c.propertyIds, registeredAt: c.registeredAt, notes: c.notes, agencyId: c.agencyId, category: c.category, lastContactedAt: c.lastContactedAt, contactCount: c.contactCount, operationType: c.operationType || 'compra' });
@@ -267,14 +296,43 @@ const Clients = () => {
 
   const handleSave = async () => {
     if (!form.name.trim()) { toast({ title: "Error", description: "El nombre es obligatorio", variant: "destructive" }); return; }
+
+    // Validación: teléfono único
+    const phoneNorm = normalizePhone(form.phone);
+    if (phoneNorm) {
+      const duplicate = clients.find(c => normalizePhone(c.phone) === phoneNorm && c.id !== editing?.id);
+      if (duplicate) {
+        toast({ title: "Teléfono duplicado", description: `Ya existe un cliente con ese número: ${duplicate.name}`, variant: "destructive" });
+        return;
+      }
+    }
+
     if (editing) {
       await updateClient({ ...editing, ...form });
       await saveCfValues(editing.id, cfValues);
       toast({ title: "Cliente actualizado" });
       setDialogOpen(false);
     } else {
-      await addClient(form);
-      toast({ title: "Cliente creado", description: "Ahora puedes completar su perfil financiero y preferencias editándolo." });
+      const created = await addClient(form);
+      const newId = created?.id;
+      if (newId && tenantId) {
+        // Persist financials & preferences only if user filled something
+        const hasFin = Object.values(createFinancials).some(v => typeof v === 'number' ? v > 0 : v === true);
+        if (hasFin) {
+          await supabase.from('client_financials').insert({ ...createFinancials, tenant_id: tenantId, client_id: newId });
+        }
+        const hasPref =
+          createPreferences.max_price > 0 || createPreferences.min_price > 0 ||
+          createPreferences.min_surface > 0 || createPreferences.max_surface > 0 ||
+          createPreferences.min_bedrooms > 0 || createPreferences.min_bathrooms > 0 ||
+          createPreferences.preferred_types.length > 0 ||
+          createPreferences.required_extras.length > 0 ||
+          createPreferences.selected_zones.length > 0;
+        if (hasPref) {
+          await supabase.from('client_preferences').insert({ ...createPreferences, tenant_id: tenantId, client_id: newId });
+        }
+      }
+      toast({ title: "Cliente creado" });
       setDialogOpen(false);
     }
   };
@@ -301,12 +359,11 @@ const Clients = () => {
   };
 
   const exportCSV = () => {
-    const headers = ['Nombre', 'Email', 'Teléfono', 'Dirección', 'Tipo', 'Operación', 'Categoría', 'Estado Lead', 'Últ. Contacto', 'Nº Contactos', 'Notas'];
+    const headers = ['Nombre', 'Email', 'Teléfono', 'Tipo', 'Operación', 'Estado Lead', 'Últ. Contacto', 'Nº Contactos', 'Notas'];
     const rows = filtered.map(c => [
-      c.name, c.email, c.phone, c.address,
+      c.name, c.email, c.phone,
       typeLabels[c.type] || c.type,
       operationLabels[c.operationType] || c.operationType,
-      c.category || '',
       statusLabels[c.leadStatus] || c.leadStatus,
       c.lastContactedAt || '',
       String(c.contactCount || 0),
@@ -343,20 +400,13 @@ const Clients = () => {
         <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
           <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input placeholder="Buscar por nombre o email..." className="pl-9" value={search} onChange={e => setSearch(e.target.value)} />
+            <Input placeholder="Buscar por nombre o teléfono..." className="pl-9" value={search} onChange={e => setSearch(e.target.value)} />
           </div>
           <Select value={typeFilter} onValueChange={setTypeFilter}>
             <SelectTrigger className="w-[160px]"><SelectValue placeholder="Tipo" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos los tipos</SelectItem>
               {Object.entries(typeLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-[160px]"><SelectValue placeholder="Categoría" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas las categorías</SelectItem>
-              {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</SelectItem>)}
             </SelectContent>
           </Select>
           <Button variant={contactSort !== "none" ? "secondary" : "outline"} size="sm" onClick={cycleContactSort} className="gap-1.5">
@@ -373,7 +423,6 @@ const Clients = () => {
                 <TableHead className="font-semibold text-xs">Contacto</TableHead>
                 <TableHead className="font-semibold text-xs">Tipo</TableHead>
                 <TableHead className="font-semibold text-xs">Operación</TableHead>
-                <TableHead className="font-semibold text-xs">Categoría</TableHead>
                 <TableHead className="font-semibold text-xs">Estado</TableHead>
                 <TableHead className="font-semibold text-xs">Últ. contacto</TableHead>
                 <TableHead className="font-semibold text-xs text-center">Nº contactos</TableHead>
@@ -385,12 +434,11 @@ const Clients = () => {
                 <TableRow key={c.id} className="hover:bg-muted/20">
                   <TableCell>
                     <p className="font-medium text-sm text-foreground">{c.name}</p>
-                    <p className="text-xs text-muted-foreground">{c.address}</p>
                   </TableCell>
                   <TableCell>
                     <div className="space-y-1">
-                      <p className="flex items-center gap-1 text-xs text-muted-foreground"><Mail className="w-3 h-3" />{c.email}</p>
-                      <p className="flex items-center gap-1 text-xs text-muted-foreground"><Phone className="w-3 h-3" />{c.phone}</p>
+                      {c.email && <p className="flex items-center gap-1 text-xs text-muted-foreground"><Mail className="w-3 h-3" />{c.email}</p>}
+                      {c.phone && <p className="flex items-center gap-1 text-xs text-muted-foreground"><Phone className="w-3 h-3" />{c.phone}</p>}
                     </div>
                   </TableCell>
                   <TableCell><Badge variant="outline" className="text-[10px]">{typeLabels[c.type]}</Badge></TableCell>
@@ -399,7 +447,6 @@ const Clients = () => {
                       {operationLabels[c.operationType] || c.operationType}
                     </Badge>
                   </TableCell>
-                  <TableCell><Badge variant="outline" className="text-[10px] capitalize">{c.category}</Badge></TableCell>
                   <TableCell>
                     <Badge variant="outline" className={`text-[10px] ${statusColors[c.leadStatus]}`}>{statusLabels[c.leadStatus]}</Badge>
                   </TableCell>
@@ -428,14 +475,13 @@ const Clients = () => {
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editing ? "Editar Cliente" : "Nuevo Cliente"}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div><Label className="text-xs">Nombre *</Label><Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></div>
-            <div><Label className="text-xs">Email</Label><Input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} /></div>
             <div className="grid grid-cols-2 gap-3">
+              <div><Label className="text-xs">Email</Label><Input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} /></div>
               <div><Label className="text-xs">Teléfono</Label><Input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} /></div>
-              <div><Label className="text-xs">Dirección</Label><Input value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -453,7 +499,7 @@ const Clients = () => {
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs">Operación</Label>
                 <Select value={form.operationType} onValueChange={(v) => setForm({ ...form, operationType: v as OperationType })}>
@@ -463,13 +509,6 @@ const Clients = () => {
                     <SelectItem value="alquiler">Alquiler</SelectItem>
                     <SelectItem value="ambos">Ambos</SelectItem>
                   </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label className="text-xs">Categoría</Label>
-                <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{CATEGORIES.map(c => <SelectItem key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div>
@@ -493,8 +532,8 @@ const Clients = () => {
             )}
             {editing ? (
               <>
-                <ClientFinancialsForm clientId={editing.id} />
-                <ClientPreferencesForm clientId={editing.id} />
+                <EditFinancialsForm clientId={editing.id} />
+                <EditPreferencesForm clientId={editing.id} />
                 <InterestedProperties
                   clientId={editing.id}
                   interests={interests}
@@ -509,11 +548,10 @@ const Clients = () => {
                 />
               </>
             ) : (
-              <div className="p-3 rounded-lg bg-muted/40 border border-border">
-                <p className="text-xs text-muted-foreground text-center">
-                  💡 Guarda el cliente para acceder al <strong>perfil financiero</strong>, <strong>preferencias de búsqueda</strong>, <strong>zonas de interés</strong> y <strong>matching</strong>.
-                </p>
-              </div>
+              <>
+                <FinancialsFields value={createFinancials} onChange={setCreateFinancials} />
+                <PreferencesFields value={createPreferences} onChange={setCreatePreferences} />
+              </>
             )}
           </div>
           <DialogFooter>
