@@ -177,7 +177,7 @@ export const usePropertyMutations = () => {
       }).eq('id', p.id);
       logActivity(tenantId, user?.id, 'update', 'property', p.id, { title: p.title });
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['properties'] }),
+    onSuccess: () => qc.refetchQueries({ queryKey: ['properties'] }),
   });
 
   const remove = useMutation({
