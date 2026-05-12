@@ -40,6 +40,7 @@ const settingsItems = [
 
 export function AppSidebar() {
   const { isAdmin } = useUserRole();
+  const { pathname } = useLocation();
 
   return (
     <Sidebar className="sidebar-gradient border-r-0">
