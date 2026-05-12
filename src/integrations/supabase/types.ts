@@ -951,6 +951,7 @@ export type Database = {
           built_surface: number | null
           category: string | null
           community_fees: number | null
+          condition: string | null
           created_at: string
           deleted_at: string | null
           description: string | null
@@ -979,6 +980,7 @@ export type Database = {
           tenant_id: string | null
           title: string
           type: string
+          unavailable_reason: string | null
         }
         Insert: {
           address?: string | null
@@ -989,6 +991,7 @@ export type Database = {
           built_surface?: number | null
           category?: string | null
           community_fees?: number | null
+          condition?: string | null
           created_at?: string
           deleted_at?: string | null
           description?: string | null
@@ -1017,6 +1020,7 @@ export type Database = {
           tenant_id?: string | null
           title: string
           type?: string
+          unavailable_reason?: string | null
         }
         Update: {
           address?: string | null
@@ -1027,6 +1031,7 @@ export type Database = {
           built_surface?: number | null
           category?: string | null
           community_fees?: number | null
+          condition?: string | null
           created_at?: string
           deleted_at?: string | null
           description?: string | null
@@ -1055,6 +1060,7 @@ export type Database = {
           tenant_id?: string | null
           title?: string
           type?: string
+          unavailable_reason?: string | null
         }
         Relationships: [
           {
@@ -1500,6 +1506,7 @@ export type Database = {
           built_surface: number | null
           category: string | null
           community_fees: number | null
+          condition: string | null
           created_at: string
           deleted_at: string | null
           description: string | null
@@ -1528,6 +1535,7 @@ export type Database = {
           tenant_id: string | null
           title: string
           type: string
+          unavailable_reason: string | null
         }
         SetofOptions: {
           from: "*"
