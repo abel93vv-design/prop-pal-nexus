@@ -85,6 +85,7 @@ const AppRoutes = () => (
     <Route path="/pipeline" element={<ProtectedRoute><Pipeline /></ProtectedRoute>} />
     <Route path="/match-center" element={<ProtectedRoute><MatchCenter /></ProtectedRoute>} />
     <Route path="/tenants" element={<ProtectedRoute><Tenants /></ProtectedRoute>} />
+    <Route path="/roles" element={<ProtectedRoute><RolesPermissions /></ProtectedRoute>} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );
