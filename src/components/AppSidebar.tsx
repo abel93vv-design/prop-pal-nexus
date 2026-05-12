@@ -72,6 +72,20 @@ export function AppSidebar() {
                       <span>{item.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
+                  {item.subItems && pathname.startsWith(item.url) && (
+                    <SidebarMenuSub>
+                      {item.subItems.map((sub) => (
+                        <SidebarMenuSubItem key={sub.title}>
+                          <SidebarMenuSubButton asChild isActive={pathname === sub.url}>
+                            <NavLink to={sub.url} className="flex items-center gap-2 text-xs">
+                              <sub.icon className="w-3.5 h-3.5 shrink-0" />
+                              <span>{sub.title}</span>
+                            </NavLink>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      ))}
+                    </SidebarMenuSub>
+                  )}
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
