@@ -51,6 +51,7 @@ interface Property {
   has_pool: boolean;
   has_garage: boolean;
   has_air_conditioning: boolean;
+  accepts_pets: boolean;
   operation_type: string;
   monthly_rent: number;
 }
