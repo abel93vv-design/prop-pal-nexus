@@ -467,7 +467,14 @@ const Tenants = () => {
                           <div className="flex items-center justify-between">
                             <div className="min-w-0">
                               <p className="text-sm font-medium text-foreground truncate">{u.full_name || "Sin nombre"}</p>
-                              <p className="text-xs text-muted-foreground font-mono">{u.email}</p>
+                              <p className="text-xs text-muted-foreground font-mono truncate">{u.email}</p>
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {(u.roles && u.roles.length > 0) ? u.roles.map(r => (
+                                  <Badge key={r} variant={r === "super_admin" || r === "admin" ? "default" : "outline"} className="capitalize text-[10px]">{r.replace("_", " ")}</Badge>
+                                )) : (
+                                  <Badge variant="outline" className="text-[10px] text-muted-foreground">Sin rol</Badge>
+                                )}
+                              </div>
                             </div>
                             <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => copyToClipboard(u.email)}>
                               <Copy className="w-3 h-3" />
