@@ -81,6 +81,31 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
       setLoading(true);
       setNotFound(false);
 
+      const hostname = window.location.hostname;
+      const isLovable =
+        hostname.includes("lovable.app") ||
+        hostname.includes("lovableproject.com") ||
+        hostname.includes("lovable.dev") ||
+        hostname === "localhost" ||
+        hostname === "127.0.0.1";
+
+      // --- Priority 0: Custom domain (verified) ---
+      if (!isLovable) {
+        const { data: byDomain } = await supabase.rpc("get_tenant_by_domain", { _host: hostname });
+        if (byDomain && byDomain.length > 0 && byDomain[0].domain_verified && byDomain[0].is_active) {
+          const { data: full } = await supabase
+            .from("tenants")
+            .select("*")
+            .eq("id", byDomain[0].id)
+            .single();
+          if (full) {
+            setTenant(mapTenant(full));
+            setLoading(false);
+            return;
+          }
+        }
+      }
+
       const subdomain = extractSubdomain();
 
       // --- Priority 1: Subdomain-based resolution ---

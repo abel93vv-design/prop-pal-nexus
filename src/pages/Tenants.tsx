@@ -11,8 +11,9 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Building2, Plus, Pencil, Trash2, Loader2, Globe, Copy, CheckCircle2, AlertCircle, Eye, EyeOff, Users, KeyRound, ExternalLink, Activity } from "lucide-react";
+import { Building2, Plus, Pencil, Trash2, Loader2, Globe, Copy, CheckCircle2, AlertCircle, Eye, EyeOff, Users, KeyRound, ExternalLink, Activity, ShieldCheck, ShieldAlert } from "lucide-react";
 import { ActivityLogViewer } from "@/components/ActivityLogViewer";
+import { TenantDomainDialog } from "@/components/TenantDomainDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 
@@ -34,6 +35,8 @@ interface Tenant {
   is_active: boolean;
   is_demo: boolean;
   created_at: string;
+  custom_domain: string | null;
+  domain_verified: boolean;
 }
 
 const generatePassword = () => {
@@ -66,6 +69,7 @@ const Tenants = () => {
   const [newPassword, setNewPassword] = useState("");
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [resettingPassword, setResettingPassword] = useState(false);
+  const [domainTenant, setDomainTenant] = useState<Tenant | null>(null);
 
   
 
@@ -221,6 +225,7 @@ const Tenants = () => {
             {tenants.map(t => (
               <Card key={t.id} className="overflow-hidden hover:shadow-md transition-shadow relative group">
                 <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 z-10">
+                  <Button variant="secondary" size="icon" className="h-7 w-7" onClick={() => setDomainTenant(t)} title="Dominio personalizado"><Globe className="w-3 h-3" /></Button>
                   <Button variant="secondary" size="icon" className="h-7 w-7" onClick={() => openDetail(t)} title="Ver usuarios"><Users className="w-3 h-3" /></Button>
                   <Button variant="secondary" size="icon" className="h-7 w-7" onClick={() => openEdit(t)}><Pencil className="w-3 h-3" /></Button>
                   <Button variant="outline" size="icon" className="h-7 w-7 border-destructive/50 bg-destructive/10 text-destructive hover:bg-destructive hover:text-destructive-foreground" onClick={() => setDeleteTarget(t)}><Trash2 className="w-3 h-3" /></Button>
@@ -245,6 +250,11 @@ const Tenants = () => {
                     </Badge>
                     <Badge variant="outline" className="capitalize">{t.plan}</Badge>
                     {t.is_demo && <Badge variant="outline" className="border-amber-400 text-amber-600">Demo</Badge>}
+                    {t.custom_domain && (
+                      t.domain_verified
+                        ? <Badge className="bg-success/15 text-success border-success/30 gap-1"><ShieldCheck className="w-3 h-3" />{t.custom_domain}</Badge>
+                        : <Badge variant="outline" className="border-amber-400 text-amber-600 gap-1"><ShieldAlert className="w-3 h-3" />{t.custom_domain}</Badge>
+                    )}
                   </div>
 
                   <div className="flex items-center justify-between pt-2 border-t border-border">
@@ -514,6 +524,12 @@ const Tenants = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <TenantDomainDialog
+        tenantId={domainTenant?.id || null}
+        tenantName={domainTenant?.name}
+        onClose={() => setDomainTenant(null)}
+        onSaved={fetchTenants}
+      />
     </Layout>
   );
 };
