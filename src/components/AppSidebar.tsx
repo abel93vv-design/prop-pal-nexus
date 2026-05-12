@@ -1,4 +1,4 @@
-import { Building2, Users, ClipboardList, LayoutDashboard, UserCog, Landmark, Settings, ShieldCheck, Kanban, Target, FileSignature, Newspaper } from "lucide-react";
+import { Building2, Users, ClipboardList, LayoutDashboard, UserCog, Landmark, Settings, ShieldCheck, Kanban, Target, FileSignature, Newspaper, KeyRound } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -19,19 +19,19 @@ import {
 } from "@/components/ui/sidebar";
 
 const propertySubItems = [
-  { title: "NE (firmadas)", url: "/propiedades/ne", icon: FileSignature },
-  { title: "Noticias", url: "/propiedades/noticias", icon: Newspaper },
+  { title: "NE (firmadas)", url: "/propiedades/ne", icon: FileSignature, module: "ne" },
+  { title: "Noticias", url: "/propiedades/noticias", icon: Newspaper, module: "noticias" },
 ];
 
 const mainItems = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Pipeline", url: "/pipeline", icon: Kanban },
-  { title: "Match Center", url: "/match-center", icon: Target },
-  { title: "Propiedades", url: "/propiedades", icon: Building2, subItems: propertySubItems },
-  { title: "Clientes", url: "/clientes", icon: Users },
-  { title: "Tareas", url: "/tareas", icon: ClipboardList },
-  { title: "Equipo", url: "/equipo", icon: UserCog },
-  { title: "Inmobiliarias", url: "/inmobiliarias", icon: Landmark },
+  { title: "Dashboard", url: "/", icon: LayoutDashboard, module: null },
+  { title: "Pipeline", url: "/pipeline", icon: Kanban, module: "pipeline" },
+  { title: "Match Center", url: "/match-center", icon: Target, module: "match_center" },
+  { title: "Propiedades", url: "/propiedades", icon: Building2, subItems: propertySubItems, module: "ne" },
+  { title: "Clientes", url: "/clientes", icon: Users, module: "clientes" },
+  { title: "Tareas", url: "/tareas", icon: ClipboardList, module: "tareas" },
+  { title: "Equipo", url: "/equipo", icon: UserCog, module: "equipo" },
+  { title: "Inmobiliarias", url: "/inmobiliarias", icon: Landmark, module: "ajustes" },
 ];
 
 const settingsItems = [
