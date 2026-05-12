@@ -12,98 +12,117 @@ export interface Distrito {
 export interface Municipio {
   id: string;
   name: string;
+  group?: string;
 }
 
 export const DISTRITOS_MALAGA: Distrito[] = [
   {
-    id: "centro", name: "Centro",
+    id: "centro", name: "Centro (Distrito 1)",
     barrios: [
       { id: "centro-historico", name: "Centro Histórico" },
       { id: "la-merced", name: "La Merced" },
       { id: "la-goleta", name: "La Goleta" },
       { id: "ensanche-centro", name: "Ensanche Centro" },
       { id: "soho", name: "Soho" },
+      { id: "la-victoria", name: "La Victoria" },
+      { id: "la-malagueta", name: "La Malagueta" },
+      { id: "lagunillas", name: "Lagunillas" },
+      { id: "la-trinidad", name: "La Trinidad" },
     ],
   },
   {
-    id: "este", name: "Este",
+    id: "este", name: "Este (Distrito 2)",
     barrios: [
       { id: "el-palo", name: "El Palo" },
       { id: "pedregalejo", name: "Pedregalejo" },
       { id: "el-candado", name: "El Candado" },
       { id: "el-morlaco", name: "El Morlaco" },
-      { id: "rincon-de-la-victoria", name: "Rincón de la Victoria" },
+      { id: "el-limonar", name: "El Limonar" },
     ],
   },
   {
-    id: "ciudad-jardin", name: "Ciudad Jardín",
+    id: "ciudad-jardin", name: "Ciudad Jardín (Distrito 3)",
     barrios: [
       { id: "ciudad-jardin-centro", name: "Ciudad Jardín" },
-      { id: "la-abejera", name: "La Abejera" },
       { id: "mangas-verdes", name: "Mangas Verdes" },
+      { id: "parque-del-sur", name: "Parque del Sur" },
     ],
   },
   {
-    id: "bailén-miraflores", name: "Bailén-Miraflores",
+    id: "bailen-miraflores", name: "Bailén-Miraflores (Distrito 4)",
     barrios: [
-      { id: "bailen", name: "Bailén" },
-      { id: "miraflores", name: "Miraflores de los Ángeles" },
       { id: "gamarra", name: "Gamarra" },
-      { id: "victoria", name: "Victoria" },
+      { id: "miraflores", name: "Miraflores de los Ángeles" },
+      { id: "nueva-malaga", name: "Nueva Málaga" },
+      { id: "suarez", name: "Suárez" },
+      { id: "carlinda", name: "Carlinda" },
     ],
   },
   {
-    id: "palma-palmilla", name: "Palma-Palmilla",
+    id: "palma-palmilla", name: "Palma-Palmilla (Distrito 5)",
     barrios: [
-      { id: "palma-palmilla-centro", name: "Palma-Palmilla" },
       { id: "la-palmilla", name: "La Palmilla" },
       { id: "26-de-febrero", name: "26 de Febrero" },
     ],
   },
   {
-    id: "cruz-humilladero", name: "Cruz de Humilladero",
+    id: "cruz-humilladero", name: "Cruz de Humilladero (Distrito 6)",
+    barrios: [
+      { id: "la-aurora", name: "La Aurora" },
+      { id: "tiro-de-pichon", name: "Tiro de Pichón" },
+      { id: "el-duende", name: "El Duende" },
+      { id: "intelhorce", name: "Intelhorce" },
+      { id: "los-tilos", name: "Los Tilos" },
+      { id: "santa-julia", name: "Santa Julia" },
+      { id: "portada-alta", name: "Portada Alta" },
+      { id: "la-barriguilla", name: "La Barriguilla" },
+    ],
+  },
+  {
+    id: "carretera-cadiz", name: "Carretera de Cádiz (Distrito 7)",
     barrios: [
       { id: "huelin", name: "Huelin" },
-      { id: "la-princesa", name: "La Princesa" },
-      { id: "la-aurora", name: "La Aurora" },
       { id: "la-paz", name: "La Paz" },
+      { id: "la-princesa", name: "La Princesa" },
       { id: "nuevo-san-andres", name: "Nuevo San Andrés" },
-    ],
-  },
-  {
-    id: "carretera-cadiz", name: "Carretera de Cádiz",
-    barrios: [
-      { id: "la-luz", name: "La Luz" },
-      { id: "pacífico", name: "Pacífico" },
-      { id: "la-florida", name: "La Florida" },
+      { id: "pacifico", name: "Pacífico" },
       { id: "san-andres", name: "San Andrés" },
-      { id: "tiro-de-pichon", name: "Tiro de Pichón" },
+      { id: "la-luz", name: "La Luz" },
+      { id: "jardin-abadia", name: "Jardín de la Abadía" },
+      { id: "el-torcal", name: "El Torcal" },
+      { id: "parque-oeste", name: "Parque del Oeste" },
+      { id: "la-termica-sacaba", name: "La Térmica-Sacaba" },
+      { id: "los-guindos", name: "Los Guindos" },
+      { id: "vistafranca", name: "Vistafranca" },
     ],
   },
   {
-    id: "churriana", name: "Churriana",
+    id: "churriana", name: "Churriana (Distrito 8)",
     barrios: [
       { id: "churriana-centro", name: "Churriana Centro" },
       { id: "guadalmar", name: "Guadalmar" },
-      { id: "alhaurin-torre", name: "Alhaurín de la Torre" },
     ],
   },
   {
-    id: "campanillas", name: "Campanillas",
+    id: "campanillas", name: "Campanillas (Distrito 9)",
     barrios: [
       { id: "campanillas-centro", name: "Campanillas" },
       { id: "santa-rosalia", name: "Santa Rosalía" },
+      { id: "maqueda", name: "Maqueda" },
+      { id: "huertecillas", name: "Huertecillas" },
+      { id: "colmenarejo", name: "Colmenarejo" },
+      { id: "castanetas", name: "Castañetas" },
+      { id: "segovia", name: "Segovia" },
     ],
   },
   {
-    id: "puerto-torre", name: "Puerto de la Torre",
+    id: "puerto-torre", name: "Puerto de la Torre (Distrito 10)",
     barrios: [
-      { id: "puerto-torre-centro", name: "Puerto de la Torre" },
       { id: "los-verdiales", name: "Los Verdiales" },
     ],
   },
   {
-    id: "teatinos", name: "Teatinos-Universidad",
+    id: "teatinos", name: "Teatinos-Universidad (Distrito 11)",
     barrios: [
       { id: "teatinos", name: "Teatinos" },
       { id: "universidad", name: "Universidad" },
@@ -114,22 +133,26 @@ export const DISTRITOS_MALAGA: Distrito[] = [
 ];
 
 export const MUNICIPIOS_PROVINCIA: Municipio[] = [
-  { id: "mun-cartama", name: "Cártama" },
-  { id: "mun-coin", name: "Coín" },
-  { id: "mun-alora", name: "Álora" },
-  { id: "mun-alhaurin-grande", name: "Alhaurín el Grande" },
-  { id: "mun-alhaurin-torre", name: "Alhaurín de la Torre" },
-  { id: "mun-marbella", name: "Marbella" },
-  { id: "mun-estepona", name: "Estepona" },
-  { id: "mun-torremolinos", name: "Torremolinos" },
-  { id: "mun-benalmadena", name: "Benalmádena" },
-  { id: "mun-fuengirola", name: "Fuengirola" },
-  { id: "mun-mijas", name: "Mijas" },
-  { id: "mun-rincon-victoria", name: "Rincón de la Victoria" },
-  { id: "mun-velez-malaga", name: "Vélez-Málaga" },
-  { id: "mun-nerja", name: "Nerja" },
-  { id: "mun-antequera", name: "Antequera" },
-  { id: "mun-ronda", name: "Ronda" },
+  // Valle del Guadalhorce
+  { id: "mun-cartama", name: "Cártama", group: "Valle del Guadalhorce" },
+  { id: "mun-coin", name: "Coín", group: "Valle del Guadalhorce" },
+  { id: "mun-alora", name: "Álora", group: "Valle del Guadalhorce" },
+  { id: "mun-alhaurin-grande", name: "Alhaurín el Grande", group: "Valle del Guadalhorce" },
+  { id: "mun-alhaurin-torre", name: "Alhaurín de la Torre", group: "Valle del Guadalhorce" },
+  // Costa del Sol Occidental
+  { id: "mun-marbella", name: "Marbella", group: "Costa del Sol Occidental" },
+  { id: "mun-estepona", name: "Estepona", group: "Costa del Sol Occidental" },
+  { id: "mun-torremolinos", name: "Torremolinos", group: "Costa del Sol Occidental" },
+  { id: "mun-benalmadena", name: "Benalmádena", group: "Costa del Sol Occidental" },
+  { id: "mun-fuengirola", name: "Fuengirola", group: "Costa del Sol Occidental" },
+  { id: "mun-mijas", name: "Mijas", group: "Costa del Sol Occidental" },
+  // Costa del Sol Oriental / Axarquía
+  { id: "mun-rincon-victoria", name: "Rincón de la Victoria", group: "Costa del Sol Oriental / Axarquía" },
+  { id: "mun-velez-malaga", name: "Vélez-Málaga", group: "Costa del Sol Oriental / Axarquía" },
+  { id: "mun-nerja", name: "Nerja", group: "Costa del Sol Oriental / Axarquía" },
+  // Interior de Málaga
+  { id: "mun-antequera", name: "Antequera", group: "Interior de Málaga" },
+  { id: "mun-ronda", name: "Ronda", group: "Interior de Málaga" },
 ];
 
 /** Get all zone IDs for "Toda Málaga" */

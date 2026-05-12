@@ -135,21 +135,26 @@ export function ZoneSelector({ selectedZones, onChange }: ZoneSelectorProps) {
           );
         })}
 
-        {/* Municipios separador */}
-        <div className="border-t border-border pt-1.5 mt-1.5">
-          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">Provincia</p>
-          <div className="grid grid-cols-2 gap-x-2 gap-y-0.5">
-            {MUNICIPIOS_PROVINCIA.map(mun => (
-              <label key={mun.id} className="flex items-center gap-1.5 text-[11px] text-muted-foreground cursor-pointer hover:text-foreground">
-                <Checkbox
-                  checked={selectedZones.includes(`municipio:${mun.id}`)}
-                  onCheckedChange={() => toggleZone(`municipio:${mun.id}`)}
-                  className="h-3.5 w-3.5"
-                />
-                {mun.name}
-              </label>
-            ))}
-          </div>
+        {/* Municipios separador agrupado */}
+        <div className="border-t border-border pt-1.5 mt-1.5 space-y-2">
+          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Provincia de Málaga</p>
+          {Array.from(new Set(MUNICIPIOS_PROVINCIA.map(m => m.group || "Otros"))).map(group => (
+            <div key={group}>
+              <p className="text-[10px] font-medium text-foreground mb-0.5">{group}</p>
+              <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 ml-1">
+                {MUNICIPIOS_PROVINCIA.filter(m => (m.group || "Otros") === group).map(mun => (
+                  <label key={mun.id} className="flex items-center gap-1.5 text-[11px] text-muted-foreground cursor-pointer hover:text-foreground">
+                    <Checkbox
+                      checked={selectedZones.includes(`municipio:${mun.id}`)}
+                      onCheckedChange={() => toggleZone(`municipio:${mun.id}`)}
+                      className="h-3.5 w-3.5"
+                    />
+                    {mun.name}
+                  </label>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
