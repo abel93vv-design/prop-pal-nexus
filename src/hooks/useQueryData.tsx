@@ -163,7 +163,7 @@ export const usePropertyMutations = () => {
 
   const update = useMutation({
     mutationFn: async (p: Property) => {
-      await supabase.from('properties').update({
+      const { data, error } = await supabase.from('properties').update({
         title: p.title, address: p.address, type: p.type, status: p.status, price: p.price,
         surface: p.surface, bedrooms: p.bedrooms, bathrooms: p.bathrooms, photos: p.photos,
         agent_id: p.agentId || null, interested_client_ids: p.interestedClientIds,
@@ -174,12 +174,19 @@ export const usePropertyMutations = () => {
         ibi_annual: p.ibi_annual, has_elevator: p.has_elevator, has_terrace: p.has_terrace,
         has_pool: p.has_pool, has_garage: p.has_garage, has_air_conditioning: p.has_air_conditioning,
         operation_type: p.operationType, monthly_rent: p.monthly_rent, condition: (p as any).condition || "", unavailable_reason: (p as any).unavailable_reason || "", listing_type: (p as any).listing_type === "ne" ? "ne" : "noticia",
-      }).eq('id', p.id);
+      }).eq('id', p.id).select().single();
+      if (error) throw error;
       logActivity(tenantId, user?.id, 'update', 'property', p.id, { title: p.title });
+      return toProperty(data);
     },
-    onSuccess: async () => {
-      await qc.refetchQueries({ queryKey: ['properties'] });
+    onSuccess: async (updatedProperty) => {
+      qc.setQueriesData<Property[]>({ queryKey: ['properties'] }, (old) => {
+        if (!old) return old;
+        return old.map((property) => property.id === updatedProperty.id ? updatedProperty : property);
+      });
+      await qc.invalidateQueries({ queryKey: ['properties'] });
     },
+    onError: (e: any) => toast({ title: "Error al actualizar", description: e.message, variant: "destructive" }),
   });
 
   const remove = useMutation({
