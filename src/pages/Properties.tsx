@@ -574,7 +574,7 @@ const Properties = () => {
                       : 'La propiedad ya aparece en el apartado Noticias.',
                   });
                   setConvertTarget(null);
-                  qc.setQueryData(['properties'], (old: Property[] | undefined) => {
+                  qc.setQueriesData<Property[]>({ queryKey: ['properties'] }, (old) => {
                     if (!old) return old;
                     return old.map((property) => property.id === convertTarget.id ? (updated as Property) : property);
                   });
