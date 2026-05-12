@@ -966,6 +966,7 @@ export type Database = {
           id: string
           interested_client_ids: string[] | null
           latitude: number | null
+          listing_type: string
           longitude: number | null
           monthly_rent: number | null
           neighborhood: string | null
@@ -1006,6 +1007,7 @@ export type Database = {
           id?: string
           interested_client_ids?: string[] | null
           latitude?: number | null
+          listing_type?: string
           longitude?: number | null
           monthly_rent?: number | null
           neighborhood?: string | null
@@ -1046,6 +1048,7 @@ export type Database = {
           id?: string
           interested_client_ids?: string[] | null
           latitude?: number | null
+          listing_type?: string
           longitude?: number | null
           monthly_rent?: number | null
           neighborhood?: string | null
@@ -1521,6 +1524,7 @@ export type Database = {
           id: string
           interested_client_ids: string[] | null
           latitude: number | null
+          listing_type: string
           longitude: number | null
           monthly_rent: number | null
           neighborhood: string | null

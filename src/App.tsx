@@ -75,6 +75,7 @@ const AppRoutes = () => (
     <Route path="/publica" element={<PublicProperties />} />
     <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
     <Route path="/propiedades" element={<ProtectedRoute><Properties /></ProtectedRoute>} />
+    <Route path="/propiedades/:listingType" element={<ProtectedRoute><Properties /></ProtectedRoute>} />
     <Route path="/clientes" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
     <Route path="/tareas" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
     <Route path="/equipo" element={<ProtectedRoute><Team /></ProtectedRoute>} />

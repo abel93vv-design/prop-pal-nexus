@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { useData } from "@/context/DataContext";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Building2, MapPin, Bed, Bath, Ruler, Search, Plus, Pencil, Trash2, FileText, Upload, X, Kanban } from "lucide-react";
+import { Building2, MapPin, Bed, Bath, Ruler, Search, Plus, Pencil, Trash2, FileText, Upload, X, Kanban, FileSignature, Newspaper, ArrowRightLeft } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PortalPublicationControls } from "@/components/PortalPublicationControls";
 import { PropertyZoneSelector } from "@/components/PropertyZoneSelector";
@@ -54,6 +54,7 @@ const emptyProperty: Omit<Property, "id"> = {
   publishedAt: new Date().toISOString().split("T")[0], description: "",
   agencyId: "", category: "residencial", ...defaultExtras,
   operationType: "venta", monthly_rent: 0, condition: "", unavailable_reason: "",
+  listing_type: "noticia",
 };
 
 const emptyDoc: Omit<Document, "id"> = {
@@ -64,6 +65,9 @@ const Properties = () => {
   const { properties, users, agencies, clients, documents, addProperty, updateProperty, deleteProperty, addDocument, deleteDocument } = useData();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { listingType: routeListing } = useParams<{ listingType?: string }>();
+  const activeListing: 'ne' | 'noticia' | 'all' =
+    routeListing === 'ne' ? 'ne' : routeListing === 'noticias' ? 'noticia' : 'all';
   const { definitions: customFields } = useCustomFieldDefinitions('property');
   const { interests, addInterest, removeInterest, updateInterestType } = useInterests();
   const { getTopMatchesForProperty } = useMatchCenter();
@@ -87,10 +91,16 @@ const Properties = () => {
     const matchType = typeFilter === "all" || p.type === typeFilter;
     const matchStatus = statusFilter === "all" || p.status === statusFilter;
     const matchOp = operationFilter === "all" || p.operationType === operationFilter || p.operationType === "ambos" || operationFilter === "ambos";
-    return matchSearch && matchType && matchStatus && matchOp;
+    const matchListing = activeListing === 'all' || (p.listing_type || 'noticia') === activeListing;
+    return matchSearch && matchType && matchStatus && matchOp && matchListing;
   });
 
-  const openCreate = () => { setEditing(null); setForm(emptyProperty); setCfValues({}); setDialogOpen(true); };
+  const openCreate = () => {
+    setEditing(null);
+    setForm({ ...emptyProperty, listing_type: activeListing === 'all' ? 'noticia' : activeListing });
+    setCfValues({});
+    setDialogOpen(true);
+  };
   const openEdit = (p: Property) => {
     setEditing(p);
     setForm({
@@ -107,6 +117,7 @@ const Properties = () => {
       has_air_conditioning: p.has_air_conditioning || false,
       operationType: p.operationType || "venta", monthly_rent: p.monthly_rent || 0,
       condition: (p as any).condition || "", unavailable_reason: (p as any).unavailable_reason || "",
+      listing_type: p.listing_type || "noticia",
     });
     setCfValues(loadedCfValues);
     setDialogOpen(true);
@@ -155,10 +166,16 @@ const Properties = () => {
       <div className="space-y-6 animate-fade-in">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Propiedades</h1>
-            <p className="text-sm text-muted-foreground mt-1">{properties.length} propiedades en el sistema</p>
+            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+              {activeListing === 'ne' && <FileSignature className="w-5 h-5 text-primary" />}
+              {activeListing === 'noticia' && <Newspaper className="w-5 h-5 text-primary" />}
+              {activeListing === 'ne' ? 'Propiedades · NE (firmadas)'
+                : activeListing === 'noticia' ? 'Propiedades · Noticias'
+                : 'Propiedades'}
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">{filtered.length} {filtered.length === 1 ? 'propiedad' : 'propiedades'}{activeListing !== 'all' ? ' en este apartado' : ' en el sistema'}</p>
           </div>
-          <Button onClick={openCreate} size="sm"><Plus className="w-4 h-4 mr-1" />Nueva Propiedad</Button>
+          <Button onClick={openCreate} size="sm"><Plus className="w-4 h-4 mr-1" />Nueva {activeListing === 'ne' ? 'NE' : activeListing === 'noticia' ? 'Noticia' : 'Propiedad'}</Button>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
@@ -198,6 +215,19 @@ const Properties = () => {
             return (
               <div key={p.id} className="rounded-xl border border-border bg-card overflow-hidden hover:shadow-md transition-shadow relative group">
                 <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="h-7 w-7"
+                    title={p.listing_type === 'ne' ? 'Convertir a Noticia' : 'Convertir a NE (firmada)'}
+                    onClick={async () => {
+                      const next = p.listing_type === 'ne' ? 'noticia' : 'ne';
+                      await updateProperty({ ...p, listing_type: next } as any);
+                      toast({ title: next === 'ne' ? 'Convertida a NE' : 'Convertida a Noticia' });
+                    }}
+                  >
+                    <ArrowRightLeft className="w-3 h-3" />
+                  </Button>
                   <Button variant="secondary" size="icon" className="h-7 w-7" title="Crear oportunidad" onClick={() => navigate(`/pipeline?property=${p.id}`)}><Kanban className="w-3 h-3" /></Button>
                   <Button variant="secondary" size="icon" className="h-7 w-7" title="Documentos" onClick={() => openDocs(p)}><FileText className="w-3 h-3" /></Button>
                   <Button variant="secondary" size="icon" className="h-7 w-7" onClick={() => openEdit(p)}><Pencil className="w-3 h-3" /></Button>
@@ -214,6 +244,9 @@ const Properties = () => {
                   <div className="flex items-start justify-between gap-2">
                     <h3 className="font-semibold text-sm text-foreground leading-tight">{p.title}</h3>
                     <div className="flex flex-col gap-1 items-end shrink-0">
+                      <Badge variant="outline" className={`text-[10px] ${p.listing_type === 'ne' ? 'bg-primary/10 text-primary border-primary/20' : 'bg-warning/10 text-warning border-warning/20'}`}>
+                        {p.listing_type === 'ne' ? 'NE' : 'Noticia'}
+                      </Badge>
                       <Badge variant="outline" className={`text-[10px] ${statusColors[p.status]}`}>{statusLabels[p.status]}</Badge>
                     </div>
                   </div>
@@ -245,6 +278,19 @@ const Properties = () => {
           <div className="space-y-3">
             <div><Label className="text-xs">Título *</Label><Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} /></div>
             <div><Label className="text-xs">Dirección *</Label><Input value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} /></div>
+            <div>
+              <Label className="text-xs">Apartado</Label>
+              <Select
+                value={form.listing_type || 'noticia'}
+                onValueChange={(v) => setForm({ ...form, listing_type: v as 'ne' | 'noticia' })}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="noticia">Noticia (sin firmar)</SelectItem>
+                  <SelectItem value="ne">NE (Nota de Encargo firmada)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="grid grid-cols-3 gap-3">
               <div>
                 <Label className="text-xs">Tipo</Label>
