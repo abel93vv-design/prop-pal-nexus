@@ -278,6 +278,19 @@ const Properties = () => {
           <div className="space-y-3">
             <div><Label className="text-xs">Título *</Label><Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} /></div>
             <div><Label className="text-xs">Dirección *</Label><Input value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} /></div>
+            <div>
+              <Label className="text-xs">Apartado</Label>
+              <Select
+                value={form.listing_type || 'noticia'}
+                onValueChange={(v) => setForm({ ...form, listing_type: v as 'ne' | 'noticia' })}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="noticia">Noticia (sin firmar)</SelectItem>
+                  <SelectItem value="ne">NE (Nota de Encargo firmada)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="grid grid-cols-3 gap-3">
               <div>
                 <Label className="text-xs">Tipo</Label>
