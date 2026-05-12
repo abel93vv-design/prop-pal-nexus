@@ -117,6 +117,7 @@ const Properties = () => {
       has_air_conditioning: p.has_air_conditioning || false,
       operationType: p.operationType || "venta", monthly_rent: p.monthly_rent || 0,
       condition: (p as any).condition || "", unavailable_reason: (p as any).unavailable_reason || "",
+      listing_type: p.listing_type || "noticia",
     });
     setCfValues(loadedCfValues);
     setDialogOpen(true);
