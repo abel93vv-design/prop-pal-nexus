@@ -246,7 +246,7 @@ const Properties = () => {
           <div className="space-y-3">
             <div><Label className="text-xs">Título *</Label><Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} /></div>
             <div><Label className="text-xs">Dirección *</Label><Input value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} /></div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <div>
                 <Label className="text-xs">Tipo</Label>
                 <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v as PropertyType })}>
@@ -255,13 +255,39 @@ const Properties = () => {
                 </Select>
               </div>
               <div>
+                <Label className="text-xs">Condición</Label>
+                <Select value={form.condition || "none"} onValueChange={(v) => setForm({ ...form, condition: v === "none" ? "" : v })}>
+                  <SelectTrigger><SelectValue placeholder="Sin especificar" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sin especificar</SelectItem>
+                    {Object.entries(conditionLabels).filter(([k]) => k !== '').map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
                 <Label className="text-xs">Estado</Label>
-                <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v as PropertyStatus })}>
+                <Select
+                  value={form.status}
+                  onValueChange={(v) => {
+                    const newStatus = v as PropertyStatus;
+                    if (newStatus === 'no_disponible' && form.status !== 'no_disponible') {
+                      setUnavailableReasonDraft(form.unavailable_reason || "");
+                      setUnavailableDialogOpen(true);
+                    }
+                    setForm({ ...form, status: newStatus });
+                  }}
+                >
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>{Object.entries(statusLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
             </div>
+            {form.status === 'no_disponible' && form.unavailable_reason && (
+              <div className="text-xs rounded-md border border-destructive/20 bg-destructive/5 px-3 py-2 text-destructive">
+                <strong>Motivo no disponible:</strong> {form.unavailable_reason}
+                <button type="button" className="ml-2 underline" onClick={() => { setUnavailableReasonDraft(form.unavailable_reason || ""); setUnavailableDialogOpen(true); }}>Editar</button>
+              </div>
+            )}
             <div className="grid grid-cols-3 gap-3">
               <div>
                 <Label className="text-xs">Operación</Label>
@@ -271,10 +297,11 @@ const Properties = () => {
                     <SelectItem value="venta">Venta</SelectItem>
                     <SelectItem value="alquiler">Alquiler</SelectItem>
                     <SelectItem value="ambos">Ambos</SelectItem>
+                    <SelectItem value="alquiler_opcion_compra">Alquiler con opción a compra</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              {(form.operationType === 'alquiler' || form.operationType === 'ambos') && (
+              {(form.operationType === 'alquiler' || form.operationType === 'ambos' || form.operationType === 'alquiler_opcion_compra') && (
                 <div><Label className="text-xs">Renta mensual (€)</Label><Input type="number" value={form.monthly_rent || ""} onChange={e => setForm({ ...form, monthly_rent: Number(e.target.value) })} /></div>
               )}
             </div>
