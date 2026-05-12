@@ -188,7 +188,12 @@ const Properties = () => {
             </h1>
             <p className="text-sm text-muted-foreground mt-1">{filtered.length} {filtered.length === 1 ? 'propiedad' : 'propiedades'}{activeListing !== 'all' ? ' en este apartado' : ' en el sistema'}</p>
           </div>
-          <Button onClick={openCreate} size="sm"><Plus className="w-4 h-4 mr-1" />Nueva {activeListing === 'ne' ? 'NE' : activeListing === 'noticia' ? 'Noticia' : 'Propiedad'}</Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}>
+              <RefreshCw className={`w-4 h-4 mr-1 ${refreshing ? 'animate-spin' : ''}`} />Refrescar
+            </Button>
+            <Button onClick={openCreate} size="sm"><Plus className="w-4 h-4 mr-1" />Nueva {activeListing === 'ne' ? 'NE' : activeListing === 'noticia' ? 'Noticia' : 'Propiedad'}</Button>
+          </div>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
