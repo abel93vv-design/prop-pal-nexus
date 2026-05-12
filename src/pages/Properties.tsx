@@ -315,7 +315,6 @@ const Properties = () => {
                 </SelectContent>
               </Select>
             </div>
-            </div>
             <div className="grid grid-cols-3 gap-3">
               <div><Label className="text-xs">Precio (€)</Label><Input type="number" value={form.price || ""} onChange={e => setForm({ ...form, price: Number(e.target.value) })} /></div>
               <div><Label className="text-xs">Metros útiles (m²)</Label><Input type="number" value={form.surface || ""} onChange={e => setForm({ ...form, surface: Number(e.target.value) })} /></div>
