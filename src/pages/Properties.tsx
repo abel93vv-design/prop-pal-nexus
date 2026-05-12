@@ -34,6 +34,18 @@ const statusColors: Record<PropertyStatus, string> = {
 
 const PROP_CATEGORIES = ['residencial', 'comercial', 'lujo', 'suelo', 'industrial', 'otro'];
 
+const conditionLabels: Record<string, string> = {
+  '': 'Sin especificar',
+  entrar_a_vivir: 'Entrar a vivir',
+  a_reformar: 'A reformar',
+  reformado: 'Reformado',
+  traspaso: 'Traspaso',
+  cambio_de_uso: 'Cambio de uso',
+  urbano: 'Urbano',
+  urbanizable: 'Urbanizable',
+  rustico: 'Rústico',
+};
+
 const defaultExtras = { postal_code: '', latitude: null as number | null, longitude: null as number | null, built_surface: 0, plot_surface: 0, energy_cert: 'en_tramite', neighborhood: '', floor: null as number | null, community_fees: 0, ibi_annual: 0, has_elevator: false, has_terrace: false, has_pool: false, has_garage: false, has_air_conditioning: false };
 
 const emptyProperty: Omit<Property, "id"> = {
@@ -41,7 +53,7 @@ const emptyProperty: Omit<Property, "id"> = {
   bedrooms: 0, bathrooms: 0, photos: [], agentId: "", interestedClientIds: [],
   publishedAt: new Date().toISOString().split("T")[0], description: "",
   agencyId: "", category: "residencial", ...defaultExtras,
-  operationType: "venta", monthly_rent: 0,
+  operationType: "venta", monthly_rent: 0, condition: "", unavailable_reason: "",
 };
 
 const emptyDoc: Omit<Document, "id"> = {
