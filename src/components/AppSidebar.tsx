@@ -39,7 +39,8 @@ const settingsItems = [
 ];
 
 export function AppSidebar() {
-  const { isAdmin } = useUserRole();
+  const { isAdmin, isSuperAdmin, can } = useUserRole();
+  const visibleMain = mainItems.filter((i) => !i.module || can(i.module, "view") || isAdmin);
   const { pathname } = useLocation();
 
   return (
