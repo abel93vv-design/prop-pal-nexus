@@ -63,7 +63,7 @@ const emptyDoc: Omit<Document, "id"> = {
 };
 
 const Properties = () => {
-  const { properties, users, agencies, clients, documents, addProperty, updateProperty, deleteProperty, addDocument, deleteDocument } = useData();
+  const { properties, users, agencies, clients, documents, addProperty, updateProperty, deleteProperty, convertListingType, addDocument, deleteDocument } = useData();
   const { toast } = useToast();
   const qc = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
@@ -564,9 +564,9 @@ const Properties = () => {
             <Button
               onClick={async () => {
                 if (!convertTarget) return;
-                const next: 'ne' | 'noticia' = convertTarget.listing_type === 'ne' ? 'noticia' : 'ne';
+                const next: 'ne' | 'noticia' = (convertTarget.listing_type || 'noticia') === 'ne' ? 'noticia' : 'ne';
                 try {
-                  const updated = await updateProperty({ ...convertTarget, listing_type: next } as any);
+                  await convertListingType({ id: convertTarget.id, target: next });
                   toast({
                     title: next === 'ne' ? 'Convertida a NE (firmada)' : 'Convertida a Noticia',
                     description: next === 'ne'
@@ -574,14 +574,9 @@ const Properties = () => {
                       : 'La propiedad ya aparece en el apartado Noticias.',
                   });
                   setConvertTarget(null);
-                  qc.setQueriesData<Property[]>({ queryKey: ['properties'] }, (old) => {
-                    if (!old) return old;
-                    return old.map((property) => property.id === convertTarget.id ? (updated as Property) : property);
-                  });
-                  await qc.refetchQueries({ queryKey: ['properties'] });
                   navigate(next === 'ne' ? '/propiedades/ne' : '/propiedades/noticias');
-                } catch (e: any) {
-                  toast({ title: 'Error al convertir', description: e?.message || '', variant: 'destructive' });
+                } catch {
+                  // toast ya mostrado por la mutación
                 }
               }}
             >

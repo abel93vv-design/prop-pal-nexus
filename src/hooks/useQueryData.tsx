@@ -197,7 +197,29 @@ export const usePropertyMutations = () => {
     onError: (e: any) => toast({ title: "Error al eliminar", description: e.message, variant: "destructive" }),
   });
 
-  return { addProperty: add.mutateAsync, updateProperty: update.mutateAsync, deleteProperty: remove.mutateAsync };
+  const convertListing = useMutation({
+    mutationFn: async ({ id, target }: { id: string; target: 'ne' | 'noticia' }) => {
+      const { data, error } = await supabase
+        .from('properties')
+        .update({ listing_type: target })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      logActivity(tenantId, user?.id, 'update', 'property', id, { listing_type: target });
+      return toProperty(data);
+    },
+    onSuccess: async (updated) => {
+      qc.setQueriesData<Property[]>({ queryKey: ['properties'] }, (old) => {
+        if (!old) return old;
+        return old.map((p) => p.id === updated.id ? updated : p);
+      });
+      await qc.invalidateQueries({ queryKey: ['properties'] });
+    },
+    onError: (e: any) => toast({ title: 'Error al convertir', description: e.message, variant: 'destructive' }),
+  });
+
+  return { addProperty: add.mutateAsync, updateProperty: update.mutateAsync, deleteProperty: remove.mutateAsync, convertListingType: convertListing.mutateAsync };
 };
 
 export const useClientMutations = () => {

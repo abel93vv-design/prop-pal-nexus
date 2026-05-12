@@ -24,6 +24,7 @@ interface DataContextType {
   addProperty: (p: Omit<Property, "id">) => Promise<any>;
   updateProperty: (p: Property) => Promise<any>;
   deleteProperty: (id: string) => Promise<any>;
+  convertListingType: (args: { id: string; target: 'ne' | 'noticia' }) => Promise<any>;
   addUser: (u: Omit<User, "id">) => Promise<any>;
   updateUser: (u: User) => Promise<any>;
   deleteUser: (id: string) => Promise<any>;
@@ -47,7 +48,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   const { data: documents = [], isLoading: loadingDocs } = useDocuments();
 
   // Mutation hooks
-  const { addProperty, updateProperty, deleteProperty } = usePropertyMutations();
+  const { addProperty, updateProperty, deleteProperty, convertListingType } = usePropertyMutations();
   const { addClient, updateClient, deleteClient } = useClientMutations();
   const { addAgency, updateAgency, deleteAgency } = useAgencyMutations();
   const { addUser, updateUser, deleteUser } = useTeamMemberMutations();
@@ -61,7 +62,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       agencies, clients, properties, users, tasks, documents, monthlyData, loading,
       addAgency, updateAgency, deleteAgency,
       addClient, updateClient, deleteClient,
-      addProperty, updateProperty, deleteProperty,
+      addProperty, updateProperty, deleteProperty, convertListingType,
       addUser, updateUser, deleteUser,
       addTask, updateTask, deleteTask,
       addDocument, updateDocument, deleteDocument,
