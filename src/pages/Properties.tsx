@@ -166,10 +166,16 @@ const Properties = () => {
       <div className="space-y-6 animate-fade-in">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Propiedades</h1>
-            <p className="text-sm text-muted-foreground mt-1">{properties.length} propiedades en el sistema</p>
+            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+              {activeListing === 'ne' && <FileSignature className="w-5 h-5 text-primary" />}
+              {activeListing === 'noticia' && <Newspaper className="w-5 h-5 text-primary" />}
+              {activeListing === 'ne' ? 'Propiedades · NE (firmadas)'
+                : activeListing === 'noticia' ? 'Propiedades · Noticias'
+                : 'Propiedades'}
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">{filtered.length} {filtered.length === 1 ? 'propiedad' : 'propiedades'}{activeListing !== 'all' ? ' en este apartado' : ' en el sistema'}</p>
           </div>
-          <Button onClick={openCreate} size="sm"><Plus className="w-4 h-4 mr-1" />Nueva Propiedad</Button>
+          <Button onClick={openCreate} size="sm"><Plus className="w-4 h-4 mr-1" />Nueva {activeListing === 'ne' ? 'NE' : activeListing === 'noticia' ? 'Noticia' : 'Propiedad'}</Button>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
