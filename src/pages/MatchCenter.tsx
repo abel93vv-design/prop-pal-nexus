@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
-import { Search, RefreshCw, Loader2, ArrowUpDown, Target, TrendingUp, AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, Check, X } from "lucide-react";
+import { Search, RefreshCw, Loader2, ArrowUpDown, Target, TrendingUp, AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, Check, X, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const categoryLabels: Record<string, string> = { high: "Alto", medium: "Medio", low: "Bajo" };
