@@ -215,6 +215,19 @@ const Properties = () => {
             return (
               <div key={p.id} className="rounded-xl border border-border bg-card overflow-hidden hover:shadow-md transition-shadow relative group">
                 <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="h-7 w-7"
+                    title={p.listing_type === 'ne' ? 'Convertir a Noticia' : 'Convertir a NE (firmada)'}
+                    onClick={async () => {
+                      const next = p.listing_type === 'ne' ? 'noticia' : 'ne';
+                      await updateProperty({ ...p, listing_type: next } as any);
+                      toast({ title: next === 'ne' ? 'Convertida a NE' : 'Convertida a Noticia' });
+                    }}
+                  >
+                    <ArrowRightLeft className="w-3 h-3" />
+                  </Button>
                   <Button variant="secondary" size="icon" className="h-7 w-7" title="Crear oportunidad" onClick={() => navigate(`/pipeline?property=${p.id}`)}><Kanban className="w-3 h-3" /></Button>
                   <Button variant="secondary" size="icon" className="h-7 w-7" title="Documentos" onClick={() => openDocs(p)}><FileText className="w-3 h-3" /></Button>
                   <Button variant="secondary" size="icon" className="h-7 w-7" onClick={() => openEdit(p)}><Pencil className="w-3 h-3" /></Button>
@@ -231,6 +244,9 @@ const Properties = () => {
                   <div className="flex items-start justify-between gap-2">
                     <h3 className="font-semibold text-sm text-foreground leading-tight">{p.title}</h3>
                     <div className="flex flex-col gap-1 items-end shrink-0">
+                      <Badge variant="outline" className={`text-[10px] ${p.listing_type === 'ne' ? 'bg-primary/10 text-primary border-primary/20' : 'bg-warning/10 text-warning border-warning/20'}`}>
+                        {p.listing_type === 'ne' ? 'NE' : 'Noticia'}
+                      </Badge>
                       <Badge variant="outline" className={`text-[10px] ${statusColors[p.status]}`}>{statusLabels[p.status]}</Badge>
                     </div>
                   </div>
