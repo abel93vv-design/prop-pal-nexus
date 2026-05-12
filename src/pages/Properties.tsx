@@ -9,7 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Building2, MapPin, Bed, Bath, Ruler, Search, Plus, Pencil, Trash2, FileText, Upload, X, Kanban, FileSignature, Newspaper, ArrowRightLeft } from "lucide-react";
+import { Building2, MapPin, Bed, Bath, Ruler, Search, Plus, Pencil, Trash2, FileText, Upload, X, Kanban, FileSignature, Newspaper, ArrowRightLeft, RefreshCw } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PortalPublicationControls } from "@/components/PortalPublicationControls";
 import { PropertyZoneSelector } from "@/components/PropertyZoneSelector";
@@ -64,6 +65,17 @@ const emptyDoc: Omit<Document, "id"> = {
 const Properties = () => {
   const { properties, users, agencies, clients, documents, addProperty, updateProperty, deleteProperty, addDocument, deleteDocument } = useData();
   const { toast } = useToast();
+  const qc = useQueryClient();
+  const [refreshing, setRefreshing] = useState(false);
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await qc.refetchQueries({ queryKey: ['properties'] });
+      toast({ title: 'Lista actualizada' });
+    } finally {
+      setRefreshing(false);
+    }
+  };
   const navigate = useNavigate();
   const { listingType: routeListing } = useParams<{ listingType?: string }>();
   const activeListing: 'ne' | 'noticia' | 'all' =
@@ -176,7 +188,12 @@ const Properties = () => {
             </h1>
             <p className="text-sm text-muted-foreground mt-1">{filtered.length} {filtered.length === 1 ? 'propiedad' : 'propiedades'}{activeListing !== 'all' ? ' en este apartado' : ' en el sistema'}</p>
           </div>
-          <Button onClick={openCreate} size="sm"><Plus className="w-4 h-4 mr-1" />Nueva {activeListing === 'ne' ? 'NE' : activeListing === 'noticia' ? 'Noticia' : 'Propiedad'}</Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}>
+              <RefreshCw className={`w-4 h-4 mr-1 ${refreshing ? 'animate-spin' : ''}`} />Refrescar
+            </Button>
+            <Button onClick={openCreate} size="sm"><Plus className="w-4 h-4 mr-1" />Nueva {activeListing === 'ne' ? 'NE' : activeListing === 'noticia' ? 'Noticia' : 'Propiedad'}</Button>
+          </div>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
