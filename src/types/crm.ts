@@ -85,6 +85,8 @@ export interface Property {
   has_air_conditioning: boolean;
   operationType: OperationType;
   monthly_rent: number;
+  condition?: string;
+  unavailable_reason?: string;
 }
 
 export interface User {
