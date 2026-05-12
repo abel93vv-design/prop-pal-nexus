@@ -186,6 +186,7 @@ function calculatePropertyScore(
     const extrasMap: Record<string, boolean> = {
       ascensor: prop.has_elevator, terraza: prop.has_terrace, piscina: prop.has_pool,
       garaje: prop.has_garage, aire_acondicionado: prop.has_air_conditioning,
+      acepta_mascotas: !!(prop as any).accepts_pets,
     };
     for (const extra of prefs.required_extras) {
       featureTotal++;
