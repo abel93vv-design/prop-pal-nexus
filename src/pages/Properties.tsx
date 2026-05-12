@@ -65,6 +65,17 @@ const emptyDoc: Omit<Document, "id"> = {
 const Properties = () => {
   const { properties, users, agencies, clients, documents, addProperty, updateProperty, deleteProperty, addDocument, deleteDocument } = useData();
   const { toast } = useToast();
+  const qc = useQueryClient();
+  const [refreshing, setRefreshing] = useState(false);
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await qc.refetchQueries({ queryKey: ['properties'] });
+      toast({ title: 'Lista actualizada' });
+    } finally {
+      setRefreshing(false);
+    }
+  };
   const navigate = useNavigate();
   const { listingType: routeListing } = useParams<{ listingType?: string }>();
   const activeListing: 'ne' | 'noticia' | 'all' =
