@@ -377,7 +377,7 @@ Deno.serve(async (req) => {
 
     let propsQuery = supabase
       .from("properties")
-      .select("id, price, surface, built_surface, plot_surface, bedrooms, bathrooms, floor, type, address, neighborhood, postal_code, status, agency_id, community_fees, ibi_annual, has_elevator, has_terrace, has_pool, has_garage, has_air_conditioning, operation_type, monthly_rent")
+      .select("id, price, surface, built_surface, plot_surface, bedrooms, bathrooms, floor, type, address, neighborhood, postal_code, status, agency_id, community_fees, ibi_annual, has_elevator, has_terrace, has_pool, has_garage, has_air_conditioning, accepts_pets, operation_type, monthly_rent")
       .eq("tenant_id", tenant_id)
       .in("status", ["disponible", "reservado"]);
     if (property_id) propsQuery = propsQuery.eq("id", property_id);
