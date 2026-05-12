@@ -174,7 +174,7 @@ const MatchCenter = () => {
         <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
           <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input placeholder="Buscar por cliente o propiedad..." className="pl-9 h-9 text-sm" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <Input placeholder="Buscar por cliente, teléfono o propiedad..." className="pl-9 h-9 text-sm" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
           <Select value={filterCategory} onValueChange={setFilterCategory}>
             <SelectTrigger className="w-[140px] h-9 text-xs"><SelectValue placeholder="Categoría" /></SelectTrigger>
