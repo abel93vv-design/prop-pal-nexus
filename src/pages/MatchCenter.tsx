@@ -81,7 +81,14 @@ const MatchCenter = () => {
           const client = clients.find((c) => c.id === m.client_id);
           const property = properties.find((p) => p.id === m.property_id);
           const q = search.toLowerCase();
-          if (!client?.name.toLowerCase().includes(q) && !property?.title.toLowerCase().includes(q)) return false;
+          const phoneNorm = (client?.phone || "").replace(/\D/g, "");
+          const qNorm = q.replace(/\D/g, "");
+          const matchPhone = qNorm.length > 0 && phoneNorm.includes(qNorm);
+          if (
+            !client?.name.toLowerCase().includes(q) &&
+            !property?.title.toLowerCase().includes(q) &&
+            !matchPhone
+          ) return false;
         }
         if (filterAgent !== "all") {
           const property = properties.find((p) => p.id === m.property_id);
