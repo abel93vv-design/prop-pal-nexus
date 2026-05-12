@@ -79,6 +79,7 @@ const Properties = () => {
   const [editing, setEditing] = useState<Property | null>(null);
   const [form, setForm] = useState<Omit<Property, "id">>(emptyProperty);
   const [deleteTarget, setDeleteTarget] = useState<Property | null>(null);
+  const [convertTarget, setConvertTarget] = useState<Property | null>(null);
   const [unavailableDialogOpen, setUnavailableDialogOpen] = useState(false);
   const [unavailableReasonDraft, setUnavailableReasonDraft] = useState("");
   const [docsProperty, setDocsProperty] = useState<Property | null>(null);
