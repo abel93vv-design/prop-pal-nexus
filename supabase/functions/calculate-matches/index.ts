@@ -114,18 +114,51 @@ function calculatePropertyScore(
 
   const propZoneId = (prop.neighborhood || "").trim();
 
+  // Mapping barrio -> distrito (debe mantenerse sincronizado con src/data/malagaZones.ts)
+  const BARRIO_TO_DISTRITO: Record<string, string> = {
+    "centro-historico":"centro","la-merced":"centro","la-goleta":"centro","ensanche-centro":"centro","soho":"centro","la-victoria":"centro","la-malagueta":"centro","lagunillas":"centro","la-trinidad":"centro",
+    "el-palo":"este","pedregalejo":"este","el-candado":"este","el-morlaco":"este","el-limonar":"este",
+    "ciudad-jardin-centro":"ciudad-jardin","mangas-verdes":"ciudad-jardin","parque-del-sur":"ciudad-jardin",
+    "gamarra":"bailen-miraflores","miraflores":"bailen-miraflores","nueva-malaga":"bailen-miraflores","suarez":"bailen-miraflores","carlinda":"bailen-miraflores",
+    "la-palmilla":"palma-palmilla","26-de-febrero":"palma-palmilla",
+    "la-aurora":"cruz-humilladero","tiro-de-pichon":"cruz-humilladero","el-duende":"cruz-humilladero","intelhorce":"cruz-humilladero","los-tilos":"cruz-humilladero","santa-julia":"cruz-humilladero","portada-alta":"cruz-humilladero","la-barriguilla":"cruz-humilladero",
+    "huelin":"carretera-cadiz","la-paz":"carretera-cadiz","la-princesa":"carretera-cadiz","nuevo-san-andres":"carretera-cadiz","pacifico":"carretera-cadiz","san-andres":"carretera-cadiz","la-luz":"carretera-cadiz","jardin-abadia":"carretera-cadiz","el-torcal":"carretera-cadiz","parque-oeste":"carretera-cadiz","la-termica-sacaba":"carretera-cadiz","los-guindos":"carretera-cadiz","vistafranca":"carretera-cadiz",
+    "churriana-centro":"churriana","guadalmar":"churriana",
+    "campanillas-centro":"campanillas","santa-rosalia":"campanillas","maqueda":"campanillas","huertecillas":"campanillas","colmenarejo":"campanillas","castanetas":"campanillas","segovia":"campanillas",
+    "los-verdiales":"puerto-torre",
+    "teatinos":"teatinos","universidad":"teatinos","los-manantiales":"teatinos","el-consul":"teatinos",
+  };
+
+  const MUNICIPIO_GROUP: Record<string, string> = {
+    "mun-cartama":"valle-guadalhorce","mun-coin":"valle-guadalhorce","mun-alora":"valle-guadalhorce","mun-alhaurin-grande":"valle-guadalhorce","mun-alhaurin-torre":"valle-guadalhorce",
+    "mun-marbella":"costa-occidental","mun-estepona":"costa-occidental","mun-torremolinos":"costa-occidental","mun-benalmadena":"costa-occidental","mun-fuengirola":"costa-occidental","mun-mijas":"costa-occidental",
+    "mun-rincon-victoria":"costa-oriental","mun-velez-malaga":"costa-oriental","mun-nerja":"costa-oriental",
+    "mun-antequera":"interior","mun-ronda":"interior",
+  };
+
   if (prefs.selected_zones && prefs.selected_zones.length > 0 && propZoneId) {
+    const [propType, propId] = propZoneId.split(":");
+    let matched = false;
+    let matchKind = "";
+
     if (prefs.selected_zones.includes(propZoneId)) {
-      locationScore = 100; locationMet = true;
-      locationDetail = `Zona "${propZoneId}" coincide con zona de interés`;
-    } else {
-      const [propType, propId] = propZoneId.split(":");
-      if (propType === "barrio") {
-        const districtMatch = prefs.selected_zones.find(z => {
-          if (!z.startsWith("distrito:")) return false;
-          return false;
-        });
+      matched = true; matchKind = "exacta";
+    } else if (propType === "barrio") {
+      const distId = BARRIO_TO_DISTRITO[propId];
+      if (distId && prefs.selected_zones.includes(`distrito:${distId}`)) {
+        matched = true; matchKind = `distrito ${distId}`;
       }
+    } else if (propType === "municipio") {
+      const grp = MUNICIPIO_GROUP[propId];
+      if (grp && prefs.selected_zones.includes(`grupo:${grp}`)) {
+        matched = true; matchKind = `grupo ${grp}`;
+      }
+    }
+
+    if (matched) {
+      locationScore = 100; locationMet = true;
+      locationDetail = `Zona "${propZoneId}" coincide (${matchKind}) con zonas del cliente`;
+    } else {
       locationScore = 10;
       locationDetail = `Zona "${propZoneId}" no está en las ${prefs.selected_zones.length} zonas seleccionadas`;
     }
@@ -155,6 +188,7 @@ function calculatePropertyScore(
       locationDetail = "Sin ubicaciones preferidas";
     }
   }
+
   criteria.push({ label: "Ubicación", weight: 30, score: Math.round(locationScore), met: locationMet, detail: locationDetail });
 
   let featureHits = 0;
