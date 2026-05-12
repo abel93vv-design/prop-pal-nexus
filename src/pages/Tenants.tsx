@@ -50,7 +50,7 @@ const emptyForm = { name: "", slug: "", plan: "free", is_active: true, is_demo: 
 const emptyProvision = { admin_email: "", admin_name: "", admin_password: generatePassword() };
 
 const Tenants = () => {
-  const { isSuperAdmin } = useUserRole();
+  const { isSuperAdmin, loading: roleLoading } = useUserRole();
   const { toast } = useToast();
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(true);
@@ -82,6 +82,7 @@ const Tenants = () => {
 
   useEffect(() => { fetchTenants(); }, [fetchTenants]);
 
+  if (roleLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
   if (!isSuperAdmin) return <Navigate to="/" replace />;
 
   const openCreate = () => {
