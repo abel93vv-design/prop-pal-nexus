@@ -1,6 +1,7 @@
-import { Building2, Users, ClipboardList, LayoutDashboard, UserCog, Landmark, Settings, ShieldCheck, Kanban, Target } from "lucide-react";
+import { Building2, Users, ClipboardList, LayoutDashboard, UserCog, Landmark, Settings, ShieldCheck, Kanban, Target, FileSignature, Newspaper } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { NavLink } from "@/components/NavLink";
+import { useLocation } from "react-router-dom";
 import logoIsotipo from "@/assets/logo-isotipo.png";
 import {
   Sidebar,
@@ -11,14 +12,22 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
   SidebarHeader,
 } from "@/components/ui/sidebar";
+
+const propertySubItems = [
+  { title: "NE (firmadas)", url: "/propiedades/ne", icon: FileSignature },
+  { title: "Noticias", url: "/propiedades/noticias", icon: Newspaper },
+];
 
 const mainItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Pipeline", url: "/pipeline", icon: Kanban },
   { title: "Match Center", url: "/match-center", icon: Target },
-  { title: "Propiedades", url: "/propiedades", icon: Building2 },
+  { title: "Propiedades", url: "/propiedades", icon: Building2, subItems: propertySubItems },
   { title: "Clientes", url: "/clientes", icon: Users },
   { title: "Tareas", url: "/tareas", icon: ClipboardList },
   { title: "Equipo", url: "/equipo", icon: UserCog },
