@@ -22,7 +22,7 @@ import { InterestedClients } from "@/components/InterestManager";
 import { useMatchCenter } from "@/hooks/useMatchCenter";
 import { TopClientMatches } from "@/components/MatchScoreWidgets";
 
-const typeLabels: Record<PropertyType, string> = { piso: 'Piso', casa: 'Casa', local: 'Local', terreno: 'Terreno' };
+const typeLabels: Record<PropertyType, string> = { piso: 'Piso', casa: 'Casa', local: 'Local', terreno: 'Terreno', parking: 'Parking' };
 const statusLabels: Record<PropertyStatus, string> = { disponible: 'Disponible', reservado: 'Reservado', vendido_alquilado: 'Vendido/Alquilado', no_disponible: 'No Disponible' };
 const docTypeLabels: Record<DocumentType, string> = { nota_simple: 'Nota Simple', contrato: 'Contrato', fotos: 'Fotos', otros: 'Otros' };
 const statusColors: Record<PropertyStatus, string> = {
@@ -34,6 +34,18 @@ const statusColors: Record<PropertyStatus, string> = {
 
 const PROP_CATEGORIES = ['residencial', 'comercial', 'lujo', 'suelo', 'industrial', 'otro'];
 
+const conditionLabels: Record<string, string> = {
+  '': 'Sin especificar',
+  entrar_a_vivir: 'Entrar a vivir',
+  a_reformar: 'A reformar',
+  reformado: 'Reformado',
+  traspaso: 'Traspaso',
+  cambio_de_uso: 'Cambio de uso',
+  urbano: 'Urbano',
+  urbanizable: 'Urbanizable',
+  rustico: 'Rústico',
+};
+
 const defaultExtras = { postal_code: '', latitude: null as number | null, longitude: null as number | null, built_surface: 0, plot_surface: 0, energy_cert: 'en_tramite', neighborhood: '', floor: null as number | null, community_fees: 0, ibi_annual: 0, has_elevator: false, has_terrace: false, has_pool: false, has_garage: false, has_air_conditioning: false };
 
 const emptyProperty: Omit<Property, "id"> = {
@@ -41,7 +53,7 @@ const emptyProperty: Omit<Property, "id"> = {
   bedrooms: 0, bathrooms: 0, photos: [], agentId: "", interestedClientIds: [],
   publishedAt: new Date().toISOString().split("T")[0], description: "",
   agencyId: "", category: "residencial", ...defaultExtras,
-  operationType: "venta", monthly_rent: 0,
+  operationType: "venta", monthly_rent: 0, condition: "", unavailable_reason: "",
 };
 
 const emptyDoc: Omit<Document, "id"> = {
@@ -63,6 +75,8 @@ const Properties = () => {
   const [editing, setEditing] = useState<Property | null>(null);
   const [form, setForm] = useState<Omit<Property, "id">>(emptyProperty);
   const [deleteTarget, setDeleteTarget] = useState<Property | null>(null);
+  const [unavailableDialogOpen, setUnavailableDialogOpen] = useState(false);
+  const [unavailableReasonDraft, setUnavailableReasonDraft] = useState("");
   const [docsProperty, setDocsProperty] = useState<Property | null>(null);
   const [docForm, setDocForm] = useState<Omit<Document, "id">>(emptyDoc);
   const [cfValues, setCfValues] = useState<Record<string, any>>({});
@@ -92,6 +106,7 @@ const Properties = () => {
       has_pool: p.has_pool || false, has_garage: p.has_garage || false,
       has_air_conditioning: p.has_air_conditioning || false,
       operationType: p.operationType || "venta", monthly_rent: p.monthly_rent || 0,
+      condition: (p as any).condition || "", unavailable_reason: (p as any).unavailable_reason || "",
     });
     setCfValues(loadedCfValues);
     setDialogOpen(true);
@@ -231,7 +246,7 @@ const Properties = () => {
           <div className="space-y-3">
             <div><Label className="text-xs">Título *</Label><Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} /></div>
             <div><Label className="text-xs">Dirección *</Label><Input value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} /></div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <div>
                 <Label className="text-xs">Tipo</Label>
                 <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v as PropertyType })}>
@@ -240,13 +255,39 @@ const Properties = () => {
                 </Select>
               </div>
               <div>
+                <Label className="text-xs">Condición</Label>
+                <Select value={form.condition || "none"} onValueChange={(v) => setForm({ ...form, condition: v === "none" ? "" : v })}>
+                  <SelectTrigger><SelectValue placeholder="Sin especificar" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sin especificar</SelectItem>
+                    {Object.entries(conditionLabels).filter(([k]) => k !== '').map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
                 <Label className="text-xs">Estado</Label>
-                <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v as PropertyStatus })}>
+                <Select
+                  value={form.status}
+                  onValueChange={(v) => {
+                    const newStatus = v as PropertyStatus;
+                    if (newStatus === 'no_disponible' && form.status !== 'no_disponible') {
+                      setUnavailableReasonDraft(form.unavailable_reason || "");
+                      setUnavailableDialogOpen(true);
+                    }
+                    setForm({ ...form, status: newStatus });
+                  }}
+                >
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>{Object.entries(statusLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
             </div>
+            {form.status === 'no_disponible' && form.unavailable_reason && (
+              <div className="text-xs rounded-md border border-destructive/20 bg-destructive/5 px-3 py-2 text-destructive">
+                <strong>Motivo no disponible:</strong> {form.unavailable_reason}
+                <button type="button" className="ml-2 underline" onClick={() => { setUnavailableReasonDraft(form.unavailable_reason || ""); setUnavailableDialogOpen(true); }}>Editar</button>
+              </div>
+            )}
             <div className="grid grid-cols-3 gap-3">
               <div>
                 <Label className="text-xs">Operación</Label>
@@ -256,10 +297,11 @@ const Properties = () => {
                     <SelectItem value="venta">Venta</SelectItem>
                     <SelectItem value="alquiler">Alquiler</SelectItem>
                     <SelectItem value="ambos">Ambos</SelectItem>
+                    <SelectItem value="alquiler_opcion_compra">Alquiler con opción a compra</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              {(form.operationType === 'alquiler' || form.operationType === 'ambos') && (
+              {(form.operationType === 'alquiler' || form.operationType === 'ambos' || form.operationType === 'alquiler_opcion_compra') && (
                 <div><Label className="text-xs">Renta mensual (€)</Label><Input type="number" value={form.monthly_rent || ""} onChange={e => setForm({ ...form, monthly_rent: Number(e.target.value) })} /></div>
               )}
             </div>
@@ -284,7 +326,7 @@ const Properties = () => {
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div><Label className="text-xs">Precio (€)</Label><Input type="number" value={form.price || ""} onChange={e => setForm({ ...form, price: Number(e.target.value) })} /></div>
-              <div><Label className="text-xs">Superficie (m²)</Label><Input type="number" value={form.surface || ""} onChange={e => setForm({ ...form, surface: Number(e.target.value) })} /></div>
+              <div><Label className="text-xs">Metros útiles (m²)</Label><Input type="number" value={form.surface || ""} onChange={e => setForm({ ...form, surface: Number(e.target.value) })} /></div>
               <div>
                 <Label className="text-xs">Agente</Label>
                 <Select value={form.agentId} onValueChange={(v) => setForm({ ...form, agentId: v })}>
@@ -312,10 +354,6 @@ const Properties = () => {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label className="text-xs">Código Postal</Label><Input value={form.postal_code || ""} onChange={e => setForm({ ...form, postal_code: e.target.value })} /></div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><Label className="text-xs">Latitud</Label><Input type="number" step="any" value={form.latitude ?? ""} onChange={e => setForm({ ...form, latitude: e.target.value ? Number(e.target.value) : null })} /></div>
-              <div><Label className="text-xs">Longitud</Label><Input type="number" step="any" value={form.longitude ?? ""} onChange={e => setForm({ ...form, longitude: e.target.value ? Number(e.target.value) : null })} /></div>
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div>
@@ -424,6 +462,24 @@ const Properties = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
             <Button onClick={handleSave}>{editing ? "Guardar" : "Crear"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Unavailable reason */}
+      <Dialog open={unavailableDialogOpen} onOpenChange={(o) => { if (!o) setUnavailableDialogOpen(false); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Motivo de no disponibilidad</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">Indica por qué esta propiedad pasa a estado "No disponible". Esta información se guardará junto con la propiedad.</p>
+          <Textarea
+            value={unavailableReasonDraft}
+            onChange={e => setUnavailableReasonDraft(e.target.value)}
+            rows={4}
+            placeholder="Ej.: retirada por el propietario, en obras, problemas legales..."
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setUnavailableDialogOpen(false); }}>Cancelar</Button>
+            <Button onClick={() => { setForm(prev => ({ ...prev, unavailable_reason: unavailableReasonDraft.trim() })); setUnavailableDialogOpen(false); }}>Guardar motivo</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

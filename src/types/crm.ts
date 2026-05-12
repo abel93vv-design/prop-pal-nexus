@@ -1,8 +1,9 @@
 export type ClientType = 'comprador' | 'vendedor' | 'arrendador' | 'arrendatario';
 export type LeadStatus = 'nuevo' | 'contactado' | 'en_negociacion' | 'cerrado';
-export type PropertyType = 'piso' | 'casa' | 'local' | 'terreno';
+export type PropertyType = 'piso' | 'casa' | 'local' | 'terreno' | 'parking';
 export type PropertyStatus = 'disponible' | 'reservado' | 'vendido_alquilado' | 'no_disponible';
-export type OperationType = 'venta' | 'alquiler' | 'ambos' | 'compra';
+export type OperationType = 'venta' | 'alquiler' | 'ambos' | 'compra' | 'alquiler_opcion_compra';
+export type PropertyCondition = '' | 'entrar_a_vivir' | 'a_reformar' | 'reformado' | 'traspaso' | 'cambio_de_uso' | 'urbano' | 'urbanizable' | 'rustico';
 export type UserRole = 'admin_global' | 'admin_inmobiliaria' | 'agente' | 'personalizado';
 export type TaskType = 'llamada' | 'email' | 'visita' | 'recordatorio';
 export type TaskStatus = 'pendiente' | 'en_progreso' | 'completada';
@@ -84,6 +85,8 @@ export interface Property {
   has_air_conditioning: boolean;
   operationType: OperationType;
   monthly_rent: number;
+  condition?: string;
+  unavailable_reason?: string;
 }
 
 export interface User {
