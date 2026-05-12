@@ -524,6 +524,12 @@ const Tenants = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <TenantDomainDialog
+        tenantId={domainTenant?.id || null}
+        tenantName={domainTenant?.name}
+        onClose={() => setDomainTenant(null)}
+        onSaved={fetchTenants}
+      />
     </Layout>
   );
 };
