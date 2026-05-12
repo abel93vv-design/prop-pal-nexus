@@ -104,7 +104,7 @@ const Properties = () => {
       has_pool: p.has_pool || false, has_garage: p.has_garage || false,
       has_air_conditioning: p.has_air_conditioning || false,
       operationType: p.operationType || "venta", monthly_rent: p.monthly_rent || 0,
-    });
+      condition: (p as any).condition || "", unavailable_reason: (p as any).unavailable_reason || "",
     setCfValues(loadedCfValues);
     setDialogOpen(true);
   };
