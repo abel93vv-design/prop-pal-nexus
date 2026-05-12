@@ -81,7 +81,14 @@ const MatchCenter = () => {
           const client = clients.find((c) => c.id === m.client_id);
           const property = properties.find((p) => p.id === m.property_id);
           const q = search.toLowerCase();
-          if (!client?.name.toLowerCase().includes(q) && !property?.title.toLowerCase().includes(q)) return false;
+          const phoneNorm = (client?.phone || "").replace(/\D/g, "");
+          const qNorm = q.replace(/\D/g, "");
+          const matchPhone = qNorm.length > 0 && phoneNorm.includes(qNorm);
+          if (
+            !client?.name.toLowerCase().includes(q) &&
+            !property?.title.toLowerCase().includes(q) &&
+            !matchPhone
+          ) return false;
         }
         if (filterAgent !== "all") {
           const property = properties.find((p) => p.id === m.property_id);
@@ -167,7 +174,7 @@ const MatchCenter = () => {
         <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
           <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input placeholder="Buscar por cliente o propiedad..." className="pl-9 h-9 text-sm" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <Input placeholder="Buscar por cliente, teléfono o propiedad..." className="pl-9 h-9 text-sm" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
           <Select value={filterCategory} onValueChange={setFilterCategory}>
             <SelectTrigger className="w-[140px] h-9 text-xs"><SelectValue placeholder="Categoría" /></SelectTrigger>
