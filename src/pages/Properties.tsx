@@ -529,6 +529,46 @@ const Properties = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Convert Listing Type Confirm */}
+      <Dialog open={!!convertTarget} onOpenChange={() => setConvertTarget(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>
+              {convertTarget?.listing_type === 'ne' ? '¿Convertir a Noticia?' : '¿Convertir a NE (firmada)?'}
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            {convertTarget?.listing_type === 'ne'
+              ? <>La propiedad <strong>{convertTarget?.title}</strong> pasará al apartado <strong>Noticias</strong> (sin firmar). Podrás volver a convertirla cuando quieras.</>
+              : <>La propiedad <strong>{convertTarget?.title}</strong> pasará al apartado <strong>NE (firmadas)</strong>. Confirma que la nota de encargo está firmada.</>}
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConvertTarget(null)}>Cancelar</Button>
+            <Button
+              onClick={async () => {
+                if (!convertTarget) return;
+                const next: 'ne' | 'noticia' = convertTarget.listing_type === 'ne' ? 'noticia' : 'ne';
+                try {
+                  await updateProperty({ ...convertTarget, listing_type: next } as any);
+                  toast({
+                    title: next === 'ne' ? 'Convertida a NE (firmada)' : 'Convertida a Noticia',
+                    description: next === 'ne'
+                      ? 'La propiedad ya aparece en el apartado NE.'
+                      : 'La propiedad ya aparece en el apartado Noticias.',
+                  });
+                  setConvertTarget(null);
+                  navigate(next === 'ne' ? '/propiedades/ne' : '/propiedades/noticias');
+                } catch (e: any) {
+                  toast({ title: 'Error al convertir', description: e?.message || '', variant: 'destructive' });
+                }
+              }}
+            >
+              Confirmar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Documents Manager */}
       <Dialog open={!!docsProperty} onOpenChange={() => setDocsProperty(null)}>
         <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
