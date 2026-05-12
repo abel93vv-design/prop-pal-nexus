@@ -65,6 +65,9 @@ const Properties = () => {
   const { properties, users, agencies, clients, documents, addProperty, updateProperty, deleteProperty, addDocument, deleteDocument } = useData();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { listingType: routeListing } = useParams<{ listingType?: string }>();
+  const activeListing: 'ne' | 'noticia' | 'all' =
+    routeListing === 'ne' ? 'ne' : routeListing === 'noticias' ? 'noticia' : 'all';
   const { definitions: customFields } = useCustomFieldDefinitions('property');
   const { interests, addInterest, removeInterest, updateInterestType } = useInterests();
   const { getTopMatchesForProperty } = useMatchCenter();
