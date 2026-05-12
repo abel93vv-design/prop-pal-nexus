@@ -151,7 +151,7 @@ export const usePropertyMutations = () => {
         neighborhood: p.neighborhood, floor: p.floor, community_fees: p.community_fees,
         ibi_annual: p.ibi_annual, has_elevator: p.has_elevator, has_terrace: p.has_terrace,
         has_pool: p.has_pool, has_garage: p.has_garage, has_air_conditioning: p.has_air_conditioning,
-        operation_type: p.operationType, monthly_rent: p.monthly_rent,
+        operation_type: p.operationType, monthly_rent: p.monthly_rent, condition: (p as any).condition || "", unavailable_reason: (p as any).unavailable_reason || "",
       }).select().single();
       if (error) throw error;
       logActivity(tenantId, user?.id, 'create', 'property', data.id, { title: p.title });
@@ -173,7 +173,7 @@ export const usePropertyMutations = () => {
         neighborhood: p.neighborhood, floor: p.floor, community_fees: p.community_fees,
         ibi_annual: p.ibi_annual, has_elevator: p.has_elevator, has_terrace: p.has_terrace,
         has_pool: p.has_pool, has_garage: p.has_garage, has_air_conditioning: p.has_air_conditioning,
-        operation_type: p.operationType, monthly_rent: p.monthly_rent,
+        operation_type: p.operationType, monthly_rent: p.monthly_rent, condition: (p as any).condition || "", unavailable_reason: (p as any).unavailable_reason || "",
       }).eq('id', p.id);
       logActivity(tenantId, user?.id, 'update', 'property', p.id, { title: p.title });
     },
