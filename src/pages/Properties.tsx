@@ -221,11 +221,7 @@ const Properties = () => {
                     size="icon"
                     className="h-7 w-7"
                     title={p.listing_type === 'ne' ? 'Convertir a Noticia' : 'Convertir a NE (firmada)'}
-                    onClick={async () => {
-                      const next = p.listing_type === 'ne' ? 'noticia' : 'ne';
-                      await updateProperty({ ...p, listing_type: next } as any);
-                      toast({ title: next === 'ne' ? 'Convertida a NE' : 'Convertida a Noticia' });
-                    }}
+                    onClick={() => setConvertTarget(p)}
                   >
                     <ArrowRightLeft className="w-3 h-3" />
                   </Button>
