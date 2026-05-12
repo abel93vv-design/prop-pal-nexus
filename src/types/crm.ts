@@ -87,6 +87,7 @@ export interface Property {
   monthly_rent: number;
   condition?: string;
   unavailable_reason?: string;
+  listing_type?: 'ne' | 'noticia';
 }
 
 export interface User {
