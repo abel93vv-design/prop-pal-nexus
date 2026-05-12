@@ -23,6 +23,7 @@ interface TenantUser {
   full_name: string | null;
   created_at: string;
   last_sign_in_at: string | null;
+  roles?: string[];
 }
 
 
