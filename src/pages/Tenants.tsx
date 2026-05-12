@@ -67,7 +67,7 @@ const Tenants = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [resettingPassword, setResettingPassword] = useState(false);
 
-  const isSuperAdmin = isAdmin;
+  
 
   const fetchTenants = useCallback(async () => {
     setLoading(true);
