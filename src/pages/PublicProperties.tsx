@@ -11,7 +11,7 @@ import { Building2, MapPin, Bed, Bath, Ruler, Search, Phone } from "lucide-react
 import { PropertyType } from "@/types/crm";
 import { useToast } from "@/hooks/use-toast";
 
-const typeLabels: Record<PropertyType, string> = { piso: 'Piso', casa: 'Casa', local: 'Local', terreno: 'Terreno' };
+const typeLabels: Record<PropertyType, string> = { piso: 'Piso', casa: 'Casa', local: 'Local', terreno: 'Terreno', parking: 'Parking' };
 
 const PublicProperties = () => {
   const { properties, users } = useData();
