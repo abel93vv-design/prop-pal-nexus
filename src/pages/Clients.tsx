@@ -211,6 +211,64 @@ const emptyClient: Omit<Client, "id"> = {
   operationType: "compra",
 };
 
+
+const CLIENT_DOC_TYPE_LABELS: Record<DocumentType, string> = {
+  proteccion_datos: 'Protección de Datos',
+  contrato: 'Contrato',
+  nota_simple: 'Nota Simple',
+  fotos: 'Fotos',
+  otros: 'Otros',
+};
+
+const ClientDocumentsSection = ({ clientId, documents, onAdd, onDelete }: {
+  clientId: string;
+  documents: { id: string; name: string; type: DocumentType; uploadedAt: string }[];
+  onAdd: (name: string, type: DocumentType) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
+}) => {
+  const [name, setName] = useState("");
+  const [type, setType] = useState<DocumentType>('proteccion_datos');
+  const handleAdd = async () => {
+    if (!name.trim()) return;
+    await onAdd(name.trim(), type);
+    setName("");
+    setType('proteccion_datos');
+  };
+  return (
+    <div className="space-y-2 p-3 rounded-lg border border-border bg-muted/30">
+      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Documentos del cliente</p>
+      <div className="grid grid-cols-[1fr_auto_auto] gap-2">
+        <Input placeholder="Nombre del documento" value={name} onChange={e => setName(e.target.value)} />
+        <Select value={type} onValueChange={(v) => setType(v as DocumentType)}>
+          <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {Object.entries(CLIENT_DOC_TYPE_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Button size="sm" onClick={handleAdd}><Upload className="w-3.5 h-3.5 mr-1" />Añadir</Button>
+      </div>
+      {documents.length === 0
+        ? <p className="text-xs text-muted-foreground text-center py-2">Sin documentos.</p>
+        : <div className="space-y-1.5">
+            {documents.map(d => (
+              <div key={d.id} className="flex items-center justify-between p-2 rounded border border-border bg-card">
+                <div className="flex items-center gap-2 min-w-0">
+                  <FileText className="w-4 h-4 text-primary shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{d.name}</p>
+                    <p className="text-xs text-muted-foreground">{CLIENT_DOC_TYPE_LABELS[d.type] || d.type} · {new Date(d.uploadedAt).toLocaleDateString('es-ES')}</p>
+                  </div>
+                </div>
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => onDelete(d.id)}>
+                  <X className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            ))}
+          </div>}
+    </div>
+  );
+};
+
 const Clients = () => {
   const { clients, agencies, properties, addClient, updateClient, deleteClient, documents, addDocument, deleteDocument } = useData();
   const { tenantId } = useTenant();
