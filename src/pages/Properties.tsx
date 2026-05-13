@@ -268,12 +268,35 @@ const Properties = () => {
                   <Button variant="secondary" size="icon" className="h-7 w-7" onClick={() => openEdit(p)}><Pencil className="w-3 h-3" /></Button>
                   <Button variant="secondary" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(p)}><Trash2 className="w-3 h-3" /></Button>
                 </div>
-                <div className="h-40 bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center overflow-hidden">
+                <div className="h-40 bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center overflow-hidden relative">
                   {p.photos.length > 0 ? (
                     <img src={p.photos[0]} alt={p.title} className="w-full h-full object-cover" />
                   ) : (
                     <Building2 className="w-12 h-12 text-primary/30" />
                   )}
+                  {p.listing_type === 'ne' && (() => {
+                    if (!p.ne_end_date) {
+                      return (
+                        <div className="absolute top-2 left-2 px-2 py-1 rounded-md text-[11px] font-medium bg-muted text-muted-foreground border border-border">
+                          NE sin fecha
+                        </div>
+                      );
+                    }
+                    const days = getDaysUntil(p.ne_end_date)!;
+                    const cls = days < 0 ? 'bg-destructive text-destructive-foreground'
+                      : days <= 5 ? 'bg-destructive text-destructive-foreground'
+                      : days <= 15 ? 'bg-warning text-warning-foreground'
+                      : 'bg-success text-success-foreground';
+                    const label = days < 0 ? `Caducada hace ${Math.abs(days)} d.`
+                      : days === 0 ? 'Caduca hoy'
+                      : `Quedan ${days} día${days === 1 ? '' : 's'}`;
+                    const endFmt = new Date(p.ne_end_date).toLocaleDateString('es-ES');
+                    return (
+                      <div className={`absolute top-2 left-2 px-2 py-1 rounded-md text-[11px] font-semibold shadow-md ${cls}`}>
+                        Fin NE: {endFmt} · {label}
+                      </div>
+                    );
+                  })()}
                 </div>
                 <div className="p-4 space-y-3">
                   <div className="flex items-start justify-between gap-2">
