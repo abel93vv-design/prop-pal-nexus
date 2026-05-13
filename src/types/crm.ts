@@ -88,6 +88,8 @@ export interface Property {
   condition?: string;
   unavailable_reason?: string;
   listing_type?: 'ne' | 'noticia';
+  ne_start_date?: string | null;
+  ne_end_date?: string | null;
 }
 
 export interface User {
