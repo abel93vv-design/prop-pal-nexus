@@ -404,8 +404,8 @@ export const useDocumentMutations = () => {
   const add = useMutation({
     mutationFn: async (d: Omit<Document, "id">) => {
       const { data, error } = await supabase.from('documents').insert({
-        name: d.name, type: d.type, file: d.file, property_id: d.propertyId || null, tenant_id: tenantId,
-      }).select().single();
+        name: d.name, type: d.type, file: d.file, property_id: d.propertyId || null, client_id: d.clientId || null, tenant_id: tenantId,
+      } as any).select().single();
       if (error) throw error;
       logActivity(tenantId, user?.id, 'create', 'document', data.id, { name: d.name });
       return toDocument(data);
@@ -416,8 +416,8 @@ export const useDocumentMutations = () => {
   const update = useMutation({
     mutationFn: async (d: Document) => {
       await supabase.from('documents').update({
-        name: d.name, type: d.type, file: d.file, property_id: d.propertyId || null,
-      }).eq('id', d.id);
+        name: d.name, type: d.type, file: d.file, property_id: d.propertyId || null, client_id: d.clientId || null,
+      } as any).eq('id', d.id);
       logActivity(tenantId, user?.id, 'update', 'document', d.id, { name: d.name });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['documents'] }),
