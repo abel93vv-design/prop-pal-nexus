@@ -115,14 +115,66 @@ const Auth = () => {
         setSubmitting(false);
         return;
       }
+      const GENERIC_MSG = "Datos de inicio de sesión incorrectos. Por favor, inténtalo de nuevo.";
       const { error } = await signIn(email, password);
       if (error) {
         await recordFailure(email);
-        const msg = attemptsRemaining <= 1
-          ? "Contraseña incorrecta. Cuenta bloqueada por 2 horas."
-          : `Contraseña incorrecta. Te quedan ${Math.max(0, attemptsRemaining - 1)} intentos.`;
-        toast({ title: "Error", description: msg, variant: "destructive" });
+        toast({ title: "Error", description: GENERIC_MSG, variant: "destructive" });
       } else {
+        // Validate user belongs to the tenant resolved by the current host
+        const hostname = window.location.hostname;
+        const isLovable =
+          hostname.includes("lovable.app") ||
+          hostname.includes("lovableproject.com") ||
+          hostname.includes("lovable.dev") ||
+          hostname === "localhost" ||
+          hostname === "127.0.0.1";
+
+        if (!isLovable) {
+          const { data: { user: signedInUser } } = await supabase.auth.getUser();
+          if (signedInUser) {
+            // Super admin bypass
+            const { data: isSuper } = await supabase.rpc("is_super_admin", { _user_id: signedInUser.id });
+            if (!isSuper) {
+              // Resolve tenant for current host
+              let hostTenantId: string | null = null;
+              const { data: byDomain } = await supabase.rpc("get_tenant_by_domain", { _host: hostname });
+              if (byDomain && byDomain.length > 0 && byDomain[0].domain_verified && byDomain[0].is_active) {
+                hostTenantId = byDomain[0].id;
+              } else {
+                // Try subdomain
+                const parts = hostname.split(".");
+                let sub: string | null = null;
+                if (parts.length === 2 && parts[1] === "localhost") sub = parts[0];
+                else if (parts.length >= 3) sub = parts[0];
+                if (sub && sub !== "www") {
+                  const { data: tBySlug } = await supabase
+                    .from("tenants")
+                    .select("id")
+                    .eq("slug", sub)
+                    .eq("is_active", true)
+                    .maybeSingle();
+                  if (tBySlug) hostTenantId = tBySlug.id;
+                }
+              }
+
+              if (hostTenantId) {
+                const { data: profile } = await supabase
+                  .from("profiles")
+                  .select("tenant_id")
+                  .eq("user_id", signedInUser.id)
+                  .maybeSingle();
+
+                if (!profile || profile.tenant_id !== hostTenantId) {
+                  await supabase.auth.signOut();
+                  await recordFailure(email);
+                  toast({ title: "Error", description: GENERIC_MSG, variant: "destructive" });
+                  return;
+                }
+              }
+            }
+          }
+        }
         await resetAttempts(email);
       }
     } finally {
