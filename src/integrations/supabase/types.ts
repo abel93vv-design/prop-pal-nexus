@@ -1333,6 +1333,7 @@ export type Database = {
           property_ids: string[] | null
           role: string
           tenant_id: string | null
+          user_id: string | null
         }
         Insert: {
           access_type?: string
@@ -1349,6 +1350,7 @@ export type Database = {
           property_ids?: string[] | null
           role?: string
           tenant_id?: string | null
+          user_id?: string | null
         }
         Update: {
           access_type?: string
@@ -1365,6 +1367,7 @@ export type Database = {
           property_ids?: string[] | null
           role?: string
           tenant_id?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {

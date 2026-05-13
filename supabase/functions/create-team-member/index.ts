@@ -5,6 +5,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const VALID_ROLES = ["admin", "socio", "coordinadora", "asesor"] as const;
+type AppRole = typeof VALID_ROLES[number];
+
 function generatePassword(length = 12): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%";
   let pwd = "";
@@ -27,7 +30,6 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    // Verify caller is authenticated
     const callerClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -38,24 +40,39 @@ Deno.serve(async (req) => {
     }
 
     const callerId = claimsData.claims.sub;
-
-    // Admin client to get caller's profile
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
-    // Get caller's tenant_id from profiles
     const { data: callerProfile } = await adminClient.from("profiles").select("tenant_id").eq("user_id", callerId).single();
     const tenantId = callerProfile?.tenant_id;
+    if (!tenantId) {
+      return new Response(JSON.stringify({ error: "No se pudo identificar tu inmobiliaria" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // Validate caller is admin of tenant or super_admin
+    const { data: callerRoles } = await adminClient
+      .from("user_roles")
+      .select("role, tenant_id")
+      .eq("user_id", callerId);
+    const isAuthorized = (callerRoles || []).some(
+      (r: any) => r.role === "super_admin" || (r.role === "admin" && r.tenant_id === tenantId),
+    );
+    if (!isAuthorized) {
+      return new Response(JSON.stringify({ error: "Solo los administradores pueden crear miembros" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
 
     const body = await req.json();
-    const { name, email, role, phone, agency_id, access_type, permissions, password: providedPassword } = body;
+    const { name, email, phone, agency_id, app_role, password: providedPassword } = body;
 
-    if (!name || !email || !role) {
+    if (!name || !email || !app_role) {
       return new Response(JSON.stringify({ error: "Nombre, email y rol son obligatorios" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    if (!VALID_ROLES.includes(app_role)) {
+      return new Response(JSON.stringify({ error: `Rol inválido. Debe ser uno de: ${VALID_ROLES.join(", ")}` }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const password = providedPassword || generatePassword();
 
-    // Create auth user
     const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
       email,
       password,
@@ -69,28 +86,41 @@ Deno.serve(async (req) => {
 
     const userId = authData.user.id;
 
-    // Update profile with tenant_id and must_change_password
     await adminClient.from("profiles").update({
       tenant_id: tenantId,
       must_change_password: true,
     }).eq("user_id", userId);
 
-    // Create team member row (no password column)
+    // Insert team member with user_id link
     const { error: teamError } = await adminClient.from("team_members").insert({
       name,
       email,
-      role,
+      role: app_role, // legacy column, now stores app_role too
       phone: phone || "",
       agency_id: agency_id || null,
-      access_type: access_type || "solo_inmobiliaria",
-      permissions: permissions || [],
+      access_type: "solo_inmobiliaria",
+      permissions: [],
       tenant_id: tenantId,
+      user_id: userId,
     });
 
     if (teamError) {
-      // Rollback: delete auth user
       await adminClient.auth.admin.deleteUser(userId);
       return new Response(JSON.stringify({ error: teamError.message }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // Insert user_role for RBAC
+    const { error: roleError } = await adminClient.from("user_roles").insert({
+      user_id: userId,
+      tenant_id: tenantId,
+      role: app_role as AppRole,
+    });
+
+    if (roleError) {
+      // Rollback
+      await adminClient.from("team_members").delete().eq("user_id", userId);
+      await adminClient.auth.admin.deleteUser(userId);
+      return new Response(JSON.stringify({ error: `Error al asignar rol: ${roleError.message}` }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const loginUrl = `${req.headers.get("origin") || supabaseUrl}/auth`;
@@ -101,12 +131,12 @@ Deno.serve(async (req) => {
       email,
       password,
       login_url: loginUrl,
-      message: `Usuario creado. Comparta las credenciales con ${name}.`,
+      message: `Usuario creado con rol ${app_role}. Comparta las credenciales con ${name}.`,
     }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ error: (err as Error).message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
