@@ -155,6 +155,10 @@ const Properties = () => {
 
   const handleSave = async () => {
     if (!form.title.trim() || !form.address.trim()) { toast({ title: "Error", description: "Título y dirección son obligatorios", variant: "destructive" }); return; }
+    if (form.listing_type === 'ne' && (!form.ne_start_date || !form.ne_end_date)) {
+      toast({ title: "Error", description: "Las fechas de inicio y fin de la NE son obligatorias", variant: "destructive" });
+      return;
+    }
     if (editing) {
       await updateProperty({ ...editing, ...form });
       await saveCfValues(editing.id, cfValues);
