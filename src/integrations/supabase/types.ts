@@ -298,6 +298,7 @@ export type Database = {
           phone: string | null
           property_ids: string[] | null
           registered_at: string
+          source: string | null
           tenant_id: string | null
           type: string
         }
@@ -318,6 +319,7 @@ export type Database = {
           phone?: string | null
           property_ids?: string[] | null
           registered_at?: string
+          source?: string | null
           tenant_id?: string | null
           type?: string
         }
@@ -338,6 +340,7 @@ export type Database = {
           phone?: string | null
           property_ids?: string[] | null
           registered_at?: string
+          source?: string | null
           tenant_id?: string | null
           type?: string
         }
@@ -1579,6 +1582,7 @@ export type Database = {
           phone: string | null
           property_ids: string[] | null
           registered_at: string
+          source: string | null
           tenant_id: string | null
           type: string
         }
