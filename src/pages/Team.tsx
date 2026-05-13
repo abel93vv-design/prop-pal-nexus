@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Layout } from "@/components/Layout";
 import { useData } from "@/context/DataContext";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,47 +10,44 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Mail, Phone, Building2, Users, Plus, Pencil, Trash2, ShieldCheck, Key, Loader2, Copy, CheckCircle2 } from "lucide-react";
-import { User, UserRole, AccessType, Permission } from "@/types/crm";
+import { Mail, Phone, Building2, Users, Plus, Pencil, Trash2, ShieldCheck, Loader2, Copy, CheckCircle2 } from "lucide-react";
+import { User } from "@/types/crm";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "react-router-dom";
+import { useUserRole, AppRole } from "@/hooks/useUserRole";
 
-import { useUserRole } from "@/hooks/useUserRole";
+type TeamRole = "admin" | "socio" | "coordinadora" | "asesor";
 
-const roleLabels: Record<UserRole, string> = {
-  admin_global: 'Admin Global',
-  admin_inmobiliaria: 'Admin Inmobiliaria',
-  agente: 'Agente',
-  personalizado: 'Personalizado',
-};
-const roleColors: Record<UserRole, string> = {
-  admin_global: 'bg-destructive/10 text-destructive border-destructive/20',
-  admin_inmobiliaria: 'bg-warning/10 text-warning border-warning/20',
-  agente: 'bg-info/10 text-info border-info/20',
-  personalizado: 'bg-secondary/20 text-secondary-foreground border-secondary/30',
-};
-const accessLabels: Record<AccessType, string> = {
-  total: 'Acceso Total',
-  solo_inmobiliaria: 'Solo su Inmobiliaria',
-  personalizado: 'Personalizado',
+const roleLabels: Record<TeamRole, string> = {
+  admin: "Admin",
+  socio: "Socio",
+  coordinadora: "Coordinadora",
+  asesor: "Asesor",
 };
 
-const ALL_PERMISSIONS: { key: Permission; label: string }[] = [
-  { key: 'ver_clientes', label: 'Ver clientes' },
-  { key: 'ver_propiedades', label: 'Ver propiedades' },
-  { key: 'ver_tareas', label: 'Ver tareas' },
-  { key: 'editar_clientes', label: 'Editar clientes' },
-  { key: 'editar_propiedades', label: 'Editar propiedades' },
-  { key: 'editar_tareas', label: 'Editar tareas' },
-  { key: 'eliminar_registros', label: 'Eliminar registros' },
-  { key: 'publicar_propiedades', label: 'Publicar propiedades' },
-];
+const roleColors: Record<TeamRole, string> = {
+  admin: "bg-destructive/10 text-destructive border-destructive/20",
+  socio: "bg-warning/10 text-warning border-warning/20",
+  coordinadora: "bg-info/10 text-info border-info/20",
+  asesor: "bg-secondary/30 text-secondary-foreground border-secondary/40",
+};
 
-const ALL_PERMS: Permission[] = ALL_PERMISSIONS.map(p => p.key);
+interface FormState {
+  name: string;
+  email: string;
+  phone: string;
+  agencyId: string;
+  appRole: TeamRole;
+  tempPassword: string;
+}
 
-const emptyUser: Omit<User, "id"> & { tempPassword: string } = {
-  name: "", email: "", role: "agente", phone: "", propertyIds: [], clientIds: [],
-  avatar: "", agencyId: "", accessType: "solo_inmobiliaria", permissions: ['ver_clientes','ver_propiedades','ver_tareas'], tempPassword: "",
+const emptyForm: FormState = {
+  name: "",
+  email: "",
+  phone: "",
+  agencyId: "",
+  appRole: "asesor",
+  tempPassword: "",
 };
 
 interface CreatedCredentials {
@@ -63,70 +60,133 @@ interface CreatedCredentials {
 const Team = () => {
   const { users, agencies, updateUser, deleteUser } = useData();
   const { user: authUser } = useAuth();
-  const { isAdmin } = useUserRole();
+  const { isAdmin, isSuperAdmin, tenantId } = useUserRole();
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<User | null>(null);
-  const [form, setForm] = useState<Omit<User, "id"> & { tempPassword: string }>(emptyUser);
+  const [form, setForm] = useState<FormState>(emptyForm);
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [creating, setCreating] = useState(false);
   const [credentials, setCredentials] = useState<CreatedCredentials | null>(null);
   const [copied, setCopied] = useState(false);
+  const [rolesByUserId, setRolesByUserId] = useState<Record<string, TeamRole>>({});
+  const [memberUserIds, setMemberUserIds] = useState<Record<string, string>>({}); // team_member.id -> user_id
 
-  const filtered = users.filter(u => roleFilter === "all" || u.role === roleFilter);
+  const canAssignAdmin = isAdmin || isSuperAdmin;
 
-  const openCreate = () => { setEditing(null); setForm(emptyUser); setDialogOpen(true); };
-  const openEdit = (u: User) => {
-    setEditing(u);
-    setForm({ name: u.name, email: u.email, role: u.role, phone: u.phone, propertyIds: u.propertyIds, clientIds: u.clientIds, avatar: u.avatar, agencyId: u.agencyId, accessType: u.accessType, permissions: u.permissions, tempPassword: "" });
+  // Load user_roles for current tenant + user_id binding from team_members
+  useEffect(() => {
+    if (!tenantId) return;
+    (async () => {
+      const [{ data: tm }, { data: ur }] = await Promise.all([
+        supabase.from("team_members").select("id, user_id").eq("tenant_id", tenantId),
+        supabase.from("user_roles").select("user_id, role").eq("tenant_id", tenantId),
+      ]);
+      const tmMap: Record<string, string> = {};
+      (tm || []).forEach((t: any) => { if (t.user_id) tmMap[t.id] = t.user_id; });
+      setMemberUserIds(tmMap);
+
+      const rolesMap: Record<string, TeamRole> = {};
+      (ur || []).forEach((r: any) => {
+        if (["admin", "socio", "coordinadora", "asesor"].includes(r.role)) {
+          rolesMap[r.user_id] = r.role as TeamRole;
+        }
+      });
+      setRolesByUserId(rolesMap);
+    })();
+  }, [tenantId, dialogOpen, credentials]);
+
+  const getMemberRole = (u: User): TeamRole | null => {
+    const uid = memberUserIds[u.id];
+    if (uid && rolesByUserId[uid]) return rolesByUserId[uid];
+    return null;
+  };
+
+  const filtered = users.filter((u) => {
+    if (roleFilter === "all") return true;
+    return getMemberRole(u) === roleFilter;
+  });
+
+  const openCreate = () => {
+    setEditing(null);
+    setForm(emptyForm);
     setDialogOpen(true);
   };
 
-  const handleRoleChange = (role: UserRole) => {
-    let accessType: AccessType = 'solo_inmobiliaria';
-    let permissions: Permission[] = ALL_PERMS;
-    if (role === 'admin_global') { accessType = 'total'; permissions = ALL_PERMS; }
-    else if (role === 'agente') { permissions = ['ver_clientes','ver_propiedades','ver_tareas','editar_clientes','editar_propiedades','editar_tareas','publicar_propiedades']; }
-    else if (role === 'personalizado') { permissions = []; accessType = 'personalizado'; }
-    setForm(f => ({ ...f, role, accessType, permissions }));
-  };
-
-  const handleAccessChange = (accessType: AccessType) => {
-    const permissions: Permission[] = accessType === 'total' ? ALL_PERMS : accessType === 'solo_inmobiliaria' ? ['ver_clientes','ver_propiedades','ver_tareas','editar_clientes','editar_propiedades','editar_tareas'] : [];
-    setForm(f => ({ ...f, accessType, permissions }));
-  };
-
-  const togglePermission = (p: Permission) => {
-    setForm(f => ({
-      ...f,
-      permissions: f.permissions.includes(p) ? f.permissions.filter(x => x !== p) : [...f.permissions, p],
-    }));
+  const openEdit = (u: User) => {
+    setEditing(u);
+    const currentRole = getMemberRole(u) || "asesor";
+    setForm({
+      name: u.name,
+      email: u.email,
+      phone: u.phone,
+      agencyId: u.agencyId,
+      appRole: currentRole,
+      tempPassword: "",
+    });
+    setDialogOpen(true);
   };
 
   const handleSave = async () => {
-    if (!form.name.trim() || !form.email.trim()) { toast({ title: "Error", description: "Nombre y email son obligatorios", variant: "destructive" }); return; }
-    if (form.role === 'admin_global' && !isAdmin) { toast({ title: "Error", description: "No tienes permisos para asignar el rol Admin Global", variant: "destructive" }); return; }
+    if (!form.name.trim() || !form.email.trim()) {
+      toast({ title: "Error", description: "Nombre y email son obligatorios", variant: "destructive" });
+      return;
+    }
+    if (form.appRole === "admin" && !canAssignAdmin) {
+      toast({ title: "Error", description: "No tienes permisos para asignar el rol Admin", variant: "destructive" });
+      return;
+    }
 
     if (editing) {
-      updateUser({ ...editing, ...form });
+      // Update team_members basic data
+      updateUser({ ...editing, name: form.name, phone: form.phone, agencyId: form.agencyId });
+
+      // Update role if user_id is linked
+      const uid = memberUserIds[editing.id];
+      if (uid && tenantId) {
+        const { error } = await supabase
+          .from("user_roles")
+          .upsert(
+            { user_id: uid, tenant_id: tenantId, role: form.appRole as AppRole },
+            { onConflict: "user_id,tenant_id,role" as any },
+          );
+        // Fallback: delete old non-matching tenant roles, then insert
+        if (error) {
+          await supabase.from("user_roles").delete().eq("user_id", uid).eq("tenant_id", tenantId);
+          await supabase.from("user_roles").insert({ user_id: uid, tenant_id: tenantId, role: form.appRole as AppRole });
+        } else {
+          // Make sure no other role for same tenant remains
+          await supabase
+            .from("user_roles")
+            .delete()
+            .eq("user_id", uid)
+            .eq("tenant_id", tenantId)
+            .neq("role", form.appRole);
+        }
+        setRolesByUserId((prev) => ({ ...prev, [uid]: form.appRole }));
+      } else {
+        toast({
+          title: "Aviso",
+          description: "Este miembro no está vinculado a un usuario. El rol no se puede cambiar.",
+        });
+      }
+
       toast({ title: "Miembro actualizado" });
       setDialogOpen(false);
       return;
     }
 
-    // Creating new user via edge function
+    // Create new user
     setCreating(true);
     try {
       const { data, error } = await supabase.functions.invoke("create-team-member", {
         body: {
           name: form.name,
           email: form.email,
-          role: form.role,
           phone: form.phone,
           agency_id: form.agencyId || null,
-          access_type: form.accessType,
-          permissions: form.permissions,
+          app_role: form.appRole,
           password: form.tempPassword || undefined,
         },
       });
@@ -143,7 +203,6 @@ const Team = () => {
           login_url: data.login_url,
           name: form.name,
         });
-        // Refresh data
         window.location.reload();
       }
     } catch (err: any) {
@@ -154,7 +213,11 @@ const Team = () => {
   };
 
   const handleDelete = () => {
-    if (deleteTarget) { deleteUser(deleteTarget.id); toast({ title: "Miembro eliminado" }); setDeleteTarget(null); }
+    if (deleteTarget) {
+      deleteUser(deleteTarget.id);
+      toast({ title: "Miembro eliminado" });
+      setDeleteTarget(null);
+    }
   };
 
   const copyCredentials = () => {
@@ -188,6 +251,7 @@ const Team = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {filtered.map(u => {
             const agency = agencies.find(a => a.id === u.agencyId);
+            const memberRole = getMemberRole(u);
             return (
               <Card key={u.id} className="hover:shadow-md transition-shadow relative group">
                 <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
@@ -200,7 +264,15 @@ const Team = () => {
                   </div>
                   <div>
                     <h3 className="font-semibold text-sm text-foreground">{u.name}</h3>
-                    <Badge variant="outline" className={`text-[10px] mt-1 ${roleColors[u.role]}`}>{roleLabels[u.role]}</Badge>
+                    {memberRole ? (
+                      <Badge variant="outline" className={`text-[10px] mt-1 ${roleColors[memberRole]}`}>
+                        {roleLabels[memberRole]}
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-[10px] mt-1 bg-muted text-muted-foreground border-border">
+                        Sin rol asignado
+                      </Badge>
+                    )}
                   </div>
                   <div className="space-y-1 text-xs text-muted-foreground">
                     <p className="flex items-center justify-center gap-1"><Mail className="w-3 h-3" />{u.email}</p>
@@ -208,11 +280,7 @@ const Team = () => {
                     {agency && <p className="flex items-center justify-center gap-1"><Building2 className="w-3 h-3" />{agency.name}</p>}
                   </div>
                   <div className="pt-2 border-t border-border">
-                    <div className="flex items-center justify-center gap-1 text-[10px] text-muted-foreground">
-                      <Key className="w-3 h-3" />
-                      {u.accessType === 'total' ? 'Acceso total' : u.accessType === 'solo_inmobiliaria' ? 'Su inmobiliaria' : `${u.permissions.length} permisos`}
-                    </div>
-                    <div className="flex justify-center gap-3 mt-2 text-xs text-muted-foreground">
+                    <div className="flex justify-center gap-3 text-xs text-muted-foreground">
                       <span className="flex items-center gap-1"><Building2 className="w-3 h-3" />{u.propertyIds.length} prop.</span>
                       <span className="flex items-center gap-1"><Users className="w-3 h-3" />{u.clientIds.length} cli.</span>
                     </div>
@@ -226,7 +294,7 @@ const Team = () => {
 
       {/* Create / Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editing ? "Editar Miembro" : "Nuevo Miembro"}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div className="space-y-3">
@@ -234,59 +302,49 @@ const Team = () => {
               <div><Label className="text-xs">Email *</Label><Input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} disabled={!!editing} /></div>
               <div className="grid grid-cols-2 gap-3">
                 <div><Label className="text-xs">Teléfono</Label><Input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} /></div>
-                <div>
-                  <Label className="text-xs">Contraseña {!editing && "(auto si vacío)"}</Label>
-                  <Input type="password" value={form.tempPassword} onChange={e => setForm({ ...form, tempPassword: e.target.value })} placeholder={editing ? "Sin cambios" : "Auto-generada"} />
-                </div>
+                {!editing && (
+                  <div>
+                    <Label className="text-xs">Contraseña (auto si vacío)</Label>
+                    <Input type="password" value={form.tempPassword} onChange={e => setForm({ ...form, tempPassword: e.target.value })} placeholder="Auto-generada" />
+                  </div>
+                )}
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-xs">Rol *</Label>
-                  <Select value={form.role} onValueChange={(v) => handleRoleChange(v as UserRole)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>{Object.entries(roleLabels).filter(([k]) => k !== 'admin_global' || isAdmin).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="text-xs">Inmobiliaria</Label>
-                  <Select value={form.agencyId || "none"} onValueChange={(v) => setForm({ ...form, agencyId: v === "none" ? "" : v })}>
-                    <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Sin asignar</SelectItem>
-                      {agencies.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div>
+                <Label className="text-xs">Inmobiliaria</Label>
+                <Select value={form.agencyId || "none"} onValueChange={(v) => setForm({ ...form, agencyId: v === "none" ? "" : v })}>
+                  <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sin asignar</SelectItem>
+                    {agencies.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
             <div className="p-3 rounded-lg bg-muted/40 border border-border space-y-3">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-primary" />
-                <p className="text-xs font-semibold text-foreground">Tipo de acceso</p>
+                <p className="text-xs font-semibold text-foreground">Rol del miembro *</p>
               </div>
-              <Select value={form.accessType} onValueChange={(v) => handleAccessChange(v as AccessType)}>
+              <Select value={form.appRole} onValueChange={(v) => setForm({ ...form, appRole: v as TeamRole })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {Object.entries(accessLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                  {(Object.entries(roleLabels) as [TeamRole, string][])
+                    .filter(([k]) => k !== "admin" || canAssignAdmin)
+                    .map(([k, v]) => (
+                      <SelectItem key={k} value={k}>{v}</SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
-
-              {form.accessType === 'personalizado' && (
-                <div className="space-y-2">
-                  <p className="text-xs font-medium text-muted-foreground">Permisos personalizados:</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {ALL_PERMISSIONS.map(p => (
-                      <label key={p.key} className="flex items-center gap-2 cursor-pointer group">
-                        <Checkbox
-                          checked={form.permissions.includes(p.key)}
-                          onCheckedChange={() => togglePermission(p.key)}
-                        />
-                        <span className="text-xs text-foreground group-hover:text-primary transition-colors">{p.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
+              <p className="text-[11px] text-muted-foreground">
+                {form.appRole === "admin"
+                  ? "Acceso total al CRM de la inmobiliaria."
+                  : <>Los permisos de cada rol se gestionan en <Link to="/roles" className="underline text-primary">Roles y permisos</Link>.</>}
+              </p>
+              {editing && !memberUserIds[editing.id] && (
+                <p className="text-[11px] text-warning">
+                  ⚠️ Este miembro no está vinculado a una cuenta de usuario. El rol no se aplicará hasta que inicie sesión por primera vez.
+                </p>
               )}
             </div>
           </div>
@@ -305,7 +363,7 @@ const Team = () => {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-green-500" />
+              <CheckCircle2 className="w-5 h-5 text-success" />
               Usuario creado exitosamente
             </DialogTitle>
           </DialogHeader>
