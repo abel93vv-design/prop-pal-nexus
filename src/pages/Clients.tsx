@@ -577,6 +577,16 @@ const Clients = () => {
               <div><Label className="text-xs">Email</Label><Input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} /></div>
               <div><Label className="text-xs">Teléfono</Label><Input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} /></div>
             </div>
+            <div>
+              <Label className="text-xs">Origen del cliente</Label>
+              <Select value={form.source || "none"} onValueChange={(v) => setForm({ ...form, source: v === "none" ? "" : v })}>
+                <SelectTrigger><SelectValue placeholder="Seleccionar origen" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sin especificar</SelectItem>
+                  {SOURCE_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs">Tipo</Label>
