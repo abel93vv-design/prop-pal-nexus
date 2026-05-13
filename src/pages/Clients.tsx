@@ -204,11 +204,28 @@ const statusColors: Record<LeadStatus, string> = {
   inactivo: 'bg-muted text-muted-foreground border-border',
 };
 
+const SOURCE_OPTIONS: { value: string; label: string }[] = [
+  { value: 'fotocasa', label: 'Fotocasa' },
+  { value: 'idealista', label: 'Idealista' },
+  { value: 'milanuncios', label: 'Milanuncios' },
+  { value: 'habitaclia', label: 'Habitaclia' },
+  { value: 'oficina', label: 'Oficina' },
+  { value: 'web', label: 'Web' },
+  { value: 'redes_sociales', label: 'Redes sociales' },
+  { value: 'whatsapp', label: 'WhatsApp' },
+  { value: 'telegram', label: 'Telegram' },
+  { value: 'escaparate', label: 'Escaparate' },
+  { value: 'wallapop', label: 'Wallapop' },
+  { value: 'publicidad_zona', label: 'Publicidad zona' },
+  { value: 'referido', label: 'Referido' },
+  { value: 'otros', label: 'Otros' },
+];
+
 const emptyClient: Omit<Client, "id"> = {
   name: "", email: "", phone: "", address: "", type: "comprador", leadStatus: "nuevo",
   propertyIds: [], registeredAt: new Date().toISOString().split("T")[0], notes: "",
   agencyId: "", category: "", lastContactedAt: "", contactCount: 0,
-  operationType: "compra",
+  operationType: "compra", source: "",
 };
 
 
