@@ -24,6 +24,11 @@ const viabilityColors: Record<string, string> = {
   Risk: "bg-warning/10 text-warning border-warning/20",
   "Not Viable": "bg-destructive/10 text-destructive border-destructive/20",
 };
+const viabilityLabels: Record<string, string> = {
+  Viable: "Viable",
+  Risk: "en riesgo",
+  "Not Viable": "No viable",
+};
 
 const PAGE_SIZE = 25;
 
