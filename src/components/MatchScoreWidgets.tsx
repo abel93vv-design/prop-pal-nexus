@@ -110,7 +110,7 @@ export function TopClientMatches({ matches, clients, users }: TopClientMatchesPr
                   {categoryLabels[m.category]}
                 </Badge>
                 <span className={`text-[9px] font-medium ${viabilityColors[m.viability_status]}`}>
-                  {m.viability_status}
+                  {viabilityLabels[m.viability_status] || m.viability_status}
                 </span>
               </div>
             </div>
