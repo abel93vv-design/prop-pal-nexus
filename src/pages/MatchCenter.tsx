@@ -24,6 +24,11 @@ const viabilityColors: Record<string, string> = {
   Risk: "bg-warning/10 text-warning border-warning/20",
   "Not Viable": "bg-destructive/10 text-destructive border-destructive/20",
 };
+const viabilityLabels: Record<string, string> = {
+  Viable: "Viable",
+  Risk: "en riesgo",
+  "Not Viable": "No viable",
+};
 
 const PAGE_SIZE = 25;
 
@@ -151,7 +156,7 @@ const MatchCenter = () => {
                   m.financial_score,
                   m.total_score,
                   categoryLabels[m.category] || m.category,
-                  m.viability_status,
+                  viabilityLabels[m.viability_status] || m.viability_status,
                 ].map(esc).join(";");
               });
               const csv = "\uFEFF" + [headers.join(";"), ...rows].join("\n");
@@ -327,7 +332,7 @@ const MatchCenter = () => {
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline" className={`text-[10px] ${viabilityColors[m.viability_status]}`}>
-                            {m.viability_status}
+                            {viabilityLabels[m.viability_status] || m.viability_status}
                           </Badge>
                         </TableCell>
                       </TableRow>

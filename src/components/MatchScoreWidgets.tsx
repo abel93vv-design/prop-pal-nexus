@@ -14,6 +14,11 @@ const viabilityColors: Record<string, string> = {
   Risk: "text-warning",
   "Not Viable": "text-destructive",
 };
+const viabilityLabels: Record<string, string> = {
+  Viable: "Viable",
+  Risk: "en riesgo",
+  "Not Viable": "No viable",
+};
 
 interface TopPropertyMatchesProps {
   matches: MatchScore[];
@@ -53,7 +58,7 @@ export function TopPropertyMatches({ matches, properties }: TopPropertyMatchesPr
                 {categoryLabels[m.category]}
               </Badge>
               <span className={`text-[9px] font-medium ${viabilityColors[m.viability_status]}`}>
-                {m.viability_status}
+                {viabilityLabels[m.viability_status] || m.viability_status}
               </span>
             </div>
           </div>
@@ -105,7 +110,7 @@ export function TopClientMatches({ matches, clients, users }: TopClientMatchesPr
                   {categoryLabels[m.category]}
                 </Badge>
                 <span className={`text-[9px] font-medium ${viabilityColors[m.viability_status]}`}>
-                  {m.viability_status}
+                  {viabilityLabels[m.viability_status] || m.viability_status}
                 </span>
               </div>
             </div>
