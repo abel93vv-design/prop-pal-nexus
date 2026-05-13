@@ -970,6 +970,8 @@ export type Database = {
           listing_type: string
           longitude: number | null
           monthly_rent: number | null
+          ne_end_date: string | null
+          ne_start_date: string | null
           neighborhood: string | null
           operation_type: string
           photos: string[] | null
@@ -1012,6 +1014,8 @@ export type Database = {
           listing_type?: string
           longitude?: number | null
           monthly_rent?: number | null
+          ne_end_date?: string | null
+          ne_start_date?: string | null
           neighborhood?: string | null
           operation_type?: string
           photos?: string[] | null
@@ -1054,6 +1058,8 @@ export type Database = {
           listing_type?: string
           longitude?: number | null
           monthly_rent?: number | null
+          ne_end_date?: string | null
+          ne_start_date?: string | null
           neighborhood?: string | null
           operation_type?: string
           photos?: string[] | null
@@ -1610,6 +1616,8 @@ export type Database = {
           listing_type: string
           longitude: number | null
           monthly_rent: number | null
+          ne_end_date: string | null
+          ne_start_date: string | null
           neighborhood: string | null
           operation_type: string
           photos: string[] | null
