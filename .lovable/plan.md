@@ -1,46 +1,57 @@
-## Diagnóstico
+## Objetivo
 
-Verificar el dominio en el CRM **solo marca el TXT como válido en nuestra base de datos**. No hace que `crm.valoracasa.es` apunte realmente a la app. Para que el navegador cargue algo en esa URL hacen falta **tres capas**, y ahora mismo solo tienes una:
+Cuando alguien intenta iniciar sesión en un tenant (por subdominio o dominio personalizado como `crm.valoracasa.es`) con credenciales que **no pertenecen a ese tenant** (usuario inexistente o usuario de otro tenant), mostrar siempre el mismo mensaje genérico:
+
+> **"Datos de inicio de sesión incorrectos. Por favor, inténtalo de nuevo."**
+
+Sin revelar si el usuario existe en otra inmobiliaria (importante por seguridad y aislamiento multi-tenant).
+
+## Comportamiento actual
+
+- `TenantContext` resuelve el tenant por dominio/subdominio correctamente.
+- `Auth.tsx` hace `signIn(email, password)` y, si Supabase devuelve OK, deja entrar al usuario **sin verificar** si su `profiles.tenant_id` coincide con el tenant del dominio.
+- Resultado: un usuario de Tenant A puede iniciar sesión en `crm.valoracasa.es` (Tenant B) y el `TenantContext` luego lo redirige raro o le muestra datos del tenant equivocado.
+
+## Cambio propuesto
+
+### 1. Validación post-login en `src/pages/Auth.tsx`
+
+Tras un `signIn` exitoso, antes de dejar al usuario entrar:
+
+1. Resolver el tenant del host actual (usar `resolveDomainTenant()` para dominios custom o `extractSubdomain()` + lookup por slug para subdominios). En hosts Lovable/localhost no se aplica restricción (acceso libre por perfil).
+2. Leer `profiles.tenant_id` del usuario recién autenticado.
+3. Comparar:
+   - Si el usuario es `super_admin` → permitir siempre.
+   - Si `profile.tenant_id === tenantDelHost.id` → permitir.
+   - Si no coincide (o el usuario no tiene perfil) → `supabase.auth.signOut()` y mostrar el toast genérico de credenciales incorrectas, además de contar el intento fallido como hasta ahora (`recordFailure`).
+
+### 2. Mensaje uniforme
+
+Reemplazar todos los mensajes de error de login (contraseña incorrecta, usuario de otro tenant, usuario inexistente) por uno único:
+
+> "Datos de inicio de sesión incorrectos. Por favor, inténtalo de nuevo."
+
+(El contador de intentos restantes se mantiene como info adicional, pero el motivo nunca se revela.)
+
+### 3. Defensa adicional en `TenantContext` (opcional pero recomendada)
+
+En la prioridad 0 (dominio custom) y 1 (subdominio), si hay sesión activa pero `profile.tenant_id` no coincide con el tenant resuelto y el usuario no es super_admin → forzar `signOut()` y dejar `tenant` válido para que aparezca la pantalla de login limpia. Esto cubre el caso de un usuario que ya tenía sesión guardada en otro subdominio y abre uno nuevo.
+
+## Detalles técnicos
+
+- **Archivos a modificar**:
+  - `src/pages/Auth.tsx` → añadir validación tenant tras `signIn`, unificar mensaje.
+  - `src/context/TenantContext.tsx` → añadir guardia de cross-tenant session.
+- **No se tocan**: edge functions, RLS, esquema BD, ni el flujo de signup.
+- **Hosts Lovable** (`*.lovable.app`, `localhost`, etc.) siguen funcionando como hoy: el usuario entra y se resuelve el tenant por su perfil.
+- **Super admin** queda exento de la restricción para poder entrar a cualquier tenant.
+
+## Mensaje único
 
 ```
-[1] DNS del cliente (valoracasa.es)
-       ↓ A crm → 185.158.133.1   ✅ (ya hecho)
-       ↓ TXT _kagesan-verify.crm  ✅ (verificado en CRM)
-
-[2] Lovable Hosting (Project Settings → Domains)
-       ↓ Connect Domain: crm.valoracasa.es   ❌ FALTA
-       ↓ Provisión SSL automática (Let's Encrypt)
-
-[3] TenantContext resuelve por hostname
-       ↓ get_tenant_by_domain('crm.valoracasa.es')   ✅ (código listo)
+toast({
+  title: "Error",
+  description: "Datos de inicio de sesión incorrectos. Por favor, inténtalo de nuevo.",
+  variant: "destructive"
+});
 ```
-
-El paso **[2] está sin hacer**. Por eso:
-- El servidor `185.158.133.1` recibe la petición pero **no sabe que `crm.valoracasa.es` pertenece a este proyecto** → devuelve nada / error / cert inválido.
-- HTTPS falla porque **no se ha emitido certificado SSL** para ese host.
-
-## Cómo solucionarlo (acción manual, no es código)
-
-1. Abre **Project Settings → Domains** en Lovable (lo hace el super admin del proyecto, tú).
-2. Pulsa **Connect Domain** → escribe `crm.valoracasa.es` (sin `https://`, sin `/`).
-3. Lovable detectará que el A record ya apunta correctamente y pasará a estado **Verifying → Setting up → Active**. Tarda entre 5 min y 1h normalmente.
-4. Cuando aparezca **Active**, abre `https://crm.valoracasa.es` → cargará el CRM y `TenantContext` lo resolverá automáticamente al tenant **Valoracasa Huelin**.
-
-## Verificaciones rápidas mientras tanto
-
-- **DNS propagado**: `dig crm.valoracasa.es +short` debe devolver `185.158.133.1`. Si devuelve otra IP, el cliente tiene un registro antiguo en conflicto y hay que borrarlo.
-- **Sin Cloudflare proxy**: si el cliente usa Cloudflare con la nube naranja, hay que ponerla en gris (DNS only) o, en el paso 2, marcar la casilla "Domain uses Cloudflare or a similar proxy" en el diálogo de Lovable.
-- **CAA records**: si el dominio tiene registros CAA, deben permitir `letsencrypt.org`, si no el SSL fallará.
-
-## Qué NO hay que tocar en código
-
-El flag `domain_verified = true` que ves en el CRM es correcto y suficiente por nuestro lado. El `TenantContext` ya hace `get_tenant_by_domain(hostname)` como prioridad 0 y carga el tenant correcto en cuanto Lovable enrute el dominio. **No hace falta cambiar nada en el repositorio**, solo el paso 2 en Project Settings.
-
-## Si después de "Active" sigue sin verse nada
-
-Entonces sí miramos código:
-- Revisar logs de la edge function en producción.
-- Revisar que `resolveDomainTenant()` no quede cacheado con `null` de un intento previo (el `cached` module-level se reinicia con un hard reload).
-- Confirmar que el tenant Valoracasa Huelin tiene `is_active = true` y `deleted_at IS NULL`.
-
-Pero el 99% de los casos se arregla con el **paso 2**.
