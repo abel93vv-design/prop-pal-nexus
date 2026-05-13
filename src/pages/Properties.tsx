@@ -55,7 +55,14 @@ const emptyProperty: Omit<Property, "id"> = {
   publishedAt: new Date().toISOString().split("T")[0], description: "",
   agencyId: "", category: "residencial", ...defaultExtras,
   operationType: "venta", monthly_rent: 0, condition: "", unavailable_reason: "",
-  listing_type: "noticia",
+  listing_type: "noticia", ne_start_date: null, ne_end_date: null,
+};
+
+const getDaysUntil = (dateStr?: string | null): number | null => {
+  if (!dateStr) return null;
+  const end = new Date(dateStr + 'T23:59:59');
+  const now = new Date();
+  return Math.ceil((end.getTime() - now.getTime()) / 86400000);
 };
 
 const emptyDoc: Omit<Document, "id"> = {
