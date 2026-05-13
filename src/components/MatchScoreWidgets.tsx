@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { MatchScore } from "@/hooks/useMatchCenter";
 import { Client, Property } from "@/types/crm";
 import { Target, DollarSign, TrendingUp } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const categoryLabels: Record<string, string> = { high: "Alto", medium: "Medio", low: "Bajo" };
 const categoryColors: Record<string, string> = {
@@ -26,6 +27,7 @@ interface TopPropertyMatchesProps {
 }
 
 export function TopPropertyMatches({ matches, properties }: TopPropertyMatchesProps) {
+  const navigate = useNavigate();
   if (matches.length === 0) return (
     <div className="text-xs text-muted-foreground italic py-2">
       No hay matches calculados. Ve al Match Center para recalcular.
@@ -41,7 +43,14 @@ export function TopPropertyMatches({ matches, properties }: TopPropertyMatchesPr
         const prop = properties.find((p) => p.id === m.property_id);
         if (!prop) return null;
         return (
-          <div key={m.id} className="flex items-center justify-between p-2 rounded-md border border-border bg-muted/20 text-xs">
+          <div
+            key={m.id}
+            role="button"
+            tabIndex={0}
+            onClick={() => navigate(`/propiedades?edit=${prop.id}`)}
+            onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/propiedades?edit=${prop.id}`); }}
+            className="flex items-center justify-between p-2 rounded-md border border-border bg-muted/20 text-xs cursor-pointer hover:bg-muted/40 transition-colors"
+          >
             <div className="flex-1 min-w-0">
               <p className="font-medium truncate">{prop.title}</p>
               <p className="text-[10px] text-muted-foreground">{prop.price.toLocaleString("es-ES")} € · {prop.address}</p>
@@ -75,6 +84,7 @@ interface TopClientMatchesProps {
 }
 
 export function TopClientMatches({ matches, clients, users }: TopClientMatchesProps) {
+  const navigate = useNavigate();
   if (matches.length === 0) return (
     <div className="text-xs text-muted-foreground italic py-2">
       No hay matches calculados. Ve al Match Center para recalcular.
@@ -90,7 +100,14 @@ export function TopClientMatches({ matches, clients, users }: TopClientMatchesPr
         const client = clients.find((c) => c.id === m.client_id);
         if (!client) return null;
         return (
-          <div key={m.id} className="p-2 rounded-md border border-border bg-muted/20 text-xs space-y-1">
+          <div
+            key={m.id}
+            role="button"
+            tabIndex={0}
+            onClick={() => navigate(`/clientes?edit=${client.id}`)}
+            onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/clientes?edit=${client.id}`); }}
+            className="p-2 rounded-md border border-border bg-muted/20 text-xs space-y-1 cursor-pointer hover:bg-muted/40 transition-colors"
+          >
             <div className="flex items-center justify-between">
               <div className="flex-1 min-w-0">
                 <p className="font-medium truncate">{client.name}</p>
