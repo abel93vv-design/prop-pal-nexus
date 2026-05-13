@@ -146,6 +146,8 @@ const Properties = () => {
       operationType: p.operationType || "venta", monthly_rent: p.monthly_rent || 0,
       condition: (p as any).condition || "", unavailable_reason: (p as any).unavailable_reason || "",
       listing_type: p.listing_type || "noticia",
+      ne_start_date: p.ne_start_date || null,
+      ne_end_date: p.ne_end_date || null,
     });
     setCfValues(loadedCfValues);
     setDialogOpen(true);
