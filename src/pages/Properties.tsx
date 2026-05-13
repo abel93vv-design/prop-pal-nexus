@@ -603,7 +603,7 @@ const Properties = () => {
       </Dialog>
 
       {/* Convert Listing Type Confirm */}
-      <Dialog open={!!convertTarget} onOpenChange={() => setConvertTarget(null)}>
+      <Dialog open={!!convertTarget} onOpenChange={(o) => { if (!o) { setConvertTarget(null); setConvertNeStart(""); setConvertNeEnd(""); } }}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>
@@ -613,16 +613,37 @@ const Properties = () => {
           <p className="text-sm text-muted-foreground">
             {convertTarget?.listing_type === 'ne'
               ? <>La propiedad <strong>{convertTarget?.title}</strong> pasará al apartado <strong>Noticias</strong> (sin firmar). Podrás volver a convertirla cuando quieras.</>
-              : <>La propiedad <strong>{convertTarget?.title}</strong> pasará al apartado <strong>NE (firmadas)</strong>. Confirma que la nota de encargo está firmada.</>}
+              : <>La propiedad <strong>{convertTarget?.title}</strong> pasará al apartado <strong>NE (firmadas)</strong>. Indica las fechas de la nota de encargo.</>}
           </p>
+          {convertTarget && (convertTarget.listing_type || 'noticia') === 'noticia' && (
+            <div className="grid grid-cols-2 gap-3 mt-2">
+              <div>
+                <Label className="text-xs">Inicio NE *</Label>
+                <Input type="date" value={convertNeStart} onChange={e => setConvertNeStart(e.target.value)} />
+              </div>
+              <div>
+                <Label className="text-xs">Fin NE *</Label>
+                <Input type="date" value={convertNeEnd} onChange={e => setConvertNeEnd(e.target.value)} />
+              </div>
+            </div>
+          )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setConvertTarget(null)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => { setConvertTarget(null); setConvertNeStart(""); setConvertNeEnd(""); }}>Cancelar</Button>
             <Button
               onClick={async () => {
                 if (!convertTarget) return;
                 const next: 'ne' | 'noticia' = (convertTarget.listing_type || 'noticia') === 'ne' ? 'noticia' : 'ne';
+                if (next === 'ne' && (!convertNeStart || !convertNeEnd)) {
+                  toast({ title: 'Faltan fechas', description: 'Indica fecha de inicio y fin de la NE.', variant: 'destructive' });
+                  return;
+                }
                 try {
-                  await convertListingType({ id: convertTarget.id, target: next });
+                  await convertListingType({
+                    id: convertTarget.id,
+                    target: next,
+                    ne_start_date: next === 'ne' ? convertNeStart : null,
+                    ne_end_date: next === 'ne' ? convertNeEnd : null,
+                  });
                   toast({
                     title: next === 'ne' ? 'Convertida a NE (firmada)' : 'Convertida a Noticia',
                     description: next === 'ne'
@@ -630,6 +651,8 @@ const Properties = () => {
                       : 'La propiedad ya aparece en el apartado Noticias.',
                   });
                   setConvertTarget(null);
+                  setConvertNeStart("");
+                  setConvertNeEnd("");
                   navigate(next === 'ne' ? '/propiedades/ne' : '/propiedades/noticias');
                 } catch {
                   // toast ya mostrado por la mutación
