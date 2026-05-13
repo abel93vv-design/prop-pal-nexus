@@ -48,6 +48,7 @@ export interface Client {
   lastContactedAt: string;
   contactCount: number;
   operationType: OperationType;
+  source?: string;
 }
 
 export interface Property {
