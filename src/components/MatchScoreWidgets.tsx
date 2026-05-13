@@ -14,6 +14,11 @@ const viabilityColors: Record<string, string> = {
   Risk: "text-warning",
   "Not Viable": "text-destructive",
 };
+const viabilityLabels: Record<string, string> = {
+  Viable: "Viable",
+  Risk: "en riesgo",
+  "Not Viable": "No viable",
+};
 
 interface TopPropertyMatchesProps {
   matches: MatchScore[];
