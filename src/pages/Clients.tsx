@@ -212,7 +212,7 @@ const emptyClient: Omit<Client, "id"> = {
 };
 
 const Clients = () => {
-  const { clients, agencies, properties, addClient, updateClient, deleteClient } = useData();
+  const { clients, agencies, properties, addClient, updateClient, deleteClient, documents, addDocument, deleteDocument } = useData();
   const { tenantId } = useTenant();
   const { toast } = useToast();
   const navigate = useNavigate();
