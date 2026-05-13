@@ -155,6 +155,19 @@ const Properties = () => {
     setDialogOpen(true);
   };
 
+  const [searchParams, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    const editId = searchParams.get('edit');
+    if (editId && properties.length > 0) {
+      const p = properties.find(x => x.id === editId);
+      if (p) {
+        openEdit(p);
+        searchParams.delete('edit');
+        setSearchParams(searchParams, { replace: true });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [properties, searchParams]);
   const handleSave = async () => {
     if (!form.title.trim() || !form.address.trim()) { toast({ title: "Error", description: "Título y dirección son obligatorios", variant: "destructive" }); return; }
     if (form.listing_type === 'ne' && (!form.ne_start_date || !form.ne_end_date)) {
