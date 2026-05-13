@@ -27,6 +27,7 @@ interface TopPropertyMatchesProps {
 }
 
 export function TopPropertyMatches({ matches, properties }: TopPropertyMatchesProps) {
+  const navigate = useNavigate();
   if (matches.length === 0) return (
     <div className="text-xs text-muted-foreground italic py-2">
       No hay matches calculados. Ve al Match Center para recalcular.
