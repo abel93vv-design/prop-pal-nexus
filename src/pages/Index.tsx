@@ -1,9 +1,8 @@
-import { Building2, Users, ClipboardList, TrendingUp, AlertCircle, Home } from "lucide-react";
+import { Building2, Users, Newspaper, FileCheck, AlertCircle, Home } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useData } from "@/context/DataContext";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { Layout } from "@/components/Layout";
 
 const statusLabels: Record<string, string> = {
@@ -13,23 +12,22 @@ const statusLabels: Record<string, string> = {
 };
 
 const Index = () => {
-  const { properties, clients, tasks, users, monthlyData } = useData();
-  const availableProperties = properties.filter(p => p.status === 'disponible').length;
-  const newLeads = clients.filter(c => c.leadStatus === 'nuevo').length;
-  const pendingTasks = tasks.filter(t => t.status === 'pendiente').length;
+  const { properties, clients, tasks, users } = useData();
+  const neCount = properties.filter(p => p.listing_type === 'ne').length;
+  const noticiaCount = properties.filter(p => p.listing_type === 'noticia').length;
+  const clientCount = clients.length;
   const urgentClients = clients.filter(c => c.leadStatus === 'en_negociacion');
 
   const stats = [
-    { label: 'Propiedades Disponibles', value: availableProperties, icon: Building2, color: 'text-info' },
-    { label: 'Leads Nuevos', value: newLeads, icon: Users, color: 'text-success' },
-    { label: 'Tareas Pendientes', value: pendingTasks, icon: ClipboardList, color: 'text-warning' },
-    { label: 'En Negociación', value: urgentClients.length, icon: TrendingUp, color: 'text-destructive' },
+    { label: 'NE', value: neCount, icon: FileCheck, color: 'text-primary' },
+    { label: 'Noticias', value: noticiaCount, icon: Newspaper, color: 'text-secondary' },
+    { label: 'Clientes', value: clientCount, icon: Users, color: 'text-info' },
   ];
 
   const quickLinks = [
     { label: 'Propiedades', to: '/propiedades', icon: Building2 },
     { label: 'Clientes', to: '/clientes', icon: Users },
-    { label: 'Tareas', to: '/tareas', icon: ClipboardList },
+    { label: 'Tareas', to: '/tareas', icon: AlertCircle },
     { label: 'Web Pública', to: '/publica', icon: Home },
   ];
 
@@ -41,7 +39,7 @@ const Index = () => {
           <p className="text-sm text-muted-foreground mt-1">Resumen general de tu inmobiliaria</p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {stats.map(s => (
             <div key={s.label} className="stat-card">
               <div className="flex items-center justify-between">
@@ -55,55 +53,34 @@ const Index = () => {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="lg:col-span-2">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base font-semibold">Ventas y Alquileres por Mes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={monthlyData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
-                  <YAxis tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
-                  <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: 12 }} />
-                  <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Bar dataKey="ventas" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} name="Ventas" />
-                  <Bar dataKey="alquileres" fill="hsl(var(--secondary))" radius={[4, 4, 0, 0]} name="Alquileres" />
-                </BarChart>
-              </ResponsiveContainer>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader className="pb-2"><CardTitle className="text-base font-semibold">Accesos Rápidos</CardTitle></CardHeader>
+            <CardContent className="grid grid-cols-2 gap-2">
+              {quickLinks.map(l => (
+                <Link key={l.to} to={l.to} className="flex flex-col items-center gap-2 p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-center">
+                  <l.icon className="w-6 h-6 text-primary" />
+                  <span className="text-xs font-medium text-foreground">{l.label}</span>
+                </Link>
+              ))}
             </CardContent>
           </Card>
-
-          <div className="space-y-4">
-            <Card>
-              <CardHeader className="pb-2"><CardTitle className="text-base font-semibold">Accesos Rápidos</CardTitle></CardHeader>
-              <CardContent className="grid grid-cols-2 gap-2">
-                {quickLinks.map(l => (
-                  <Link key={l.to} to={l.to} className="flex flex-col items-center gap-2 p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-center">
-                    <l.icon className="w-6 h-6 text-primary" />
-                    <span className="text-xs font-medium text-foreground">{l.label}</span>
-                  </Link>
-                ))}
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base font-semibold flex items-center gap-2"><AlertCircle className="w-4 h-4 text-destructive" />Seguimiento Urgente</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {urgentClients.map(c => (
-                  <div key={c.id} className="flex items-center justify-between p-2 rounded-md bg-muted/30">
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{c.name}</p>
-                      <p className="text-xs text-muted-foreground">{c.notes.slice(0, 40)}...</p>
-                    </div>
-                    <Badge variant="outline" className="text-[10px] border-destructive/30 text-destructive">Urgente</Badge>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base font-semibold flex items-center gap-2"><AlertCircle className="w-4 h-4 text-destructive" />Seguimiento Urgente</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {urgentClients.map(c => (
+                <div key={c.id} className="flex items-center justify-between p-2 rounded-md bg-muted/30">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{c.name}</p>
+                    <p className="text-xs text-muted-foreground">{c.notes.slice(0, 40)}...</p>
                   </div>
-                ))}
-              </CardContent>
-            </Card>
-          </div>
+                  <Badge variant="outline" className="text-[10px] border-destructive/30 text-destructive">Urgente</Badge>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
         </div>
 
         <Card>
