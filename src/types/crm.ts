@@ -8,7 +8,7 @@ export type UserRole = 'admin_global' | 'admin_inmobiliaria' | 'agente' | 'perso
 export type TaskType = 'llamada' | 'email' | 'visita' | 'recordatorio';
 export type TaskStatus = 'pendiente' | 'en_progreso' | 'completada';
 export type TaskPriority = 'baja' | 'media' | 'alta';
-export type DocumentType = 'nota_simple' | 'contrato' | 'fotos' | 'otros';
+export type DocumentType = 'nota_simple' | 'contrato' | 'fotos' | 'proteccion_datos' | 'otros';
 
 export type Permission =
   | 'ver_clientes'
