@@ -84,6 +84,7 @@ interface TopClientMatchesProps {
 }
 
 export function TopClientMatches({ matches, clients, users }: TopClientMatchesProps) {
+  const navigate = useNavigate();
   if (matches.length === 0) return (
     <div className="text-xs text-muted-foreground italic py-2">
       No hay matches calculados. Ve al Match Center para recalcular.
