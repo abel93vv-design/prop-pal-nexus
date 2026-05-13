@@ -9,6 +9,7 @@ import { PLAN_ORDER, PLAN_LABELS, PLAN_PRICES, getPlanLimits, isUnlimited, PlanN
 import { Crown, Zap, Building2, Users, ClipboardList, Landmark, Plug, Settings2, KeyRound, Kanban, CheckCircle2, Lock, FileText, Download, Loader2, Eye, X } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useUserRole } from "@/hooks/useUserRole";
 
 const RESOURCE_LABELS: Record<ResourceKey, { label: string; icon: React.ComponentType<any> }> = {
   properties: { label: "Propiedades", icon: Building2 },
@@ -321,6 +322,7 @@ function InvoicesList() {
 
 export function SubscriptionTab() {
   const { plan, planLabel, usage } = usePlanLimits();
+  const { isAdmin } = useUserRole();
 
   const resourceKeys: ResourceKey[] = ['properties', 'clients', 'team_members', 'agencies', 'portals', 'custom_fields', 'api_keys', 'pipelines'];
 
@@ -342,16 +344,18 @@ export function SubscriptionTab() {
         </CardContent>
       </Card>
 
-      <InvoicesList />
+      {isAdmin && <InvoicesList />}
 
-      <div>
-        <h3 className="text-sm font-semibold text-foreground mb-3">Planes disponibles</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {PLAN_ORDER.map((p) => (
-            <PlanCard key={p} planName={p} currentPlan={plan} />
-          ))}
+      {isAdmin && (
+        <div>
+          <h3 className="text-sm font-semibold text-foreground mb-3">Planes disponibles</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {PLAN_ORDER.map((p) => (
+              <PlanCard key={p} planName={p} currentPlan={plan} />
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
