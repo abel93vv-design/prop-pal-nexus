@@ -283,9 +283,7 @@ const Properties = () => {
                       );
                     }
                     const days = getDaysUntil(p.ne_end_date)!;
-                    const cls = days < 0 ? 'bg-destructive text-destructive-foreground'
-                      : days <= 5 ? 'bg-destructive text-destructive-foreground'
-                      : days <= 15 ? 'bg-warning text-warning-foreground'
+                    const cls = days <= 15 ? 'bg-destructive text-destructive-foreground'
                       : 'bg-success text-success-foreground';
                     const label = days < 0 ? `Caducada hace ${Math.abs(days)} d.`
                       : days === 0 ? 'Caduca hoy'
