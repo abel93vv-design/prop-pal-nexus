@@ -24,7 +24,7 @@ interface DataContextType {
   addProperty: (p: Omit<Property, "id">) => Promise<any>;
   updateProperty: (p: Property) => Promise<any>;
   deleteProperty: (id: string) => Promise<any>;
-  convertListingType: (args: { id: string; target: 'ne' | 'noticia' }) => Promise<any>;
+  convertListingType: (args: { id: string; target: 'ne' | 'noticia'; ne_start_date?: string | null; ne_end_date?: string | null }) => Promise<any>;
   addUser: (u: Omit<User, "id">) => Promise<any>;
   updateUser: (u: User) => Promise<any>;
   deleteUser: (id: string) => Promise<any>;
