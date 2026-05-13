@@ -388,6 +388,19 @@ const Clients = () => {
     setDialogOpen(true);
   };
 
+  const [searchParams, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    const editId = searchParams.get('edit');
+    if (editId && clients.length > 0) {
+      const c = clients.find(x => x.id === editId);
+      if (c) {
+        openEdit(c);
+        searchParams.delete('edit');
+        setSearchParams(searchParams, { replace: true });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clients, searchParams]);
   const handleSave = async () => {
     if (!form.name.trim()) { toast({ title: "Error", description: "El nombre es obligatorio", variant: "destructive" }); return; }
 
