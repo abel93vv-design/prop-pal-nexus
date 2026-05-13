@@ -43,7 +43,14 @@ export function TopPropertyMatches({ matches, properties }: TopPropertyMatchesPr
         const prop = properties.find((p) => p.id === m.property_id);
         if (!prop) return null;
         return (
-          <div key={m.id} className="flex items-center justify-between p-2 rounded-md border border-border bg-muted/20 text-xs">
+          <div
+            key={m.id}
+            role="button"
+            tabIndex={0}
+            onClick={() => navigate(`/propiedades?edit=${prop.id}`)}
+            onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/propiedades?edit=${prop.id}`); }}
+            className="flex items-center justify-between p-2 rounded-md border border-border bg-muted/20 text-xs cursor-pointer hover:bg-muted/40 transition-colors"
+          >
             <div className="flex-1 min-w-0">
               <p className="font-medium truncate">{prop.title}</p>
               <p className="text-[10px] text-muted-foreground">{prop.price.toLocaleString("es-ES")} € · {prop.address}</p>
