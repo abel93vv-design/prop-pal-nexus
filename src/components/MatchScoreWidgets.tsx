@@ -100,7 +100,14 @@ export function TopClientMatches({ matches, clients, users }: TopClientMatchesPr
         const client = clients.find((c) => c.id === m.client_id);
         if (!client) return null;
         return (
-          <div key={m.id} className="p-2 rounded-md border border-border bg-muted/20 text-xs space-y-1">
+          <div
+            key={m.id}
+            role="button"
+            tabIndex={0}
+            onClick={() => navigate(`/clientes?edit=${client.id}`)}
+            onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/clientes?edit=${client.id}`); }}
+            className="p-2 rounded-md border border-border bg-muted/20 text-xs space-y-1 cursor-pointer hover:bg-muted/40 transition-colors"
+          >
             <div className="flex items-center justify-between">
               <div className="flex-1 min-w-0">
                 <p className="font-medium truncate">{client.name}</p>
