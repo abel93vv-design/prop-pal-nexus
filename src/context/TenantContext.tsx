@@ -99,6 +99,20 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
             .eq("id", byDomain[0].id)
             .single();
           if (full) {
+            // Cross-tenant session guard
+            if (session?.user?.id) {
+              const { data: isSuper } = await supabase.rpc("is_super_admin", { _user_id: session.user.id });
+              if (!isSuper) {
+                const { data: profile } = await supabase
+                  .from("profiles")
+                  .select("tenant_id")
+                  .eq("user_id", session.user.id)
+                  .maybeSingle();
+                if (!profile || profile.tenant_id !== full.id) {
+                  await supabase.auth.signOut();
+                }
+              }
+            }
             setTenant(mapTenant(full));
             setLoading(false);
             return;
@@ -118,6 +132,20 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
           .single();
 
         if (tenantBySlug) {
+          // Cross-tenant session guard
+          if (session?.user?.id) {
+            const { data: isSuper } = await supabase.rpc("is_super_admin", { _user_id: session.user.id });
+            if (!isSuper) {
+              const { data: profile } = await supabase
+                .from("profiles")
+                .select("tenant_id")
+                .eq("user_id", session.user.id)
+                .maybeSingle();
+              if (!profile || profile.tenant_id !== tenantBySlug.id) {
+                await supabase.auth.signOut();
+              }
+            }
+          }
           setTenant(mapTenant(tenantBySlug));
           setLoading(false);
           return;
