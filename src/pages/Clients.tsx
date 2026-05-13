@@ -204,11 +204,28 @@ const statusColors: Record<LeadStatus, string> = {
   inactivo: 'bg-muted text-muted-foreground border-border',
 };
 
+const SOURCE_OPTIONS: { value: string; label: string }[] = [
+  { value: 'fotocasa', label: 'Fotocasa' },
+  { value: 'idealista', label: 'Idealista' },
+  { value: 'milanuncios', label: 'Milanuncios' },
+  { value: 'habitaclia', label: 'Habitaclia' },
+  { value: 'oficina', label: 'Oficina' },
+  { value: 'web', label: 'Web' },
+  { value: 'redes_sociales', label: 'Redes sociales' },
+  { value: 'whatsapp', label: 'WhatsApp' },
+  { value: 'telegram', label: 'Telegram' },
+  { value: 'escaparate', label: 'Escaparate' },
+  { value: 'wallapop', label: 'Wallapop' },
+  { value: 'publicidad_zona', label: 'Publicidad zona' },
+  { value: 'referido', label: 'Referido' },
+  { value: 'otros', label: 'Otros' },
+];
+
 const emptyClient: Omit<Client, "id"> = {
   name: "", email: "", phone: "", address: "", type: "comprador", leadStatus: "nuevo",
   propertyIds: [], registeredAt: new Date().toISOString().split("T")[0], notes: "",
   agencyId: "", category: "", lastContactedAt: "", contactCount: 0,
-  operationType: "compra",
+  operationType: "compra", source: "",
 };
 
 
@@ -366,7 +383,7 @@ const Clients = () => {
   };
   const openEdit = (c: Client) => {
     setEditing(c);
-    setForm({ name: c.name, email: c.email, phone: c.phone, address: c.address, type: c.type, leadStatus: c.leadStatus, propertyIds: c.propertyIds, registeredAt: c.registeredAt, notes: c.notes, agencyId: c.agencyId, category: c.category, lastContactedAt: c.lastContactedAt, contactCount: c.contactCount, operationType: c.operationType || 'compra' });
+    setForm({ name: c.name, email: c.email, phone: c.phone, address: c.address, type: c.type, leadStatus: c.leadStatus, propertyIds: c.propertyIds, registeredAt: c.registeredAt, notes: c.notes, agencyId: c.agencyId, category: c.category, lastContactedAt: c.lastContactedAt, contactCount: c.contactCount, operationType: c.operationType || 'compra', source: c.source || '' });
     setCfValues(loadedCfValues);
     setDialogOpen(true);
   };
@@ -559,6 +576,16 @@ const Clients = () => {
             <div className="grid grid-cols-2 gap-3">
               <div><Label className="text-xs">Email</Label><Input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} /></div>
               <div><Label className="text-xs">Teléfono</Label><Input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} /></div>
+            </div>
+            <div>
+              <Label className="text-xs">Origen del cliente</Label>
+              <Select value={form.source || "none"} onValueChange={(v) => setForm({ ...form, source: v === "none" ? "" : v })}>
+                <SelectTrigger><SelectValue placeholder="Seleccionar origen" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sin especificar</SelectItem>
+                  {SOURCE_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
