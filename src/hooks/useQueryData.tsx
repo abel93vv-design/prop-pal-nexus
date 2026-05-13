@@ -242,7 +242,7 @@ export const useClientMutations = () => {
         name: c.name, email: c.email, phone: c.phone, address: c.address, type: c.type,
         lead_status: c.leadStatus, property_ids: c.propertyIds, notes: c.notes,
         agency_id: c.agencyId || null, category: c.category, last_contacted_at: c.lastContactedAt || null,
-        contact_count: c.contactCount, tenant_id: tenantId, operation_type: c.operationType,
+        contact_count: c.contactCount, tenant_id: tenantId, operation_type: c.operationType, source: c.source || '',
       }).select().single();
       if (error) throw error;
       logActivity(tenantId, user?.id, 'create', 'client', data.id, { name: c.name });
