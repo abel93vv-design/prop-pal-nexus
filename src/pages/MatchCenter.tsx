@@ -156,7 +156,7 @@ const MatchCenter = () => {
                   m.financial_score,
                   m.total_score,
                   categoryLabels[m.category] || m.category,
-                  m.viability_status,
+                  viabilityLabels[m.viability_status] || m.viability_status,
                 ].map(esc).join(";");
               });
               const csv = "\uFEFF" + [headers.join(";"), ...rows].join("\n");
