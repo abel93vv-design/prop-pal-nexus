@@ -326,6 +326,18 @@ const Properties = () => {
                 </SelectContent>
               </Select>
             </div>
+            {form.listing_type === 'ne' && (
+              <div className="grid grid-cols-2 gap-3 p-3 rounded-md border border-primary/20 bg-primary/5">
+                <div>
+                  <Label className="text-xs">Fecha inicio NE *</Label>
+                  <Input type="date" value={form.ne_start_date || ""} onChange={e => setForm({ ...form, ne_start_date: e.target.value || null })} />
+                </div>
+                <div>
+                  <Label className="text-xs">Fecha fin NE *</Label>
+                  <Input type="date" value={form.ne_end_date || ""} onChange={e => setForm({ ...form, ne_end_date: e.target.value || null })} />
+                </div>
+              </div>
+            )}
             <div className="grid grid-cols-3 gap-3">
               <div>
                 <Label className="text-xs">Tipo</Label>
