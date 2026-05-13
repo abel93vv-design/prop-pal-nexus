@@ -128,4 +128,5 @@ export interface Document {
   file: string;
   uploadedAt: string;
   propertyId: string;
+  clientId?: string;
 }
