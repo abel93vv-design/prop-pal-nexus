@@ -1,92 +1,55 @@
+## Problema actual
+
+En **Equipo → Nuevo miembro** el selector "Tipo de acceso" ofrece opciones legacy (Acceso Total / Solo su Inmobiliaria / Personalizado) que **no están conectadas** con la matriz real de **Roles y permisos** (`socio`, `coordinadora`, `asesor`). La matriz usa la tabla `user_roles` + `role_permissions` (función `has_module_access`), pero al crear un miembro nunca se inserta nada en `user_roles`, así que los permisos definidos en /roles no se aplican al usuario.
+
 ## Objetivo
 
-Que tú, como **super_admin**, puedas:
-1. Ver todas las inmobiliarias (tenants) con acceso al CRM.
-2. Ver los usuarios de cada una y su rol.
-3. Cambiar plan, activar/desactivar.
-4. Asignar a cada inmobiliaria su propio dominio (ej. `crm.valoracasa.es`) de forma que, al entrar por ese dominio, el sistema fije automáticamente su tenant y solo vea sus datos.
+Que al dar de alta a un miembro del equipo se elija directamente uno de los roles reales del sistema (**Admin**, **Socio**, **Coordinadora**, **Asesor**) y que ese rol se inserte en `user_roles` para el `tenant_id` activo. Así los permisos de la matriz **Roles y permisos** se aplican automáticamente.
 
-## Cambios en base de datos
+## Cambios
 
-Tabla `tenants` — añadir columnas:
-- `custom_domain text unique` (ej. `crm.valoracasa.es`)
-- `domain_verified boolean default false`
-- `domain_verification_token text` (para validar propiedad por DNS TXT)
+### 1. `src/pages/Team.tsx` (UI del formulario)
+- Eliminar el bloque "Tipo de acceso" (Total / Solo su inmobiliaria / Personalizado) y la lista de permisos personalizados.
+- Sustituirlo por un selector único **"Rol del miembro"** con las opciones:
+  - **Admin** (acceso total al CRM de la inmobiliaria) — solo visible si el actor ya es admin/super_admin.
+  - **Socio**
+  - **Coordinadora**
+  - **Asesor**
+- Mostrar debajo un texto: *"Los permisos de cada rol se gestionan en Roles y permisos"* con enlace a `/roles`.
+- En la card del miembro, mostrar el rol real (badge con color) en vez de "Acceso total / Su inmobiliaria / N permisos".
+- Eliminar de `emptyUser` y del envío al edge function los campos `accessType` y `permissions` (o enviarlos vacíos para no romper la tabla `team_members`).
 
-Función SQL `get_tenant_by_domain(_host text)` (SECURITY DEFINER) → devuelve `id, name, slug, custom_domain` del tenant cuyo `custom_domain = _host`. Pública para `anon` (necesaria antes del login).
+### 2. `supabase/functions/create-team-member/index.ts`
+- Aceptar un nuevo campo `app_role` (`admin | socio | coordinadora | asesor`) en el body.
+- Validar que el actor (caller) sea `admin` del tenant o `super_admin` antes de crear.
+- Tras crear el `auth.user` y el `team_members`, **insertar fila en `user_roles`**:
+  ```ts
+  await adminClient.from("user_roles").insert({
+    user_id: userId,
+    tenant_id: tenantId,
+    role: app_role,  // 'admin' | 'socio' | 'coordinadora' | 'asesor'
+  });
+  ```
+- Si la inserción de `user_roles` falla, hacer rollback (borrar auth user y team_members).
 
-RLS de `tenants`: super_admin puede UPDATE/DELETE/INSERT (hoy solo `admin` legacy puede). Reescribir políticas con `is_super_admin(auth.uid())`.
+### 3. Edición de miembros existentes
+- En el diálogo de edición, permitir cambiar el rol. Como aún no tenemos un endpoint dedicado, añadir una pequeña función en cliente que haga `upsert` en `user_roles` (`onConflict: "user_id,tenant_id"`) — requiere que `team_members` guarde `user_id` (verificar; si no existe, vincular por email vía edge function `manage-tenant-admin`).
+- Si el binding por `user_id` no es trivial en el cliente, dejar la edición de rol **solo desde la pestaña Tenants → 👥 usuarios** (ya existente vía `manage-tenant-admin`) y mostrar un aviso en el form de edición: *"Para cambiar el rol de un miembro existente, usa el panel de Tenants"*. Esta opción es la más segura y la recomendada.
 
-## Resolución de tenant por dominio
-
-Nuevo `src/lib/tenantResolver.ts`:
-- Lee `window.location.hostname`.
-- Si coincide con un `custom_domain` verificado → fija ese `tenant_id` como **tenant activo forzado** en `localStorage` y en un contexto `TenantContext`.
-- Si el usuario logueado pertenece a otro tenant distinto del dominio → bloquea acceso con mensaje "Este dominio pertenece a otra inmobiliaria".
-- En dominios Lovable (`*.lovable.app`, `localhost`) → comportamiento actual (tenant del perfil).
-
-`get_user_tenant_id()` se mantiene; el bloqueo por dominio se aplica en cliente. (Aislamiento real ya está garantizado por RLS sobre `profiles.tenant_id`.)
-
-## Panel super_admin (`/inmobiliarias`)
-
-Reescribir `src/pages/Tenants.tsx` (ya existe, 520 líneas) como panel completo. Solo accesible si `is_super_admin`.
-
-Listado con columnas:
-- Nombre / slug
-- Plan (badge editable)
-- Estado activo (switch)
-- Dominio propio + estado de verificación
-- Nº usuarios (link a detalle)
-- Acciones: Editar dominio · Ver usuarios · Cambiar plan · Activar/Desactivar
-
-**Modal "Gestionar dominio"** por tenant:
-- Input para `custom_domain`.
-- Al guardar, genera `domain_verification_token` y muestra instrucciones DNS:
-  - `A` record: `@` o subdominio → IP del proyecto Lovable (`185.158.133.1`).
-  - `TXT` record: `_kagesan-verify` → token.
-- Botón "Verificar ahora" → edge function `verify-tenant-domain` que hace DNS lookup (Deno `Deno.resolveDns`) y marca `domain_verified=true`.
-- Aviso: el dominio también debe añadirse en **Project Settings → Domains** de Lovable para que apunte al CRM (paso manual del super_admin).
-
-**Modal "Usuarios de la inmobiliaria"**:
-- Lista `profiles` + `user_roles` filtrados por `tenant_id`.
-- Muestra nombre, email, rol, último acceso.
-- Solo lectura (la gestión de roles se hace desde `/roles` dentro del tenant).
-
-**Cambio de plan**: select `free | basic | pro | enterprise` → UPDATE directo.
-
-**Activar/Desactivar**: toggle `is_active`. Si está inactivo, el login bloquea entrada al tenant.
-
-## Edge function `verify-tenant-domain`
-
-- Input: `tenant_id`.
-- Lee `custom_domain` y `domain_verification_token` del tenant.
-- Hace `Deno.resolveDns(\`_kagesan-verify.\${domain}\`, "TXT")` y comprueba que el token está presente.
-- Si OK → `UPDATE tenants SET domain_verified=true`.
-- Solo invocable por super_admin (verifica JWT + `is_super_admin`).
-
-## Sidebar
-
-En `AppSidebar`, el ítem "Inmobiliarias" solo se muestra si `is_super_admin` (ya está así, confirmar).
-
-## Flujo de uso
-
-1. Super_admin entra en **Inmobiliarias** → ve Valoracasa Huelin, Demo, etc.
-2. Click en Valoracasa Huelin → "Gestionar dominio" → escribe `crm.valoracasa.es`.
-3. Da al cliente las instrucciones DNS (A + TXT).
-4. Cliente añade los registros en su DNS.
-5. Super_admin (o el cliente desde Lovable) añade el dominio en **Project Settings → Domains** de Lovable.
-6. Click "Verificar" → tenant queda atado al dominio.
-7. Cualquiera que entre por `crm.valoracasa.es` solo puede operar dentro del tenant Valoracasa Huelin.
+### 4. Mostrar rol en la card del Equipo
+- Cargar los `user_roles` del tenant en paralelo en `DataContext` o directamente en `Team.tsx` (un `useEffect` con `supabase.from('user_roles').select('user_id, role').eq('tenant_id', tenantId)`).
+- Vincular por `email` ↔ `team_members` o, mejor, almacenar `user_id` en `team_members` cuando se cree (paso 2 ya lo hace; añadir columna `user_id` si no existe).
 
 ## Detalles técnicos
 
-- Migración: ALTER `tenants` + nuevas RLS para super_admin + función `get_tenant_by_domain`.
-- Edge function nueva: `supabase/functions/verify-tenant-domain/index.ts`.
-- Frontend: reescribir `src/pages/Tenants.tsx`, crear `src/lib/tenantResolver.ts`, hook `useTenantDomain.tsx`, componentes `TenantDomainDialog.tsx` y `TenantUsersDialog.tsx`.
-- App.tsx: en bootstrap, llamar al resolver para fijar tenant si el host coincide.
+- Tipo `AccessType` y campo `accessType` quedan obsoletos en la UI; pueden mantenerse en la BD como columnas (no romper) pero ya no se usan.
+- La función `has_module_access` ya está implementada y solo necesita que exista la fila en `user_roles` para resolver permisos correctamente.
+- El rol `admin` da acceso total automáticamente (línea ya implementada en `has_module_access`), por eso no aparece en la matriz de permisos.
 
-## Limitaciones que debes saber
+## Resultado esperado
 
-- Lovable hosting requiere añadir cada dominio en **Project Settings → Domains** manualmente — no puedo automatizarlo desde código. El panel mostrará un recordatorio claro.
-- SSL lo aprovisiona Lovable automáticamente tras la verificación.
-- La propagación DNS puede tardar hasta 72h.
+Al crear "Juan Pérez" como **Asesor**, el sistema:
+1. Crea el `auth.user`.
+2. Inserta su perfil con `tenant_id`.
+3. Inserta `user_roles { user_id, tenant_id, role: 'asesor' }`.
+4. Juan, al iniciar sesión, ve **exactamente** los módulos marcados como `can_view` para "Asesor" en /roles.
