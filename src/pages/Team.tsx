@@ -393,7 +393,7 @@ const Team = () => {
               {copied ? <CheckCircle2 className="w-4 h-4 mr-1" /> : <Copy className="w-4 h-4 mr-1" />}
               {copied ? "Copiado" : "Copiar credenciales"}
             </Button>
-            <Button onClick={() => setCredentials(null)}>Cerrar</Button>
+            <Button onClick={() => { setCredentials(null); window.location.reload(); }}>Cerrar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
