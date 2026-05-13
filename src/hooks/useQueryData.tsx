@@ -198,10 +198,18 @@ export const usePropertyMutations = () => {
   });
 
   const convertListing = useMutation({
-    mutationFn: async ({ id, target }: { id: string; target: 'ne' | 'noticia' }) => {
+    mutationFn: async ({ id, target, ne_start_date, ne_end_date }: { id: string; target: 'ne' | 'noticia'; ne_start_date?: string | null; ne_end_date?: string | null }) => {
+      const payload: any = { listing_type: target };
+      if (target === 'ne') {
+        payload.ne_start_date = ne_start_date ?? null;
+        payload.ne_end_date = ne_end_date ?? null;
+      } else {
+        payload.ne_start_date = null;
+        payload.ne_end_date = null;
+      }
       const { data, error } = await supabase
         .from('properties')
-        .update({ listing_type: target })
+        .update(payload)
         .eq('id', id)
         .select()
         .single();
