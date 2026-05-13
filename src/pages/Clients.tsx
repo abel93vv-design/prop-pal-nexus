@@ -546,11 +546,18 @@ const Clients = () => {
                   matches={getTopMatchesForClient(editing.id)}
                   properties={properties}
                 />
+                <ClientDocumentsSection
+                  clientId={editing.id}
+                  documents={documents.filter(d => d.clientId === editing.id)}
+                  onAdd={async (name, type) => { await addDocument({ name, type, file: '', propertyId: '', clientId: editing.id, uploadedAt: new Date().toISOString() }); toast({ title: 'Documento añadido' }); }}
+                  onDelete={async (id) => { await deleteDocument(id); toast({ title: 'Documento eliminado' }); }}
+                />
               </>
             ) : (
               <>
                 <FinancialsFields value={createFinancials} onChange={setCreateFinancials} />
                 <PreferencesFields value={createPreferences} onChange={setCreatePreferences} />
+                <p className="text-xs text-muted-foreground italic">Guarda primero el cliente para poder adjuntar documentos (Protección de datos, contratos, etc.).</p>
               </>
             )}
           </div>
