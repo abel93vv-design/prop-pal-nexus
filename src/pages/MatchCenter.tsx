@@ -332,7 +332,7 @@ const MatchCenter = () => {
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline" className={`text-[10px] ${viabilityColors[m.viability_status]}`}>
-                            {m.viability_status}
+                            {viabilityLabels[m.viability_status] || m.viability_status}
                           </Badge>
                         </TableCell>
                       </TableRow>
