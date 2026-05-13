@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { MatchScore } from "@/hooks/useMatchCenter";
 import { Client, Property } from "@/types/crm";
 import { Target, DollarSign, TrendingUp } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const categoryLabels: Record<string, string> = { high: "Alto", medium: "Medio", low: "Bajo" };
 const categoryColors: Record<string, string> = {
