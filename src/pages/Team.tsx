@@ -203,7 +203,6 @@ const Team = () => {
           login_url: data.login_url,
           name: form.name,
         });
-        window.location.reload();
       }
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
