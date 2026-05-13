@@ -9,13 +9,38 @@ const VALID_ROLES = ["admin", "socio", "coordinadora", "asesor"] as const;
 type AppRole = typeof VALID_ROLES[number];
 
 function generatePassword(length = 12): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%";
-  let pwd = "";
-  const arr = new Uint8Array(length);
-  crypto.getRandomValues(arr);
-  for (const byte of arr) pwd += chars[byte % chars.length];
-  return pwd;
+  const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+  const lower = "abcdefghijkmnpqrstuvwxyz";
+  const digits = "23456789";
+  const all = upper + lower + digits;
+
+  const pickRandom = (set: string) => {
+    const buf = new Uint32Array(1);
+    crypto.getRandomValues(buf);
+    return set[buf[0] % set.length];
+  };
+
+  // Guarantee at least 1 uppercase, 1 lowercase, 2 digits + uniqueness extras
+  const required = [pickRandom(upper), pickRandom(lower), pickRandom(digits), pickRandom(digits)];
+  // Add timestamp-derived chars to ensure uniqueness across calls
+  const ts = Date.now().toString(36);
+  const tsChars = ts.slice(-3).split("").map((c) => /[0-9a-z]/i.test(c) ? c : pickRandom(all));
+
+  const remaining = length - required.length - tsChars.length;
+  const rest: string[] = [];
+  for (let i = 0; i < remaining; i++) rest.push(pickRandom(all));
+
+  const all_chars = [...required, ...tsChars, ...rest];
+  // Fisher-Yates shuffle with crypto randomness
+  for (let i = all_chars.length - 1; i > 0; i--) {
+    const buf = new Uint32Array(1);
+    crypto.getRandomValues(buf);
+    const j = buf[0] % (i + 1);
+    [all_chars[i], all_chars[j]] = [all_chars[j], all_chars[i]];
+  }
+  return all_chars.join("");
 }
+
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
