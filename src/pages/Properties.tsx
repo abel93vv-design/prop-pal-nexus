@@ -286,6 +286,24 @@ const Properties = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-1 text-xs text-muted-foreground"><MapPin className="w-3 h-3" />{p.address}</div>
+                  {p.listing_type === 'ne' && p.ne_end_date && (() => {
+                    const days = getDaysUntil(p.ne_end_date);
+                    if (days === null) return null;
+                    const cls = days < 0 ? 'bg-destructive/10 text-destructive border-destructive/20'
+                      : days <= 5 ? 'bg-destructive/10 text-destructive border-destructive/20'
+                      : days <= 15 ? 'bg-warning/10 text-warning border-warning/20'
+                      : 'bg-success/10 text-success border-success/20';
+                    const label = days < 0 ? `Caducada hace ${Math.abs(days)} d.`
+                      : days === 0 ? 'Caduca hoy'
+                      : `Quedan ${days} día${days === 1 ? '' : 's'}`;
+                    const endFmt = new Date(p.ne_end_date).toLocaleDateString('es-ES');
+                    return (
+                      <div className="flex items-center justify-between gap-2 text-xs">
+                        <span className="text-muted-foreground">Fin NE: {endFmt}</span>
+                        <Badge variant="outline" className={`text-[10px] ${cls}`}>{label}</Badge>
+                      </div>
+                    );
+                  })()}
                   <div className="flex items-center gap-4 text-xs text-muted-foreground">
                     {p.bedrooms > 0 && <span className="flex items-center gap-1"><Bed className="w-3 h-3" />{p.bedrooms}</span>}
                     {p.bathrooms > 0 && <span className="flex items-center gap-1"><Bath className="w-3 h-3" />{p.bathrooms}</span>}
