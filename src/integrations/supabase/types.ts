@@ -458,6 +458,7 @@ export type Database = {
       }
       documents: {
         Row: {
+          client_id: string | null
           deleted_at: string | null
           file: string | null
           id: string
@@ -468,6 +469,7 @@ export type Database = {
           uploaded_at: string
         }
         Insert: {
+          client_id?: string | null
           deleted_at?: string | null
           file?: string | null
           id?: string
@@ -478,6 +480,7 @@ export type Database = {
           uploaded_at?: string
         }
         Update: {
+          client_id?: string | null
           deleted_at?: string | null
           file?: string | null
           id?: string

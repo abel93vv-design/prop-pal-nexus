@@ -10,8 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Search, Mail, Phone, Plus, Pencil, Trash2, PhoneCall, ArrowUpDown, Kanban, Download, Upload } from "lucide-react";
-import { Client, ClientType, LeadStatus, OperationType } from "@/types/crm";
+import { Search, Mail, Phone, Plus, Pencil, Trash2, PhoneCall, ArrowUpDown, Kanban, Download, Upload, FileText, X } from "lucide-react";
+import { Client, ClientType, LeadStatus, OperationType, DocumentType } from "@/types/crm";
 import { useToast } from "@/hooks/use-toast";
 import { useCustomFieldDefinitions, useCustomFieldValues } from "@/hooks/useCustomFields";
 import { CustomFieldsRenderer } from "@/components/CustomFieldsRenderer";
@@ -211,8 +211,66 @@ const emptyClient: Omit<Client, "id"> = {
   operationType: "compra",
 };
 
+
+const CLIENT_DOC_TYPE_LABELS: Record<DocumentType, string> = {
+  proteccion_datos: 'Protección de Datos',
+  contrato: 'Contrato',
+  nota_simple: 'Nota Simple',
+  fotos: 'Fotos',
+  otros: 'Otros',
+};
+
+const ClientDocumentsSection = ({ clientId, documents, onAdd, onDelete }: {
+  clientId: string;
+  documents: { id: string; name: string; type: DocumentType; uploadedAt: string }[];
+  onAdd: (name: string, type: DocumentType) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
+}) => {
+  const [name, setName] = useState("");
+  const [type, setType] = useState<DocumentType>('proteccion_datos');
+  const handleAdd = async () => {
+    if (!name.trim()) return;
+    await onAdd(name.trim(), type);
+    setName("");
+    setType('proteccion_datos');
+  };
+  return (
+    <div className="space-y-2 p-3 rounded-lg border border-border bg-muted/30">
+      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Documentos del cliente</p>
+      <div className="grid grid-cols-[1fr_auto_auto] gap-2">
+        <Input placeholder="Nombre del documento" value={name} onChange={e => setName(e.target.value)} />
+        <Select value={type} onValueChange={(v) => setType(v as DocumentType)}>
+          <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {Object.entries(CLIENT_DOC_TYPE_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Button size="sm" onClick={handleAdd}><Upload className="w-3.5 h-3.5 mr-1" />Añadir</Button>
+      </div>
+      {documents.length === 0
+        ? <p className="text-xs text-muted-foreground text-center py-2">Sin documentos.</p>
+        : <div className="space-y-1.5">
+            {documents.map(d => (
+              <div key={d.id} className="flex items-center justify-between p-2 rounded border border-border bg-card">
+                <div className="flex items-center gap-2 min-w-0">
+                  <FileText className="w-4 h-4 text-primary shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{d.name}</p>
+                    <p className="text-xs text-muted-foreground">{CLIENT_DOC_TYPE_LABELS[d.type] || d.type} · {new Date(d.uploadedAt).toLocaleDateString('es-ES')}</p>
+                  </div>
+                </div>
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => onDelete(d.id)}>
+                  <X className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            ))}
+          </div>}
+    </div>
+  );
+};
+
 const Clients = () => {
-  const { clients, agencies, properties, addClient, updateClient, deleteClient } = useData();
+  const { clients, agencies, properties, addClient, updateClient, deleteClient, documents, addDocument, deleteDocument } = useData();
   const { tenantId } = useTenant();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -546,11 +604,18 @@ const Clients = () => {
                   matches={getTopMatchesForClient(editing.id)}
                   properties={properties}
                 />
+                <ClientDocumentsSection
+                  clientId={editing.id}
+                  documents={documents.filter(d => d.clientId === editing.id)}
+                  onAdd={async (name, type) => { await addDocument({ name, type, file: '', propertyId: '', clientId: editing.id, uploadedAt: new Date().toISOString() }); toast({ title: 'Documento añadido' }); }}
+                  onDelete={async (id) => { await deleteDocument(id); toast({ title: 'Documento eliminado' }); }}
+                />
               </>
             ) : (
               <>
                 <FinancialsFields value={createFinancials} onChange={setCreateFinancials} />
                 <PreferencesFields value={createPreferences} onChange={setCreatePreferences} />
+                <p className="text-xs text-muted-foreground italic">Guarda primero el cliente para poder adjuntar documentos (Protección de datos, contratos, etc.).</p>
               </>
             )}
           </div>

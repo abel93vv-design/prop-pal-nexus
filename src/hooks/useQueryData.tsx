@@ -11,7 +11,7 @@ const toClient = (r: any): Client => ({ id: r.id, name: r.name, email: r.email |
 const toProperty = (r: any): Property => ({ id: r.id, title: r.title, address: r.address || '', type: r.type, status: r.status, price: Number(r.price) || 0, surface: Number(r.surface) || 0, bedrooms: r.bedrooms || 0, bathrooms: r.bathrooms || 0, photos: r.photos || [], agentId: r.agent_id || '', interestedClientIds: r.interested_client_ids || [], publishedAt: r.published_at || '', description: r.description || '', agencyId: r.agency_id || '', category: r.category || '', postal_code: r.postal_code || '', latitude: r.latitude != null ? Number(r.latitude) : null, longitude: r.longitude != null ? Number(r.longitude) : null, built_surface: Number(r.built_surface) || 0, plot_surface: Number(r.plot_surface) || 0, energy_cert: r.energy_cert || 'en_tramite', neighborhood: r.neighborhood || '', floor: r.floor != null ? Number(r.floor) : null, community_fees: Number(r.community_fees) || 0, ibi_annual: Number(r.ibi_annual) || 0, has_elevator: r.has_elevator || false, has_terrace: r.has_terrace || false, has_pool: r.has_pool || false, has_garage: r.has_garage || false, has_air_conditioning: r.has_air_conditioning || false, operationType: r.operation_type || 'venta', monthly_rent: Number(r.monthly_rent) || 0, condition: r.condition || '', unavailable_reason: r.unavailable_reason || '', listing_type: (r.listing_type === 'ne' ? 'ne' : 'noticia'), ne_start_date: r.ne_start_date || null, ne_end_date: r.ne_end_date || null });
 const toUser = (r: any): User => ({ id: r.id, name: r.name, email: r.email || '', role: r.role as any, phone: r.phone || '', propertyIds: r.property_ids || [], clientIds: r.client_ids || [], avatar: r.avatar || '', agencyId: r.agency_id || '', accessType: r.access_type as any, permissions: r.permissions || [] });
 const toTask = (r: any): Task => ({ id: r.id, title: r.title, type: r.type as any, status: r.status as any, priority: r.priority as any, dueDate: r.due_date || '', agentId: r.agent_id || '', clientId: r.client_id || '', propertyId: r.property_id || '', notes: r.notes || '', agencyId: r.agency_id || '', category: r.category || '' });
-const toDocument = (r: any): Document => ({ id: r.id, name: r.name, type: r.type as any, file: r.file || '', uploadedAt: r.uploaded_at || '', propertyId: r.property_id || '' });
+const toDocument = (r: any): Document => ({ id: r.id, name: r.name, type: r.type as any, file: r.file || '', uploadedAt: r.uploaded_at || '', propertyId: r.property_id || '', clientId: r.client_id || '' });
 
 // ---- Activity Logger ----
 const logActivity = async (tenantId: string | null, userId: string | undefined, action: string, entityType: string, entityId?: string, metadata?: Record<string, any>) => {
@@ -404,8 +404,8 @@ export const useDocumentMutations = () => {
   const add = useMutation({
     mutationFn: async (d: Omit<Document, "id">) => {
       const { data, error } = await supabase.from('documents').insert({
-        name: d.name, type: d.type, file: d.file, property_id: d.propertyId || null, tenant_id: tenantId,
-      }).select().single();
+        name: d.name, type: d.type, file: d.file, property_id: d.propertyId || null, client_id: d.clientId || null, tenant_id: tenantId,
+      } as any).select().single();
       if (error) throw error;
       logActivity(tenantId, user?.id, 'create', 'document', data.id, { name: d.name });
       return toDocument(data);
@@ -416,8 +416,8 @@ export const useDocumentMutations = () => {
   const update = useMutation({
     mutationFn: async (d: Document) => {
       await supabase.from('documents').update({
-        name: d.name, type: d.type, file: d.file, property_id: d.propertyId || null,
-      }).eq('id', d.id);
+        name: d.name, type: d.type, file: d.file, property_id: d.propertyId || null, client_id: d.clientId || null,
+      } as any).eq('id', d.id);
       logActivity(tenantId, user?.id, 'update', 'document', d.id, { name: d.name });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['documents'] }),

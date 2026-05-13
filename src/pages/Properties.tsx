@@ -25,7 +25,7 @@ import { TopClientMatches } from "@/components/MatchScoreWidgets";
 
 const typeLabels: Record<PropertyType, string> = { piso: 'Piso', casa: 'Casa', local: 'Local', terreno: 'Terreno', parking: 'Parking' };
 const statusLabels: Record<PropertyStatus, string> = { disponible: 'Disponible', reservado: 'Reservado', vendido_alquilado: 'Vendido/Alquilado', no_disponible: 'No Disponible' };
-const docTypeLabels: Record<DocumentType, string> = { nota_simple: 'Nota Simple', contrato: 'Contrato', fotos: 'Fotos', otros: 'Otros' };
+const docTypeLabels: Record<DocumentType, string> = { nota_simple: 'Nota Simple', contrato: 'Contrato', fotos: 'Fotos', proteccion_datos: 'Protección de Datos', otros: 'Otros' };
 const statusColors: Record<PropertyStatus, string> = {
   disponible: 'bg-success/10 text-success border-success/20',
   reservado: 'bg-warning/10 text-warning border-warning/20',
