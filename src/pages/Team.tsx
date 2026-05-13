@@ -203,7 +203,6 @@ const Team = () => {
           login_url: data.login_url,
           name: form.name,
         });
-        window.location.reload();
       }
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -359,7 +358,7 @@ const Team = () => {
       </Dialog>
 
       {/* Credentials Dialog */}
-      <Dialog open={!!credentials} onOpenChange={() => setCredentials(null)}>
+      <Dialog open={!!credentials} onOpenChange={(open) => { if (!open) { setCredentials(null); window.location.reload(); } }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -394,7 +393,7 @@ const Team = () => {
               {copied ? <CheckCircle2 className="w-4 h-4 mr-1" /> : <Copy className="w-4 h-4 mr-1" />}
               {copied ? "Copiado" : "Copiar credenciales"}
             </Button>
-            <Button onClick={() => setCredentials(null)}>Cerrar</Button>
+            <Button onClick={() => { setCredentials(null); window.location.reload(); }}>Cerrar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
