@@ -358,7 +358,7 @@ const Team = () => {
       </Dialog>
 
       {/* Credentials Dialog */}
-      <Dialog open={!!credentials} onOpenChange={() => setCredentials(null)}>
+      <Dialog open={!!credentials} onOpenChange={(open) => { if (!open) { setCredentials(null); window.location.reload(); } }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
