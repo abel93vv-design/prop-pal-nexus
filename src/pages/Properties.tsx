@@ -55,7 +55,14 @@ const emptyProperty: Omit<Property, "id"> = {
   publishedAt: new Date().toISOString().split("T")[0], description: "",
   agencyId: "", category: "residencial", ...defaultExtras,
   operationType: "venta", monthly_rent: 0, condition: "", unavailable_reason: "",
-  listing_type: "noticia",
+  listing_type: "noticia", ne_start_date: null, ne_end_date: null,
+};
+
+const getDaysUntil = (dateStr?: string | null): number | null => {
+  if (!dateStr) return null;
+  const end = new Date(dateStr + 'T23:59:59');
+  const now = new Date();
+  return Math.ceil((end.getTime() - now.getTime()) / 86400000);
 };
 
 const emptyDoc: Omit<Document, "id"> = {
@@ -108,6 +115,14 @@ const Properties = () => {
     return matchSearch && matchType && matchStatus && matchOp && matchListing;
   });
 
+  if (activeListing === 'ne') {
+    filtered.sort((a, b) => {
+      const da = a.ne_end_date ? new Date(a.ne_end_date).getTime() : Number.POSITIVE_INFINITY;
+      const db = b.ne_end_date ? new Date(b.ne_end_date).getTime() : Number.POSITIVE_INFINITY;
+      return da - db;
+    });
+  }
+
   const openCreate = () => {
     setEditing(null);
     setForm({ ...emptyProperty, listing_type: activeListing === 'all' ? 'noticia' : activeListing });
@@ -131,6 +146,8 @@ const Properties = () => {
       operationType: p.operationType || "venta", monthly_rent: p.monthly_rent || 0,
       condition: (p as any).condition || "", unavailable_reason: (p as any).unavailable_reason || "",
       listing_type: p.listing_type || "noticia",
+      ne_start_date: p.ne_start_date || null,
+      ne_end_date: p.ne_end_date || null,
     });
     setCfValues(loadedCfValues);
     setDialogOpen(true);
@@ -138,6 +155,10 @@ const Properties = () => {
 
   const handleSave = async () => {
     if (!form.title.trim() || !form.address.trim()) { toast({ title: "Error", description: "Título y dirección son obligatorios", variant: "destructive" }); return; }
+    if (form.listing_type === 'ne' && (!form.ne_start_date || !form.ne_end_date)) {
+      toast({ title: "Error", description: "Las fechas de inicio y fin de la NE son obligatorias", variant: "destructive" });
+      return;
+    }
     if (editing) {
       await updateProperty({ ...editing, ...form });
       await saveCfValues(editing.id, cfValues);
@@ -265,6 +286,24 @@ const Properties = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-1 text-xs text-muted-foreground"><MapPin className="w-3 h-3" />{p.address}</div>
+                  {p.listing_type === 'ne' && p.ne_end_date && (() => {
+                    const days = getDaysUntil(p.ne_end_date);
+                    if (days === null) return null;
+                    const cls = days < 0 ? 'bg-destructive/10 text-destructive border-destructive/20'
+                      : days <= 5 ? 'bg-destructive/10 text-destructive border-destructive/20'
+                      : days <= 15 ? 'bg-warning/10 text-warning border-warning/20'
+                      : 'bg-success/10 text-success border-success/20';
+                    const label = days < 0 ? `Caducada hace ${Math.abs(days)} d.`
+                      : days === 0 ? 'Caduca hoy'
+                      : `Quedan ${days} día${days === 1 ? '' : 's'}`;
+                    const endFmt = new Date(p.ne_end_date).toLocaleDateString('es-ES');
+                    return (
+                      <div className="flex items-center justify-between gap-2 text-xs">
+                        <span className="text-muted-foreground">Fin NE: {endFmt}</span>
+                        <Badge variant="outline" className={`text-[10px] ${cls}`}>{label}</Badge>
+                      </div>
+                    );
+                  })()}
                   <div className="flex items-center gap-4 text-xs text-muted-foreground">
                     {p.bedrooms > 0 && <span className="flex items-center gap-1"><Bed className="w-3 h-3" />{p.bedrooms}</span>}
                     {p.bathrooms > 0 && <span className="flex items-center gap-1"><Bath className="w-3 h-3" />{p.bathrooms}</span>}
@@ -305,6 +344,18 @@ const Properties = () => {
                 </SelectContent>
               </Select>
             </div>
+            {form.listing_type === 'ne' && (
+              <div className="grid grid-cols-2 gap-3 p-3 rounded-md border border-primary/20 bg-primary/5">
+                <div>
+                  <Label className="text-xs">Fecha inicio NE *</Label>
+                  <Input type="date" value={form.ne_start_date || ""} onChange={e => setForm({ ...form, ne_start_date: e.target.value || null })} />
+                </div>
+                <div>
+                  <Label className="text-xs">Fecha fin NE *</Label>
+                  <Input type="date" value={form.ne_end_date || ""} onChange={e => setForm({ ...form, ne_end_date: e.target.value || null })} />
+                </div>
+              </div>
+            )}
             <div className="grid grid-cols-3 gap-3">
               <div>
                 <Label className="text-xs">Tipo</Label>

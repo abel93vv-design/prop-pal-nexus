@@ -1,0 +1,1 @@
+ALTER TABLE public.properties ADD COLUMN IF NOT EXISTS ne_start_date date, ADD COLUMN IF NOT EXISTS ne_end_date date;
