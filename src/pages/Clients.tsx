@@ -112,7 +112,7 @@ function PreferencesFields({ value, onChange }: { value: PreferencesState; onCha
       <div>
         <Label className="text-xs">Tipología deseada</Label>
         <div className="flex flex-wrap gap-2 mt-1">
-          {['piso', 'casa', 'local', 'terreno'].map(t => (
+          {['piso', 'casa', 'local', 'terreno', 'parking'].map(t => (
             <label key={t} className="flex items-center gap-1.5 text-xs cursor-pointer">
               <Checkbox
                 checked={value.preferred_types.includes(t)}
