@@ -220,32 +220,51 @@ const CLIENT_DOC_TYPE_LABELS: Record<DocumentType, string> = {
   otros: 'Otros',
 };
 
+const AVAILABLE_CLIENT_DOC_TYPES: { value: DocumentType; label: string }[] = [
+  { value: 'proteccion_datos', label: 'Protección de Datos' },
+  { value: 'otros', label: 'Otros' },
+];
+
 const ClientDocumentsSection = ({ clientId, documents, onAdd, onDelete }: {
   clientId: string;
   documents: { id: string; name: string; type: DocumentType; uploadedAt: string }[];
   onAdd: (name: string, type: DocumentType) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
 }) => {
-  const [name, setName] = useState("");
+  const [customName, setCustomName] = useState("");
   const [type, setType] = useState<DocumentType>('proteccion_datos');
   const handleAdd = async () => {
-    const finalName = name.trim() || CLIENT_DOC_TYPE_LABELS[type];
+    if (type === 'otros' && !customName.trim()) return;
+    const finalName = type === 'proteccion_datos'
+      ? CLIENT_DOC_TYPE_LABELS.proteccion_datos
+      : customName.trim();
     await onAdd(finalName, type);
-    setName("");
+    setCustomName("");
     setType('proteccion_datos');
   };
   return (
     <div className="space-y-2 p-3 rounded-lg border border-border bg-muted/30">
       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Documentos del cliente</p>
-      <div className="grid grid-cols-[1fr_auto_auto] gap-2">
-        <Input placeholder="Nombre (opcional)" value={name} onChange={e => setName(e.target.value)} />
+      <div className="flex items-center gap-2">
         <Select value={type} onValueChange={(v) => setType(v as DocumentType)}>
-          <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
           <SelectContent>
-            {Object.entries(CLIENT_DOC_TYPE_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+            {AVAILABLE_CLIENT_DOC_TYPES.map(({ value, label }) => (
+              <SelectItem key={value} value={value}>{label}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
-        <Button size="sm" onClick={handleAdd}><Upload className="w-3.5 h-3.5 mr-1" />Añadir</Button>
+        {type === 'otros' && (
+          <Input
+            placeholder="Nombre del documento"
+            value={customName}
+            onChange={e => setCustomName(e.target.value)}
+            className="flex-1"
+          />
+        )}
+        <Button size="sm" onClick={handleAdd} disabled={type === 'otros' && !customName.trim()}>
+          <Upload className="w-3.5 h-3.5 mr-1" />Añadir
+        </Button>
       </div>
       {documents.length === 0
         ? <p className="text-xs text-muted-foreground text-center py-2">Sin documentos.</p>
