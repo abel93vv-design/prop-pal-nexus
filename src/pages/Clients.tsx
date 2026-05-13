@@ -229,8 +229,8 @@ const ClientDocumentsSection = ({ clientId, documents, onAdd, onDelete }: {
   const [name, setName] = useState("");
   const [type, setType] = useState<DocumentType>('proteccion_datos');
   const handleAdd = async () => {
-    if (!name.trim()) return;
-    await onAdd(name.trim(), type);
+    const finalName = name.trim() || CLIENT_DOC_TYPE_LABELS[type];
+    await onAdd(finalName, type);
     setName("");
     setType('proteccion_datos');
   };
@@ -238,7 +238,7 @@ const ClientDocumentsSection = ({ clientId, documents, onAdd, onDelete }: {
     <div className="space-y-2 p-3 rounded-lg border border-border bg-muted/30">
       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Documentos del cliente</p>
       <div className="grid grid-cols-[1fr_auto_auto] gap-2">
-        <Input placeholder="Nombre del documento" value={name} onChange={e => setName(e.target.value)} />
+        <Input placeholder="Nombre (opcional)" value={name} onChange={e => setName(e.target.value)} />
         <Select value={type} onValueChange={(v) => setType(v as DocumentType)}>
           <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
           <SelectContent>
