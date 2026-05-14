@@ -288,11 +288,15 @@ const RolesPermissions = () => {
           </TabsContent>
 
           <TabsContent value="members" className="space-y-3">
+            <div className="flex justify-end">
+              <Button size="sm" onClick={() => setCreateOpen(true)}>
+                <Plus className="w-4 h-4 mr-1" />Crear usuario
+              </Button>
+            </div>
             <Card>
               <CardContent className="p-4">
                 <p className="text-sm text-muted-foreground mb-3">
-                  Para asignar o cambiar el rol de un usuario, ve a <strong>Equipo</strong> → editar miembro.
-                  Los roles disponibles son:
+                  Crea nuevos usuarios desde aquí o desde <strong>Equipo</strong>. Los roles disponibles son:
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {EDITABLE_ROLES.map((r) => (
@@ -318,6 +322,61 @@ const RolesPermissions = () => {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Create user dialog */}
+        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader><DialogTitle>Crear nuevo usuario</DialogTitle></DialogHeader>
+            <div className="space-y-3">
+              <div><Label className="text-xs">Nombre *</Label><Input value={newUser.name} onChange={e => setNewUser({ ...newUser, name: e.target.value })} /></div>
+              <div><Label className="text-xs">Email *</Label><Input type="email" value={newUser.email} onChange={e => setNewUser({ ...newUser, email: e.target.value })} /></div>
+              <div><Label className="text-xs">Teléfono</Label><Input value={newUser.phone} onChange={e => setNewUser({ ...newUser, phone: e.target.value })} /></div>
+              <div>
+                <Label className="text-xs">Rol</Label>
+                <Select value={newUser.appRole} onValueChange={(v) => setNewUser({ ...newUser, appRole: v as AppRole })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {EDITABLE_ROLES.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs">Contraseña temporal (opcional)</Label>
+                <Input value={newUser.tempPassword} onChange={e => setNewUser({ ...newUser, tempPassword: e.target.value })} placeholder="Se generará una si se deja vacío" />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancelar</Button>
+              <Button onClick={handleCreateUser} disabled={creating}>
+                {creating && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}Crear
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Credentials dialog */}
+        <Dialog open={!!credentials} onOpenChange={(open) => !open && setCredentials(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader><DialogTitle className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-success" />Usuario creado</DialogTitle></DialogHeader>
+            {credentials && (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">Comparte estas credenciales con <strong>{credentials.name}</strong>. Deberá cambiar la contraseña en el primer acceso.</p>
+                <div className="p-3 rounded-lg bg-muted/40 border border-border space-y-1.5 text-sm font-mono">
+                  <div><span className="text-muted-foreground">Email:</span> {credentials.email}</div>
+                  <div><span className="text-muted-foreground">Contraseña:</span> {credentials.password}</div>
+                  <div><span className="text-muted-foreground">URL:</span> {credentials.login_url}</div>
+                </div>
+                <Button onClick={copyCredentials} variant="outline" className="w-full">
+                  {copied ? <CheckCircle2 className="w-4 h-4 mr-1 text-success" /> : <Copy className="w-4 h-4 mr-1" />}
+                  {copied ? "Copiado" : "Copiar credenciales"}
+                </Button>
+              </div>
+            )}
+            <DialogFooter>
+              <Button onClick={() => setCredentials(null)}>Cerrar</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
