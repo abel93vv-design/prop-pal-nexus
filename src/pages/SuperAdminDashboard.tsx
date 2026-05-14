@@ -265,6 +265,10 @@ export default function SuperAdminDashboard() {
                   </CardContent>
                 </Card>
               </TabsContent>
+
+              <TabsContent value="docs">
+                <AdminDocs />
+              </TabsContent>
             </Tabs>
           </>
         )}
