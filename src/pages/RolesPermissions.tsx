@@ -6,10 +6,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ShieldCheck, Loader2, Save } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { ShieldCheck, Loader2, Save, Plus, Copy, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const MODULES: { key: string; label: string }[] = [
@@ -57,6 +60,13 @@ const RolesPermissions = () => {
   const [perms, setPerms] = useState<Record<string, PermRow>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  // Create user dialog state
+  const [createOpen, setCreateOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newUser, setNewUser] = useState({ name: "", email: "", phone: "", appRole: "asesor" as AppRole, tempPassword: "" });
+  const [credentials, setCredentials] = useState<{ name: string; email: string; password: string; login_url: string } | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const loadAll = async () => {
     if (!tenantId) return;
@@ -136,6 +146,48 @@ const RolesPermissions = () => {
     } else {
       toast({ title: "Permisos guardados", description: "Los cambios se aplican inmediatamente." });
     }
+  };
+
+  const handleCreateUser = async () => {
+    if (!newUser.name.trim() || !newUser.email.trim()) {
+      toast({ title: "Faltan datos", description: "Nombre y email son obligatorios.", variant: "destructive" });
+      return;
+    }
+    setCreating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-team-member", {
+        body: {
+          name: newUser.name,
+          email: newUser.email,
+          phone: newUser.phone,
+          agency_id: null,
+          app_role: newUser.appRole,
+          password: newUser.tempPassword || undefined,
+        },
+      });
+      if (error) {
+        toast({ title: "Error", description: error.message, variant: "destructive" });
+      } else if (data?.error) {
+        toast({ title: "Error", description: data.error, variant: "destructive" });
+      } else {
+        setCreateOpen(false);
+        setCredentials({ name: newUser.name, email: data.email, password: data.password, login_url: data.login_url });
+        setNewUser({ name: "", email: "", phone: "", appRole: "asesor", tempPassword: "" });
+        loadAll();
+      }
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const copyCredentials = () => {
+    if (!credentials) return;
+    const text = `🔐 Credenciales de acceso al CRM\n\nNombre: ${credentials.name}\nEmail: ${credentials.email}\nContraseña: ${credentials.password}\nURL de acceso: ${credentials.login_url}\n\n⚠️ Deberás cambiar tu contraseña en el primer inicio de sesión.`;
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   if (roleLoading) {
@@ -236,11 +288,15 @@ const RolesPermissions = () => {
           </TabsContent>
 
           <TabsContent value="members" className="space-y-3">
+            <div className="flex justify-end">
+              <Button size="sm" onClick={() => setCreateOpen(true)}>
+                <Plus className="w-4 h-4 mr-1" />Crear usuario
+              </Button>
+            </div>
             <Card>
               <CardContent className="p-4">
                 <p className="text-sm text-muted-foreground mb-3">
-                  Para asignar o cambiar el rol de un usuario, ve a <strong>Equipo</strong> → editar miembro.
-                  Los roles disponibles son:
+                  Crea nuevos usuarios desde aquí o desde <strong>Equipo</strong>. Los roles disponibles son:
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {EDITABLE_ROLES.map((r) => (
@@ -266,6 +322,61 @@ const RolesPermissions = () => {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Create user dialog */}
+        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader><DialogTitle>Crear nuevo usuario</DialogTitle></DialogHeader>
+            <div className="space-y-3">
+              <div><Label className="text-xs">Nombre *</Label><Input value={newUser.name} onChange={e => setNewUser({ ...newUser, name: e.target.value })} /></div>
+              <div><Label className="text-xs">Email *</Label><Input type="email" value={newUser.email} onChange={e => setNewUser({ ...newUser, email: e.target.value })} /></div>
+              <div><Label className="text-xs">Teléfono</Label><Input value={newUser.phone} onChange={e => setNewUser({ ...newUser, phone: e.target.value })} /></div>
+              <div>
+                <Label className="text-xs">Rol</Label>
+                <Select value={newUser.appRole} onValueChange={(v) => setNewUser({ ...newUser, appRole: v as AppRole })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {EDITABLE_ROLES.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs">Contraseña temporal (opcional)</Label>
+                <Input value={newUser.tempPassword} onChange={e => setNewUser({ ...newUser, tempPassword: e.target.value })} placeholder="Se generará una si se deja vacío" />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancelar</Button>
+              <Button onClick={handleCreateUser} disabled={creating}>
+                {creating && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}Crear
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Credentials dialog */}
+        <Dialog open={!!credentials} onOpenChange={(open) => !open && setCredentials(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader><DialogTitle className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-success" />Usuario creado</DialogTitle></DialogHeader>
+            {credentials && (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">Comparte estas credenciales con <strong>{credentials.name}</strong>. Deberá cambiar la contraseña en el primer acceso.</p>
+                <div className="p-3 rounded-lg bg-muted/40 border border-border space-y-1.5 text-sm font-mono">
+                  <div><span className="text-muted-foreground">Email:</span> {credentials.email}</div>
+                  <div><span className="text-muted-foreground">Contraseña:</span> {credentials.password}</div>
+                  <div><span className="text-muted-foreground">URL:</span> {credentials.login_url}</div>
+                </div>
+                <Button onClick={copyCredentials} variant="outline" className="w-full">
+                  {copied ? <CheckCircle2 className="w-4 h-4 mr-1 text-success" /> : <Copy className="w-4 h-4 mr-1" />}
+                  {copied ? "Copiado" : "Copiar credenciales"}
+                </Button>
+              </div>
+            )}
+            <DialogFooter>
+              <Button onClick={() => setCredentials(null)}>Cerrar</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
