@@ -293,11 +293,8 @@ const Auth = () => {
               Iniciar sesión
             </Button>
           </form>
-          <p className="text-center text-sm text-muted-foreground">
-            ¿No tienes cuenta?{" "}
-            <Link to="/signup" className="text-primary hover:underline font-medium">
-              Regístrate
-            </Link>
+          <p className="text-center text-xs text-muted-foreground">
+            El acceso es por invitación. Contacta con tu administrador para obtener una cuenta.
           </p>
         </CardContent>
       </Card>
