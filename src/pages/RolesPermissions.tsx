@@ -189,6 +189,8 @@ const RolesPermissions = () => {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  if (roleLoading) {
     return (
       <Layout>
         <div className="flex items-center justify-center min-h-[60vh]">
