@@ -1,76 +1,88 @@
-# Panel Super Admin Global
+# Documentación interna en el Panel Global
 
-Crear un panel exclusivo para `abel93vv@gmail.com` (rol `super_admin`) que muestre la actividad consolidada de todos los tenants del sistema.
+Añadir una nueva pestaña **"Documentación"** dentro de `/admin` (SuperAdminDashboard) visible solo para `super_admin`. Será una guía viva de toda la plataforma para que Abel tenga en un solo sitio la referencia de qué hay, cómo funciona y qué cobra.
 
-## Acceso
+## Estructura de la pestaña
 
-- Nueva ruta `/admin` protegida: solo visible y accesible si el usuario tiene rol `super_admin` en `user_roles`.
-- Nuevo enlace "Panel Global" en el sidebar, oculto para el resto de usuarios.
-- El email `abel93vv@gmail.com` ya tendrá rol `super_admin` (verificar y asignar si falta).
+Layout de dos columnas: índice lateral (sticky) + contenido con secciones ancla. Todo renderizado desde un único componente `AdminDocs.tsx` con datos tipados (no Markdown externo) para que se actualice solo si cambian `PLAN_LIMITS`, `PLAN_PRICES`, etc.
 
-## Secciones del panel
+### Secciones
 
-### 1. Resumen general (KPIs arriba)
-- Nº total de tenants activos
-- Nº total de usuarios en la plataforma
-- Nº total de clientes
-- Nº total de propiedades
-- Ingresos del mes (suma de facturas pagadas)
-- Tenants en riesgo (≥80% de algún límite del plan)
+1. **Visión general**
+   - Qué es la plataforma (CRM inmobiliario multi-tenant)
+   - Arquitectura: tenants aislados por RLS, super admin global
+   - Flujo: alta de tenant → admin del tenant → equipo → clientes/propiedades
 
-### 2. Tabla de tenants
-Una fila por tenant con:
-- Nombre + slug + dominio
-- Plan contratado (free / basic / pro / enterprise) + estado de suscripción
-- Fecha de alta
-- Nº usuarios actuales / límite del plan + barra de progreso
-- Nº propiedades / límite + barra
-- Nº clientes / límite + barra
-- Estado: activo / inactivo / cerca del límite (badge color)
-- Acciones: Ver detalle, Ver facturas, Cambiar plan, Suspender
+2. **Roles y permisos**
+   - Tabla con los 5 roles: `super_admin`, `admin`, `socio`, `coordinadora`, `asesor`
+   - Para cada rol: descripción, qué ve, qué puede crear/editar/eliminar
+   - Matriz de permisos por módulo (Clientes, Propiedades, Tareas, Pipeline, Match Center, Equipo, Ajustes, Facturación)
+   - Nota: solo el admin del tenant gestiona miembros; super_admin gestiona tenants
 
-### 3. Detalle de un tenant (modal o sub-página)
-- Datos del tenant + admin principal
-- Lista de usuarios del tenant con rol y último acceso
-- Últimos clientes creados (10 más recientes)
-- Últimas propiedades creadas
-- Historial de facturas con importe, periodo, estado, descarga
-- Log de actividad reciente (`activity_logs`)
-- Uso de almacenamiento (documentos)
+3. **Planes y precios**
+   - Tabla generada desde `PLAN_LIMITS` + `PLAN_PRICES` + `PLAN_LABELS`
+   - Columnas: Free / Basic / Pro / Enterprise
+   - Filas: precio €/mes, propiedades, clientes, miembros, agencias, portales, campos personalizados, API keys, pipelines, almacenamiento, match center, retención de logs
+   - Badges "Ilimitado" cuando aplique
 
-### 4. Actividad global en tiempo real
-- Feed cronológico de últimos eventos en todos los tenants: nuevos usuarios, nuevos clientes, nuevas propiedades, nuevas facturas
-- Filtros por tipo de evento y por tenant
+4. **Módulos y herramientas**
+   Una tarjeta por módulo con: para qué sirve, cómo se usa paso a paso, quién tiene acceso, límites del plan que aplican.
+   - Dashboard / KPIs
+   - Clientes (tipos, lead status, intereses, importación CSV, exportación)
+   - Propiedades (NE vs Noticias, multi-imagen, estados, syndication Fotocasa/Idealista)
+   - Match Center (4 ejes de ponderación, filtros duros)
+   - Pipeline (kanban, etapas configurables)
+   - Tareas y recordatorios
+   - Equipo y miembros
+   - Inmobiliarias / agencias
+   - Ajustes (perfil, seguridad, sesiones, auditoría, copias)
+   - Onboarding wizard
+   - Asistente IA (Gemini)
+   - Feedback flotante
 
-### 5. Facturación consolidada
-- Tabla de todas las facturas de todos los tenants
-- Filtros por mes, plan, estado
-- Total facturado por mes (gráfico)
-- Exportar CSV
+5. **Panel Global (super admin)**
+   - Qué hace cada pestaña: Resumen, Tenants, Actividad, Facturación, Documentación
+   - Cómo cambiar el plan de un tenant
+   - Cómo interpretar barras de uso (ámbar ≥80%, rojo 100%)
+   - Exportar facturación a CSV
+   - Provisionar un nuevo tenant (`/tenants`)
 
-## Sugerencias adicionales que añadiría
+6. **Seguridad y datos**
+   - RLS por `tenant_id`
+   - Roles en tabla aparte (`user_roles`)
+   - Soft delete (`deleted_at`) y papelera
+   - Snapshots / versionado
+   - Logs de actividad por tenant
+   - Lockout de login (5 fallos en 2h), rate limiting auth (10 req/min)
+   - Cambio de contraseña forzado en primer login
 
-1. **Alertas automáticas** — destacar tenants que: no han iniciado sesión en 30 días, están al 90% de un límite, tienen suscripción vencida, llevan >7 días sin actividad.
-2. **Gráfico de crecimiento** — nuevos tenants/clientes/propiedades por mes (últimos 6 meses).
-3. **Ranking de tenants** — más activos por nº de operaciones, más clientes, más propiedades publicadas.
-4. **Health score por tenant** — métrica compuesta (uso, actividad, pago al día) para ver de un vistazo cuáles necesitan atención.
-5. **Acceso rápido "Impersonar"** — botón para entrar al CRM de un tenant como super admin (solo lectura) para dar soporte.
-6. **Resumen de portales** — qué tenants tienen Fotocasa/Idealista activos y cuántos anuncios publican.
-7. **Notas internas por tenant** — campo libre para que Abel anote acuerdos, incidencias, contactos.
-8. **Exportación mensual** — informe PDF/CSV con resumen del mes para enviar o archivar.
+7. **Facturación y suscripciones**
+   - Cómo se generan las facturas HTML
+   - Estados de suscripción
+   - Qué pasa al alcanzar un límite
+
+8. **FAQ operativo**
+   - "Un tenant no puede entrar" → ver bloqueos, must_change_password, suscripción
+   - "Cómo doy de alta un nuevo cliente del CRM" → crear tenant + admin
+   - "Cómo cambio el plan de alguien" → Panel Global → Tenants → Cambiar plan
+   - "Cómo recupero datos borrados" → Papelera del tenant
 
 ## Detalles técnicos
 
-- **Edge function nueva** `super-admin-dashboard` (verify_jwt, valida `is_super_admin(auth.uid())` server-side) que devuelve:
-  - Lista completa de tenants con conteos agregados (usuarios, clientes, propiedades) usando `service_role` para saltarse RLS.
-  - Facturas, actividad y detalles bajo demanda.
-- **Nueva página** `src/pages/SuperAdminDashboard.tsx` con tabs: Resumen / Tenants / Actividad / Facturación.
-- **Componentes nuevos**: `TenantStatsCard`, `TenantDetailDrawer`, `GlobalActivityFeed`, `BillingTable`.
-- **Cálculo de límites**: reutilizar `PLAN_LIMITS` de `src/config/planLimits.ts`. Marcar fila en ámbar a ≥80% y rojo a 100%.
-- **Sidebar**: añadir item "Panel Global" condicionado a `isSuperAdmin` desde `useUserRole`.
-- **Ruta** `/admin` envuelta en guard que redirige si no es super_admin.
-- **Migración mínima**: ninguna estructural necesaria (todo se calcula sobre tablas existentes); opcional añadir tabla `tenant_notes` si quieres incluir la sugerencia 7.
+- Nuevo archivo: `src/pages/admin/AdminDocs.tsx` (componente puro de presentación)
+- Integrar como nueva `<TabsTrigger value="docs">Documentación</TabsTrigger>` en `src/pages/SuperAdminDashboard.tsx`
+- Datos derivados de:
+  - `src/config/planLimits.ts` (PLAN_LIMITS, PLAN_PRICES, PLAN_LABELS, isUnlimited)
+  - Constantes locales para roles/permisos y descripciones de módulos
+- UI: shadcn `Card`, `Table`, `Badge`, `Accordion` (FAQ), `ScrollArea`, índice lateral con `<a href="#anchor">` y `scroll-smooth`
+- Sin cambios de backend, sin migraciones
+- Tokens semánticos del design system (verde KageSan)
+- Responsive: índice colapsa en `<lg`
 
-## ¿Confirmas?
+## Fuera de alcance
 
-¿Incluyo todas las sugerencias adicionales (1–8) o prefieres empezar solo con las secciones 1–5 base y añadir el resto después?
+- No se edita desde la UI (es estática y se actualiza por código)
+- No se exporta a PDF (se puede añadir después si lo pides)
+- No se traduce (solo español)
+
+¿Lo implemento así, o quieres que la documentación sea **editable** desde la UI (guardada en una tabla `admin_docs`) para poder añadir notas sin tocar código?
