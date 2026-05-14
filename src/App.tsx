@@ -27,6 +27,7 @@ import ResetPassword from "./pages/ResetPassword";
 import SignUp from "./pages/SignUp";
 import NotFound from "./pages/NotFound";
 import RolesPermissions from "./pages/RolesPermissions";
+import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 
 const queryClient = new QueryClient();
 
@@ -86,6 +87,7 @@ const AppRoutes = () => (
     <Route path="/match-center" element={<ProtectedRoute><MatchCenter /></ProtectedRoute>} />
     <Route path="/tenants" element={<ProtectedRoute><Tenants /></ProtectedRoute>} />
     <Route path="/roles" element={<ProtectedRoute><RolesPermissions /></ProtectedRoute>} />
+    <Route path="/admin" element={<ProtectedRoute><SuperAdminDashboard /></ProtectedRoute>} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );
