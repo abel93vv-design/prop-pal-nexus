@@ -69,32 +69,36 @@ const RolesPermissions = () => {
   const [credentials, setCredentials] = useState<{ name: string; email: string; password: string; login_url: string } | null>(null);
   const [copied, setCopied] = useState(false);
 
+  // Edit / delete state
+  const [editingMember, setEditingMember] = useState<MemberRow | null>(null);
+  const [editRole, setEditRole] = useState<AppRole>("asesor");
+  const [savingMember, setSavingMember] = useState(false);
+  const [deletingMember, setDeletingMember] = useState<MemberRow | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
   const loadAll = async () => {
     if (!tenantId) return;
     setLoading(true);
 
     const [{ data: tm }, { data: ur }, { data: rp }] = await Promise.all([
-      supabase.from("team_members").select("id, name, email").eq("tenant_id", tenantId),
-      supabase.from("user_roles").select("id, user_id, role, tenant_id").or(`tenant_id.eq.${tenantId},role.eq.super_admin`),
+      supabase.from("team_members").select("id, name, email, user_id").eq("tenant_id", tenantId).is("deleted_at", null),
+      supabase.from("user_roles").select("id, user_id, role, tenant_id").eq("tenant_id", tenantId),
       supabase.from("role_permissions").select("*").eq("tenant_id", tenantId),
     ]);
 
-    // Build members from team_members (we don't have list of auth users client-side)
-    const tmList = (tm || []) as { id: string; name: string; email: string }[];
-    // We can't map team_member->user_id directly without auth listing. Show by email.
-    const userRolesByEmail: Record<string, { role: AppRole; id: string; user_id: string }> = {};
-    const allRoles = (ur || []) as { id: string; user_id: string; role: AppRole; tenant_id: string | null }[];
-    // We need email lookup; team_members has email.
-    const memberRows: MemberRow[] = tmList.map((t) => {
-      // We can't link reliably without user_id; team_members in this app are just records.
-      return {
-        user_id: "",
-        email: t.email,
-        name: t.name,
-        role: null,
-        role_id: null,
-      };
+    const tmList = (tm || []) as { id: string; name: string; email: string; user_id: string | null }[];
+    const rolesByUserId: Record<string, { role: AppRole; id: string }> = {};
+    ((ur || []) as { id: string; user_id: string; role: AppRole }[]).forEach((r) => {
+      rolesByUserId[r.user_id] = { role: r.role, id: r.id };
     });
+
+    const memberRows: MemberRow[] = tmList.map((t) => ({
+      user_id: t.user_id || "",
+      email: t.email,
+      name: t.name,
+      role: t.user_id ? (rolesByUserId[t.user_id]?.role ?? null) : null,
+      role_id: t.user_id ? (rolesByUserId[t.user_id]?.id ?? null) : null,
+    }));
 
     setMembers(memberRows);
 
@@ -102,7 +106,6 @@ const RolesPermissions = () => {
     (rp || []).forEach((p: any) => {
       permsMap[`${p.role}:${p.module}`] = p;
     });
-    // Fill defaults for missing combinations
     EDITABLE_ROLES.filter((r) => r.value !== "admin").forEach((r) => {
       MODULES.forEach((m) => {
         const k = `${r.value}:${m.key}`;
