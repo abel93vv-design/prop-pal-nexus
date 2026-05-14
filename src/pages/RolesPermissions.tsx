@@ -462,6 +462,48 @@ const RolesPermissions = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Edit role dialog */}
+        <Dialog open={!!editingMember} onOpenChange={(open) => !open && setEditingMember(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader><DialogTitle>Editar rol de {editingMember?.name}</DialogTitle></DialogHeader>
+            <div className="space-y-3">
+              <div>
+                <Label className="text-xs">Rol</Label>
+                <Select value={editRole} onValueChange={(v) => setEditRole(v as AppRole)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {EDITABLE_ROLES.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditingMember(null)}>Cancelar</Button>
+              <Button onClick={handleSaveMemberRole} disabled={savingMember}>
+                {savingMember && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}Guardar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete confirm */}
+        <AlertDialog open={!!deletingMember} onOpenChange={(open) => !open && setDeletingMember(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>¿Eliminar a {deletingMember?.name}?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Se eliminará el acceso de este miembro al CRM de forma permanente. Esta acción no se puede deshacer.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteMember} disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                {deleting && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}Eliminar
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Layout>
   );
