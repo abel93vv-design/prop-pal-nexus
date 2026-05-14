@@ -242,6 +242,8 @@ const RolesPermissions = () => {
       setDeleting(false);
     }
   };
+
+  if (roleLoading) {
     return (
       <Layout>
         <div className="flex items-center justify-center min-h-[60vh]">
