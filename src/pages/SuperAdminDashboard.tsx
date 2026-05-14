@@ -11,7 +11,8 @@ import { Input } from "@/components/ui/input";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Building2, Users, Home, Euro, AlertTriangle, Activity, Eye, Download } from "lucide-react";
+import { Loader2, Building2, Users, Home, Euro, AlertTriangle, Activity, Eye, Download, BookOpen } from "lucide-react";
+import AdminDocs from "./admin/AdminDocs";
 import { toast } from "sonner";
 
 interface TenantRow {
