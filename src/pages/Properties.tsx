@@ -94,6 +94,7 @@ const Properties = () => {
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [operationFilter, setOperationFilter] = useState<string>("all");
+  const [agencyFilter, setAgencyFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Property | null>(null);
   const [form, setForm] = useState<Omit<Property, "id">>(emptyProperty);
@@ -114,7 +115,8 @@ const Properties = () => {
     const matchStatus = statusFilter === "all" || p.status === statusFilter;
     const matchOp = operationFilter === "all" || p.operationType === operationFilter || p.operationType === "ambos" || operationFilter === "ambos";
     const matchListing = activeListing === 'all' || (p.listing_type || 'noticia') === activeListing;
-    return matchSearch && matchType && matchStatus && matchOp && matchListing;
+    const matchAgency = agencyFilter === "all" || p.agencyId === agencyFilter;
+    return matchSearch && matchType && matchStatus && matchOp && matchListing && matchAgency;
   });
 
   if (activeListing === 'ne') {
@@ -258,6 +260,13 @@ const Properties = () => {
               <SelectItem value="venta">Venta</SelectItem>
               <SelectItem value="alquiler">Alquiler</SelectItem>
               <SelectItem value="ambos">Ambos</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={agencyFilter} onValueChange={setAgencyFilter}>
+            <SelectTrigger className="w-[160px]"><SelectValue placeholder="Inmobiliaria" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas</SelectItem>
+              {agencies.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>

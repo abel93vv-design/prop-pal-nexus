@@ -316,6 +316,7 @@ const Clients = () => {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [contactSort, setContactSort] = useState<string>("none");
+  const [agencyFilter, setAgencyFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Client | null>(null);
   const [form, setForm] = useState<Omit<Client, "id">>(emptyClient);
@@ -364,7 +365,8 @@ const Clients = () => {
       const q = search.toLowerCase();
       const matchSearch = !q || c.name.toLowerCase().includes(q) || (c.phone || "").toLowerCase().includes(q);
       const matchType = typeFilter === "all" || c.type === typeFilter;
-      return matchSearch && matchType;
+      const matchAgency = agencyFilter === "all" || c.agencyId === agencyFilter;
+      return matchSearch && matchType && matchAgency;
     })
     .sort((a, b) => {
       if (contactSort === "none") return 0;
@@ -514,6 +516,13 @@ const Clients = () => {
             <SelectContent>
               <SelectItem value="all">Todos los tipos</SelectItem>
               {Object.entries(typeLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={agencyFilter} onValueChange={setAgencyFilter}>
+            <SelectTrigger className="w-[160px]"><SelectValue placeholder="Inmobiliaria" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas</SelectItem>
+              {agencies.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
             </SelectContent>
           </Select>
           <Button variant={contactSort !== "none" ? "secondary" : "outline"} size="sm" onClick={cycleContactSort} className="gap-1.5">
