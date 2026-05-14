@@ -11,7 +11,8 @@ import { Input } from "@/components/ui/input";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Building2, Users, Home, Euro, AlertTriangle, Activity, Eye, Download } from "lucide-react";
+import { Loader2, Building2, Users, Home, Euro, AlertTriangle, Activity, Eye, Download, BookOpen } from "lucide-react";
+import AdminDocs from "./admin/AdminDocs";
 import { toast } from "sonner";
 
 interface TenantRow {
@@ -144,6 +145,7 @@ export default function SuperAdminDashboard() {
                 <TabsTrigger value="tenants">Tenants</TabsTrigger>
                 <TabsTrigger value="activity">Actividad global</TabsTrigger>
                 <TabsTrigger value="billing">Facturación</TabsTrigger>
+                <TabsTrigger value="docs"><BookOpen className="w-4 h-4 mr-1" />Documentación</TabsTrigger>
               </TabsList>
 
               <TabsContent value="tenants" className="space-y-3">
@@ -262,6 +264,10 @@ export default function SuperAdminDashboard() {
                     </Table>
                   </CardContent>
                 </Card>
+              </TabsContent>
+
+              <TabsContent value="docs">
+                <AdminDocs />
               </TabsContent>
             </Tabs>
           </>
