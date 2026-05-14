@@ -1,4 +1,4 @@
-import { Building2, Users, ClipboardList, LayoutDashboard, UserCog, Landmark, Settings, ShieldCheck, Kanban, Target, FileSignature, Newspaper, KeyRound } from "lucide-react";
+import { Building2, Users, ClipboardList, LayoutDashboard, UserCog, Landmark, Settings, ShieldCheck, Kanban, Target, FileSignature, Newspaper, KeyRound, Crown } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -110,6 +110,20 @@ export function AppSidebar() {
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+                {isSuperAdmin && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild className="h-10">
+                      <NavLink
+                        to="/admin"
+                        className="flex items-center gap-3 px-3 rounded-lg text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors text-sm"
+                        activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                      >
+                        <Crown className="w-4 h-4 shrink-0" />
+                        <span>Panel Global</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
                 {isSuperAdmin && (
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild className="h-10">
