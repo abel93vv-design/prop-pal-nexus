@@ -61,8 +61,54 @@ const RolesPermissions = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const loadAll = async () => {
-    if (!tenantId) return;
+  // Create user dialog state
+  const [createOpen, setCreateOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newUser, setNewUser] = useState({ name: "", email: "", phone: "", appRole: "asesor" as AppRole, tempPassword: "" });
+  const [credentials, setCredentials] = useState<{ name: string; email: string; password: string; login_url: string } | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const handleCreateUser = async () => {
+    if (!newUser.name.trim() || !newUser.email.trim()) {
+      toast({ title: "Faltan datos", description: "Nombre y email son obligatorios.", variant: "destructive" });
+      return;
+    }
+    setCreating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-team-member", {
+        body: {
+          name: newUser.name,
+          email: newUser.email,
+          phone: newUser.phone,
+          agency_id: null,
+          app_role: newUser.appRole,
+          password: newUser.tempPassword || undefined,
+        },
+      });
+      if (error) {
+        toast({ title: "Error", description: error.message, variant: "destructive" });
+      } else if (data?.error) {
+        toast({ title: "Error", description: data.error, variant: "destructive" });
+      } else {
+        setCreateOpen(false);
+        setCredentials({ name: newUser.name, email: data.email, password: data.password, login_url: data.login_url });
+        setNewUser({ name: "", email: "", phone: "", appRole: "asesor", tempPassword: "" });
+        loadAll();
+      }
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const copyCredentials = () => {
+    if (!credentials) return;
+    const text = `🔐 Credenciales de acceso al CRM\n\nNombre: ${credentials.name}\nEmail: ${credentials.email}\nContraseña: ${credentials.password}\nURL de acceso: ${credentials.login_url}\n\n⚠️ Deberás cambiar tu contraseña en el primer inicio de sesión.`;
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
     setLoading(true);
 
     const [{ data: tm }, { data: ur }, { data: rp }] = await Promise.all([
