@@ -180,7 +180,7 @@ const MatchCenter = () => {
 
         {/* Stats - only when searching by name/phone */}
         {showStats && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <div className="stat-card">
               <div className="flex items-center gap-2 mb-1">
                 <Target className="w-4 h-4 text-success" />
@@ -201,13 +201,6 @@ const MatchCenter = () => {
                 <span className="text-xs text-muted-foreground">Viables</span>
               </div>
               <p className="text-xl font-bold text-foreground">{viableCount}</p>
-            </div>
-            <div className="stat-card">
-              <div className="flex items-center gap-2 mb-1">
-                <AlertTriangle className="w-4 h-4 text-primary" />
-                <span className="text-xs text-muted-foreground">Score Promedio</span>
-              </div>
-              <p className="text-xl font-bold text-foreground">{avgScore}</p>
             </div>
           </div>
         )}
