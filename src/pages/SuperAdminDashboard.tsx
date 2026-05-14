@@ -145,6 +145,7 @@ export default function SuperAdminDashboard() {
                 <TabsTrigger value="tenants">Tenants</TabsTrigger>
                 <TabsTrigger value="activity">Actividad global</TabsTrigger>
                 <TabsTrigger value="billing">Facturación</TabsTrigger>
+                <TabsTrigger value="docs"><BookOpen className="w-4 h-4 mr-1" />Documentación</TabsTrigger>
               </TabsList>
 
               <TabsContent value="tenants" className="space-y-3">
