@@ -356,21 +356,53 @@ const RolesPermissions = () => {
                     <Badge key={r.value} variant="outline" className={r.color}>{r.label}</Badge>
                   ))}
                 </div>
-                {members.length > 0 && (
-                  <div className="mt-4 border-t border-border pt-4">
-                    <p className="text-xs font-semibold text-muted-foreground mb-2">Miembros del equipo ({members.length})</p>
-                    <div className="space-y-1">
-                      {members.map((m, i) => (
-                        <div key={i} className="flex items-center justify-between text-sm py-1.5 px-2 rounded hover:bg-muted/30">
-                          <div>
-                            <span className="font-medium">{m.name}</span>
-                            <span className="text-muted-foreground text-xs ml-2">{m.email}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                <div className="mt-4 border-t border-border pt-4">
+                  <p className="text-xs font-semibold text-muted-foreground mb-2">Miembros del equipo ({members.length})</p>
+                  {loading ? (
+                    <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
+                  ) : members.length === 0 ? (
+                    <p className="text-sm text-muted-foreground py-3">Aún no has creado ningún miembro.</p>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Nombre</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Rol</TableHead>
+                          <TableHead className="text-right">Acciones</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {members.map((m, i) => {
+                          const roleDef = EDITABLE_ROLES.find((r) => r.value === m.role);
+                          return (
+                            <TableRow key={i}>
+                              <TableCell className="font-medium">{m.name}</TableCell>
+                              <TableCell className="text-muted-foreground text-xs">{m.email}</TableCell>
+                              <TableCell>
+                                {roleDef ? (
+                                  <Badge variant="outline" className={roleDef.color}>{roleDef.label}</Badge>
+                                ) : (
+                                  <Badge variant="outline" className="text-muted-foreground">Sin rol</Badge>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-1">
+                                  <Button size="sm" variant="ghost" onClick={() => openEditMember(m)} disabled={!m.user_id} title={!m.user_id ? "Miembro sin usuario vinculado" : "Editar rol"}>
+                                    <Pencil className="w-3.5 h-3.5" />
+                                  </Button>
+                                  <Button size="sm" variant="ghost" onClick={() => setDeletingMember(m)} disabled={!m.user_id} className="text-destructive hover:text-destructive">
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
