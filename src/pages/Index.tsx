@@ -1,4 +1,4 @@
-import { Building2, Users, Newspaper, FileCheck, AlertCircle, Home } from "lucide-react";
+import { Building2, Users, Newspaper, FileCheck, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
