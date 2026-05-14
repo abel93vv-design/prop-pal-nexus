@@ -194,7 +194,54 @@ const RolesPermissions = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  if (roleLoading) {
+  const openEditMember = (m: MemberRow) => {
+    setEditingMember(m);
+    setEditRole((m.role as AppRole) || "asesor");
+  };
+
+  const handleSaveMemberRole = async () => {
+    if (!editingMember?.user_id) {
+      toast({ title: "Error", description: "Este miembro no está vinculado a un usuario.", variant: "destructive" });
+      return;
+    }
+    setSavingMember(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("manage-team-member", {
+        body: { action: "update_role", user_id: editingMember.user_id, new_role: editRole },
+      });
+      if (error || data?.error) {
+        toast({ title: "Error", description: error?.message || data?.error, variant: "destructive" });
+      } else {
+        toast({ title: "Rol actualizado" });
+        setEditingMember(null);
+        loadAll();
+      }
+    } finally {
+      setSavingMember(false);
+    }
+  };
+
+  const handleDeleteMember = async () => {
+    if (!deletingMember?.user_id) {
+      toast({ title: "Error", description: "Este miembro no está vinculado a un usuario.", variant: "destructive" });
+      return;
+    }
+    setDeleting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("manage-team-member", {
+        body: { action: "delete", user_id: deletingMember.user_id },
+      });
+      if (error || data?.error) {
+        toast({ title: "Error", description: error?.message || data?.error, variant: "destructive" });
+      } else {
+        toast({ title: "Miembro eliminado" });
+        setDeletingMember(null);
+        loadAll();
+      }
+    } finally {
+      setDeleting(false);
+    }
+  };
     return (
       <Layout>
         <div className="flex items-center justify-center min-h-[60vh]">
