@@ -123,10 +123,11 @@ const MatchCenter = () => {
     });
   };
 
-  const highCount = matches.filter((m) => m.category === "high").length;
-  const mediumCount = matches.filter((m) => m.category === "medium").length;
-  const viableCount = matches.filter((m) => m.viability_status === "Viable").length;
-  const avgScore = matches.length > 0 ? Math.round(matches.reduce((s, m) => s + m.total_score, 0) / matches.length) : 0;
+  const highCount = filtered.filter((m) => m.category === "high").length;
+  const mediumCount = filtered.filter((m) => m.category === "medium").length;
+  const viableCount = filtered.filter((m) => m.viability_status === "Viable").length;
+  const avgScore = filtered.length > 0 ? Math.round(filtered.reduce((s, m) => s + m.total_score, 0) / filtered.length) : 0;
+  const showStats = search.trim().length > 0;
 
   return (
     <Layout>
@@ -177,37 +178,39 @@ const MatchCenter = () => {
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="stat-card">
-            <div className="flex items-center gap-2 mb-1">
-              <Target className="w-4 h-4 text-success" />
-              <span className="text-xs text-muted-foreground">Match Alto</span>
+        {/* Stats - only when searching by name/phone */}
+        {showStats && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="stat-card">
+              <div className="flex items-center gap-2 mb-1">
+                <Target className="w-4 h-4 text-success" />
+                <span className="text-xs text-muted-foreground">Match Alto</span>
+              </div>
+              <p className="text-xl font-bold text-foreground">{highCount}</p>
             </div>
-            <p className="text-xl font-bold text-foreground">{highCount}</p>
-          </div>
-          <div className="stat-card">
-            <div className="flex items-center gap-2 mb-1">
-              <TrendingUp className="w-4 h-4 text-warning" />
-              <span className="text-xs text-muted-foreground">Match Medio</span>
+            <div className="stat-card">
+              <div className="flex items-center gap-2 mb-1">
+                <TrendingUp className="w-4 h-4 text-warning" />
+                <span className="text-xs text-muted-foreground">Match Medio</span>
+              </div>
+              <p className="text-xl font-bold text-foreground">{mediumCount}</p>
             </div>
-            <p className="text-xl font-bold text-foreground">{mediumCount}</p>
-          </div>
-          <div className="stat-card">
-            <div className="flex items-center gap-2 mb-1">
-              <CheckCircle2 className="w-4 h-4 text-info" />
-              <span className="text-xs text-muted-foreground">Viables</span>
+            <div className="stat-card">
+              <div className="flex items-center gap-2 mb-1">
+                <CheckCircle2 className="w-4 h-4 text-info" />
+                <span className="text-xs text-muted-foreground">Viables</span>
+              </div>
+              <p className="text-xl font-bold text-foreground">{viableCount}</p>
             </div>
-            <p className="text-xl font-bold text-foreground">{viableCount}</p>
-          </div>
-          <div className="stat-card">
-            <div className="flex items-center gap-2 mb-1">
-              <AlertTriangle className="w-4 h-4 text-primary" />
-              <span className="text-xs text-muted-foreground">Score Promedio</span>
+            <div className="stat-card">
+              <div className="flex items-center gap-2 mb-1">
+                <AlertTriangle className="w-4 h-4 text-primary" />
+                <span className="text-xs text-muted-foreground">Score Promedio</span>
+              </div>
+              <p className="text-xl font-bold text-foreground">{avgScore}</p>
             </div>
-            <p className="text-xl font-bold text-foreground">{avgScore}</p>
           </div>
-        </div>
+        )}
 
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
