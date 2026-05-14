@@ -28,7 +28,6 @@ const Index = () => {
     { label: 'Propiedades', to: '/propiedades', icon: Building2 },
     { label: 'Clientes', to: '/clientes', icon: Users },
     { label: 'Tareas', to: '/tareas', icon: AlertCircle },
-    { label: 'Web Pública', to: '/publica', icon: Home },
   ];
 
   return (
