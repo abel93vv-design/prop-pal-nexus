@@ -1,4 +1,4 @@
-import { Building2, Users, Newspaper, FileCheck, AlertCircle, Home } from "lucide-react";
+import { Building2, Users, Newspaper, FileCheck, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -28,7 +28,6 @@ const Index = () => {
     { label: 'Propiedades', to: '/propiedades', icon: Building2 },
     { label: 'Clientes', to: '/clientes', icon: Users },
     { label: 'Tareas', to: '/tareas', icon: AlertCircle },
-    { label: 'Web Pública', to: '/publica', icon: Home },
   ];
 
   return (
