@@ -12,7 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { ShieldCheck, Loader2, Save, Plus, Copy, CheckCircle2 } from "lucide-react";
+import { ShieldCheck, Loader2, Save, Plus, Copy, CheckCircle2, Trash2, Pencil } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 
 const MODULES: { key: string; label: string }[] = [
@@ -68,32 +69,36 @@ const RolesPermissions = () => {
   const [credentials, setCredentials] = useState<{ name: string; email: string; password: string; login_url: string } | null>(null);
   const [copied, setCopied] = useState(false);
 
+  // Edit / delete state
+  const [editingMember, setEditingMember] = useState<MemberRow | null>(null);
+  const [editRole, setEditRole] = useState<AppRole>("asesor");
+  const [savingMember, setSavingMember] = useState(false);
+  const [deletingMember, setDeletingMember] = useState<MemberRow | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
   const loadAll = async () => {
     if (!tenantId) return;
     setLoading(true);
 
     const [{ data: tm }, { data: ur }, { data: rp }] = await Promise.all([
-      supabase.from("team_members").select("id, name, email").eq("tenant_id", tenantId),
-      supabase.from("user_roles").select("id, user_id, role, tenant_id").or(`tenant_id.eq.${tenantId},role.eq.super_admin`),
+      supabase.from("team_members").select("id, name, email, user_id").eq("tenant_id", tenantId).is("deleted_at", null),
+      supabase.from("user_roles").select("id, user_id, role, tenant_id").eq("tenant_id", tenantId),
       supabase.from("role_permissions").select("*").eq("tenant_id", tenantId),
     ]);
 
-    // Build members from team_members (we don't have list of auth users client-side)
-    const tmList = (tm || []) as { id: string; name: string; email: string }[];
-    // We can't map team_member->user_id directly without auth listing. Show by email.
-    const userRolesByEmail: Record<string, { role: AppRole; id: string; user_id: string }> = {};
-    const allRoles = (ur || []) as { id: string; user_id: string; role: AppRole; tenant_id: string | null }[];
-    // We need email lookup; team_members has email.
-    const memberRows: MemberRow[] = tmList.map((t) => {
-      // We can't link reliably without user_id; team_members in this app are just records.
-      return {
-        user_id: "",
-        email: t.email,
-        name: t.name,
-        role: null,
-        role_id: null,
-      };
+    const tmList = (tm || []) as { id: string; name: string; email: string; user_id: string | null }[];
+    const rolesByUserId: Record<string, { role: AppRole; id: string }> = {};
+    ((ur || []) as { id: string; user_id: string; role: AppRole }[]).forEach((r) => {
+      rolesByUserId[r.user_id] = { role: r.role, id: r.id };
     });
+
+    const memberRows: MemberRow[] = tmList.map((t) => ({
+      user_id: t.user_id || "",
+      email: t.email,
+      name: t.name,
+      role: t.user_id ? (rolesByUserId[t.user_id]?.role ?? null) : null,
+      role_id: t.user_id ? (rolesByUserId[t.user_id]?.id ?? null) : null,
+    }));
 
     setMembers(memberRows);
 
@@ -101,7 +106,6 @@ const RolesPermissions = () => {
     (rp || []).forEach((p: any) => {
       permsMap[`${p.role}:${p.module}`] = p;
     });
-    // Fill defaults for missing combinations
     EDITABLE_ROLES.filter((r) => r.value !== "admin").forEach((r) => {
       MODULES.forEach((m) => {
         const k = `${r.value}:${m.key}`;
@@ -188,6 +192,55 @@ const RolesPermissions = () => {
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const openEditMember = (m: MemberRow) => {
+    setEditingMember(m);
+    setEditRole((m.role as AppRole) || "asesor");
+  };
+
+  const handleSaveMemberRole = async () => {
+    if (!editingMember?.user_id) {
+      toast({ title: "Error", description: "Este miembro no está vinculado a un usuario.", variant: "destructive" });
+      return;
+    }
+    setSavingMember(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("manage-team-member", {
+        body: { action: "update_role", user_id: editingMember.user_id, new_role: editRole },
+      });
+      if (error || data?.error) {
+        toast({ title: "Error", description: error?.message || data?.error, variant: "destructive" });
+      } else {
+        toast({ title: "Rol actualizado" });
+        setEditingMember(null);
+        loadAll();
+      }
+    } finally {
+      setSavingMember(false);
+    }
+  };
+
+  const handleDeleteMember = async () => {
+    if (!deletingMember?.user_id) {
+      toast({ title: "Error", description: "Este miembro no está vinculado a un usuario.", variant: "destructive" });
+      return;
+    }
+    setDeleting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("manage-team-member", {
+        body: { action: "delete", user_id: deletingMember.user_id },
+      });
+      if (error || data?.error) {
+        toast({ title: "Error", description: error?.message || data?.error, variant: "destructive" });
+      } else {
+        toast({ title: "Miembro eliminado" });
+        setDeletingMember(null);
+        loadAll();
+      }
+    } finally {
+      setDeleting(false);
+    }
   };
 
   if (roleLoading) {
@@ -303,21 +356,53 @@ const RolesPermissions = () => {
                     <Badge key={r.value} variant="outline" className={r.color}>{r.label}</Badge>
                   ))}
                 </div>
-                {members.length > 0 && (
-                  <div className="mt-4 border-t border-border pt-4">
-                    <p className="text-xs font-semibold text-muted-foreground mb-2">Miembros del equipo ({members.length})</p>
-                    <div className="space-y-1">
-                      {members.map((m, i) => (
-                        <div key={i} className="flex items-center justify-between text-sm py-1.5 px-2 rounded hover:bg-muted/30">
-                          <div>
-                            <span className="font-medium">{m.name}</span>
-                            <span className="text-muted-foreground text-xs ml-2">{m.email}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                <div className="mt-4 border-t border-border pt-4">
+                  <p className="text-xs font-semibold text-muted-foreground mb-2">Miembros del equipo ({members.length})</p>
+                  {loading ? (
+                    <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
+                  ) : members.length === 0 ? (
+                    <p className="text-sm text-muted-foreground py-3">Aún no has creado ningún miembro.</p>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Nombre</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Rol</TableHead>
+                          <TableHead className="text-right">Acciones</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {members.map((m, i) => {
+                          const roleDef = EDITABLE_ROLES.find((r) => r.value === m.role);
+                          return (
+                            <TableRow key={i}>
+                              <TableCell className="font-medium">{m.name}</TableCell>
+                              <TableCell className="text-muted-foreground text-xs">{m.email}</TableCell>
+                              <TableCell>
+                                {roleDef ? (
+                                  <Badge variant="outline" className={roleDef.color}>{roleDef.label}</Badge>
+                                ) : (
+                                  <Badge variant="outline" className="text-muted-foreground">Sin rol</Badge>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-1">
+                                  <Button size="sm" variant="ghost" onClick={() => openEditMember(m)} disabled={!m.user_id} title={!m.user_id ? "Miembro sin usuario vinculado" : "Editar rol"}>
+                                    <Pencil className="w-3.5 h-3.5" />
+                                  </Button>
+                                  <Button size="sm" variant="ghost" onClick={() => setDeletingMember(m)} disabled={!m.user_id} className="text-destructive hover:text-destructive">
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -377,6 +462,48 @@ const RolesPermissions = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Edit role dialog */}
+        <Dialog open={!!editingMember} onOpenChange={(open) => !open && setEditingMember(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader><DialogTitle>Editar rol de {editingMember?.name}</DialogTitle></DialogHeader>
+            <div className="space-y-3">
+              <div>
+                <Label className="text-xs">Rol</Label>
+                <Select value={editRole} onValueChange={(v) => setEditRole(v as AppRole)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {EDITABLE_ROLES.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditingMember(null)}>Cancelar</Button>
+              <Button onClick={handleSaveMemberRole} disabled={savingMember}>
+                {savingMember && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}Guardar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete confirm */}
+        <AlertDialog open={!!deletingMember} onOpenChange={(open) => !open && setDeletingMember(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>¿Eliminar a {deletingMember?.name}?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Se eliminará el acceso de este miembro al CRM de forma permanente. Esta acción no se puede deshacer.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteMember} disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                {deleting && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}Eliminar
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Layout>
   );
