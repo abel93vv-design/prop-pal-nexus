@@ -32,6 +32,9 @@ const roleColors: Record<TeamRole, string> = {
   asesor: "bg-secondary/30 text-secondary-foreground border-secondary/40",
 };
 
+const nativeSelectClassName =
+  "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
+
 interface FormState {
   name: string;
   email: string;
@@ -126,6 +129,14 @@ const Team = () => {
       tempPassword: "",
     });
     setDialogOpen(true);
+  };
+
+  const handleDialogOpenChange = (open: boolean) => {
+    setDialogOpen(open);
+    if (!open && !creating) {
+      setEditing(null);
+      setForm(emptyForm);
+    }
   };
 
   const handleSave = async () => {
@@ -294,7 +305,7 @@ const Team = () => {
       </div>
 
       {/* Create / Edit Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editing ? "Editar Miembro" : "Nuevo Miembro"}</DialogTitle></DialogHeader>
           <div className="space-y-4">
@@ -312,13 +323,14 @@ const Team = () => {
               </div>
               <div>
                 <Label className="text-xs">Inmobiliaria</Label>
-                <Select value={form.agencyId || "none"} onValueChange={(v) => setForm({ ...form, agencyId: v === "none" ? "" : v })}>
-                  <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Sin asignar</SelectItem>
-                    {agencies.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <select
+                  className={nativeSelectClassName}
+                  value={form.agencyId || "none"}
+                  onChange={(e) => setForm((prev) => ({ ...prev, agencyId: e.target.value === "none" ? "" : e.target.value }))}
+                >
+                  <option value="none">Sin asignar</option>
+                  {agencies.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+                </select>
               </div>
             </div>
 
@@ -327,16 +339,17 @@ const Team = () => {
                 <ShieldCheck className="w-4 h-4 text-primary" />
                 <p className="text-xs font-semibold text-foreground">Rol del miembro *</p>
               </div>
-              <Select value={form.appRole} onValueChange={(v) => setForm({ ...form, appRole: v as TeamRole })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {(Object.entries(roleLabels) as [TeamRole, string][])
-                    .filter(([k]) => k !== "admin" || canAssignAdmin)
-                    .map(([k, v]) => (
-                      <SelectItem key={k} value={k}>{v}</SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+              <select
+                className={nativeSelectClassName}
+                value={form.appRole}
+                onChange={(e) => setForm((prev) => ({ ...prev, appRole: e.target.value as TeamRole }))}
+              >
+                {(Object.entries(roleLabels) as [TeamRole, string][])
+                  .filter(([k]) => k !== "admin" || canAssignAdmin)
+                  .map(([k, v]) => (
+                    <option key={k} value={k}>{v}</option>
+                  ))}
+              </select>
               <p className="text-[11px] text-muted-foreground">
                 {form.appRole === "admin"
                   ? "Acceso total al CRM de la inmobiliaria."
