@@ -197,12 +197,14 @@ const Team = () => {
         toast({ title: "Error", description: data.error, variant: "destructive" });
       } else {
         setDialogOpen(false);
+        setForm(emptyForm);
         setCredentials({
           email: data.email,
           password: data.password,
           login_url: data.login_url,
           name: form.name,
         });
+        toast({ title: "Usuario creado", description: `${form.name} se ha añadido al equipo` });
       }
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
