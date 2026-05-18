@@ -77,6 +77,9 @@ const Team = () => {
   const [memberUserIds, setMemberUserIds] = useState<Record<string, string>>({}); // team_member.id -> user_id
 
   const canAssignAdmin = isAdmin || isSuperAdmin;
+  const assignableRoleEntries = (Object.entries(roleLabels) as [TeamRole, string][]).filter(
+    ([k]) => k !== "admin" || canAssignAdmin,
+  );
 
   // Load user_roles for current tenant + user_id binding from team_members
   useEffect(() => {
@@ -113,7 +116,7 @@ const Team = () => {
 
   const openCreate = () => {
     setEditing(null);
-    setForm(emptyForm);
+    setForm({ ...emptyForm, appRole: "asesor" });
     setDialogOpen(true);
   };
 
@@ -135,7 +138,7 @@ const Team = () => {
     setDialogOpen(open);
     if (!open && !creating) {
       setEditing(null);
-      setForm(emptyForm);
+      setForm({ ...emptyForm, appRole: "asesor" });
     }
   };
 
@@ -208,7 +211,7 @@ const Team = () => {
         toast({ title: "Error", description: data.error, variant: "destructive" });
       } else {
         setDialogOpen(false);
-        setForm(emptyForm);
+        setForm({ ...emptyForm, appRole: "asesor" });
         setCredentials({
           email: data.email,
           password: data.password,
@@ -341,14 +344,12 @@ const Team = () => {
               </div>
               <select
                 className={nativeSelectClassName}
-                value={form.appRole}
+                value={assignableRoleEntries.some(([k]) => k === form.appRole) ? form.appRole : "asesor"}
                 onChange={(e) => setForm((prev) => ({ ...prev, appRole: e.target.value as TeamRole }))}
               >
-                {(Object.entries(roleLabels) as [TeamRole, string][])
-                  .filter(([k]) => k !== "admin" || canAssignAdmin)
-                  .map(([k, v]) => (
-                    <option key={k} value={k}>{v}</option>
-                  ))}
+                {assignableRoleEntries.map(([k, v]) => (
+                  <option key={k} value={k}>{v}</option>
+                ))}
               </select>
               <p className="text-[11px] text-muted-foreground">
                 {form.appRole === "admin"
