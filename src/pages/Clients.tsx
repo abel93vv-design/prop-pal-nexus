@@ -310,6 +310,7 @@ const Clients = () => {
   const { clients, agencies, properties, addClient, updateClient, deleteClient, documents, addDocument, deleteDocument } = useData();
   const { tenantId } = useTenant();
   const { toast } = useToast();
+  const { isAdmin } = useUserRole();
   const navigate = useNavigate();
   const { definitions: customFields } = useCustomFieldDefinitions('client');
   const { interests, addInterest, removeInterest, updateInterestType } = useInterests();

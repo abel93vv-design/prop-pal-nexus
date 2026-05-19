@@ -38,6 +38,7 @@ const MatchCenter = () => {
   const { matches, loading, calculating, runMatching } = useMatchCenter();
   const { clients, properties, users } = useData();
   const { toast } = useToast();
+  const { isAdmin } = useUserRole();
 
   const [search, setSearch] = useState("");
   const [filterCategory, setFilterCategory] = useState("all");
