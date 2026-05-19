@@ -959,6 +959,9 @@ export type Database = {
           category: string | null
           community_fees: number | null
           condition: string | null
+          contact_name: string | null
+          contact_notes: string | null
+          contact_phone: string | null
           created_at: string
           deleted_at: string | null
           description: string | null
@@ -1003,6 +1006,9 @@ export type Database = {
           category?: string | null
           community_fees?: number | null
           condition?: string | null
+          contact_name?: string | null
+          contact_notes?: string | null
+          contact_phone?: string | null
           created_at?: string
           deleted_at?: string | null
           description?: string | null
@@ -1047,6 +1053,9 @@ export type Database = {
           category?: string | null
           community_fees?: number | null
           condition?: string | null
+          contact_name?: string | null
+          contact_notes?: string | null
+          contact_phone?: string | null
           created_at?: string
           deleted_at?: string | null
           description?: string | null
@@ -1606,6 +1615,9 @@ export type Database = {
           category: string | null
           community_fees: number | null
           condition: string | null
+          contact_name: string | null
+          contact_notes: string | null
+          contact_phone: string | null
           created_at: string
           deleted_at: string | null
           description: string | null
