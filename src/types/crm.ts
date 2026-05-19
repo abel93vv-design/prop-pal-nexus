@@ -91,6 +91,9 @@ export interface Property {
   listing_type?: 'ne' | 'noticia';
   ne_start_date?: string | null;
   ne_end_date?: string | null;
+  contact_name?: string;
+  contact_phone?: string;
+  contact_notes?: string;
 }
 
 export interface User {
