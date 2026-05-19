@@ -96,6 +96,7 @@ const Properties = () => {
   const [operationFilter, setOperationFilter] = useState<string>("all");
   const [agencyFilter, setAgencyFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<Property | null>(null);
   const [form, setForm] = useState<Omit<Property, "id">>(emptyProperty);
   const [deleteTarget, setDeleteTarget] = useState<Property | null>(null);
@@ -108,6 +109,26 @@ const Properties = () => {
   const [docForm, setDocForm] = useState<Omit<Document, "id">>(emptyDoc);
   const [cfValues, setCfValues] = useState<Record<string, any>>({});
   const { values: loadedCfValues, saveValues: saveCfValues } = useCustomFieldValues(editing?.id ?? null);
+
+  // Cleanup Radix overlay leftover (pointer-events:none / overflow lock) on dialog close
+  const cleanupBodyLocks = () => {
+    setTimeout(() => {
+      if (document.body.style.pointerEvents === "none") document.body.style.pointerEvents = "";
+      document.body.style.removeProperty("overflow");
+      document.body.removeAttribute("data-scroll-locked");
+    }, 50);
+  };
+
+  const handleDialogOpenChange = (open: boolean) => {
+    if (saving) return; // prevent close while saving
+    setDialogOpen(open);
+    if (!open) {
+      setEditing(null);
+      setForm(emptyProperty);
+      setCfValues({});
+      cleanupBodyLocks();
+    }
+  };
 
   const filtered = properties.filter(p => {
     const matchSearch = p.title.toLowerCase().includes(search.toLowerCase()) || p.address.toLowerCase().includes(search.toLowerCase());
@@ -171,20 +192,32 @@ const Properties = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [properties, searchParams]);
   const handleSave = async () => {
+    if (saving) return;
     if (!form.title.trim() || !form.address.trim()) { toast({ title: "Error", description: "Título y dirección son obligatorios", variant: "destructive" }); return; }
     if (form.listing_type === 'ne' && (!form.ne_start_date || !form.ne_end_date)) {
       toast({ title: "Error", description: "Las fechas de inicio y fin de la NE son obligatorias", variant: "destructive" });
       return;
     }
-    if (editing) {
-      await updateProperty({ ...editing, ...form });
-      await saveCfValues(editing.id, cfValues);
-      toast({ title: "Propiedad actualizada" });
-    } else {
-      await addProperty(form);
-      toast({ title: "Propiedad creada" });
+    setSaving(true);
+    try {
+      if (editing) {
+        await updateProperty({ ...editing, ...form });
+        await saveCfValues(editing.id, cfValues);
+        toast({ title: "Propiedad actualizada" });
+      } else {
+        await addProperty(form);
+        toast({ title: "Propiedad creada" });
+      }
+      setDialogOpen(false);
+      setEditing(null);
+      setForm(emptyProperty);
+      setCfValues({});
+      cleanupBodyLocks();
+    } catch (e: any) {
+      toast({ title: "Error al guardar", description: e?.message || "Inténtalo de nuevo", variant: "destructive" });
+    } finally {
+      setSaving(false);
     }
-    setDialogOpen(false);
   };
 
   const handleDelete = async () => {
@@ -352,7 +385,7 @@ const Properties = () => {
       </div>
 
       {/* Create / Edit Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto" onPointerDownOutside={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()}>
           <DialogHeader><DialogTitle>{editing ? "Editar Propiedad" : "Nueva Propiedad"}</DialogTitle></DialogHeader>
           <div className="space-y-3">
@@ -588,9 +621,12 @@ const Properties = () => {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSave}>{editing ? "Guardar" : "Crear"}</Button>
+            <Button variant="outline" onClick={() => handleDialogOpenChange(false)} disabled={saving}>Cancelar</Button>
+            <Button onClick={handleSave} disabled={saving}>
+              {saving ? "Guardando..." : (editing ? "Guardar" : "Crear")}
+            </Button>
           </DialogFooter>
+
         </DialogContent>
       </Dialog>
 
