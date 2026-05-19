@@ -621,9 +621,12 @@ const Properties = () => {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSave}>{editing ? "Guardar" : "Crear"}</Button>
+            <Button variant="outline" onClick={() => handleDialogOpenChange(false)} disabled={saving}>Cancelar</Button>
+            <Button onClick={handleSave} disabled={saving}>
+              {saving ? "Guardando..." : (editing ? "Guardar" : "Crear")}
+            </Button>
           </DialogFooter>
+
         </DialogContent>
       </Dialog>
 
