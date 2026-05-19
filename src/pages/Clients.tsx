@@ -25,6 +25,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { CsvImportDialog } from "@/components/CsvImportDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/context/TenantContext";
+import { useUserRole } from "@/hooks/useUserRole";
 
 const EXTRAS_OPTIONS = ['ascensor', 'terraza', 'piscina', 'garaje', 'aire_acondicionado', 'acepta_mascotas'] as const;
 const EXTRA_LABELS: Record<string, string> = {
@@ -500,7 +501,7 @@ const Clients = () => {
             <p className="text-sm text-muted-foreground mt-1">{clients.length} clientes registrados</p>
           </div>
           <div className="flex gap-2 flex-wrap">
-            <Button onClick={exportCSV} variant="outline" size="sm"><Download className="w-4 h-4 mr-1" />Exportar CSV</Button>
+            {isAdmin && <Button onClick={exportCSV} variant="outline" size="sm"><Download className="w-4 h-4 mr-1" />Exportar CSV</Button>}
             <Button onClick={() => setCsvDialogOpen(true)} variant="outline" size="sm"><Upload className="w-4 h-4 mr-1" />Importar CSV</Button>
             <Button onClick={openCreate} size="sm"><Plus className="w-4 h-4 mr-1" />Nuevo Cliente</Button>
           </div>

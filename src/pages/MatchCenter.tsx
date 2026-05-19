@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Progress } from "@/components/ui/progress";
 import { Search, RefreshCw, Loader2, ArrowUpDown, Target, TrendingUp, AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, Check, X, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useUserRole } from "@/hooks/useUserRole";
 
 const categoryLabels: Record<string, string> = { high: "Alto", medium: "Medio", low: "Bajo" };
 const categoryColors: Record<string, string> = {
@@ -139,38 +140,40 @@ const MatchCenter = () => {
             <p className="text-sm text-muted-foreground">{matches.length} matches calculados</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => {
-              const esc = (v: any) => {
-                const s = String(v ?? "");
-                return /[",;\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-              };
-              const headers = ["Cliente", "Teléfono", "Propiedad", "Precio", "P. Score", "F. Score", "Total", "Categoría", "Viabilidad"];
-              const rows = filtered.map((m) => {
-                const c = clients.find((x) => x.id === m.client_id);
-                const p = properties.find((x) => x.id === m.property_id);
-                return [
-                  c?.name || "",
-                  c?.phone || "",
-                  p?.title || "",
-                  p?.price ?? "",
-                  m.property_score,
-                  m.financial_score,
-                  m.total_score,
-                  categoryLabels[m.category] || m.category,
-                  viabilityLabels[m.viability_status] || m.viability_status,
-                ].map(esc).join(";");
-              });
-              const csv = "\uFEFF" + [headers.join(";"), ...rows].join("\n");
-              const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement("a");
-              a.href = url;
-              a.download = `match-center-${new Date().toISOString().slice(0, 10)}.csv`;
-              a.click();
-              URL.revokeObjectURL(url);
-            }} disabled={filtered.length === 0}>
-              <Download className="w-4 h-4 mr-1" /> Exportar CSV
-            </Button>
+            {isAdmin && (
+              <Button variant="outline" size="sm" onClick={() => {
+                const esc = (v: any) => {
+                  const s = String(v ?? "");
+                  return /[",;\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+                };
+                const headers = ["Cliente", "Teléfono", "Propiedad", "Precio", "P. Score", "F. Score", "Total", "Categoría", "Viabilidad"];
+                const rows = filtered.map((m) => {
+                  const c = clients.find((x) => x.id === m.client_id);
+                  const p = properties.find((x) => x.id === m.property_id);
+                  return [
+                    c?.name || "",
+                    c?.phone || "",
+                    p?.title || "",
+                    p?.price ?? "",
+                    m.property_score,
+                    m.financial_score,
+                    m.total_score,
+                    categoryLabels[m.category] || m.category,
+                    viabilityLabels[m.viability_status] || m.viability_status,
+                  ].map(esc).join(";");
+                });
+                const csv = "\uFEFF" + [headers.join(";"), ...rows].join("\n");
+                const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `match-center-${new Date().toISOString().slice(0, 10)}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+              }} disabled={filtered.length === 0}>
+                <Download className="w-4 h-4 mr-1" /> Exportar CSV
+              </Button>
+            )}
             <Button onClick={handleRunMatching} disabled={calculating} size="sm">
               {calculating ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-1" />}
               {calculating ? "Calculando..." : "Recalcular Matches"}
