@@ -5,9 +5,39 @@ import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import { HelpChat } from "@/components/HelpChat";
 import { FeedbackTab } from "@/components/FeedbackTab";
+import { useEffect } from "react";
+
+// Safety net: Radix sometimes leaves `pointer-events: none` on <body> when a
+// Dialog/Select closes. This watcher clears it as soon as no overlay is open,
+// preventing the entire page from becoming unresponsive.
+function useBodyPointerEventsGuard() {
+  useEffect(() => {
+    const sanitize = () => {
+      const hasOpenOverlay = document.querySelector(
+        '[data-state="open"][role="dialog"], [data-radix-popper-content-wrapper]'
+      );
+      if (hasOpenOverlay) return;
+      if (document.body.style.pointerEvents === "none") {
+        document.body.style.pointerEvents = "";
+      }
+      if (document.body.hasAttribute("data-scroll-locked")) {
+        document.body.removeAttribute("data-scroll-locked");
+        document.body.style.removeProperty("overflow");
+        document.body.style.removeProperty("padding-right");
+      }
+    };
+    const observer = new MutationObserver(sanitize);
+    observer.observe(document.body, {
+      attributes: true,
+      attributeFilter: ["style", "data-scroll-locked"],
+    });
+    return () => observer.disconnect();
+  }, []);
+}
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { user, signOut } = useAuth();
+  useBodyPointerEventsGuard();
 
   return (
     <SidebarProvider>
