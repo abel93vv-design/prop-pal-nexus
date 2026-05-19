@@ -1536,6 +1536,7 @@ export type Database = {
           slug: string
         }[]
       }
+      get_user_agency_id: { Args: never; Returns: string }
       get_user_role_in_tenant: {
         Args: { _tenant_id: string; _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]

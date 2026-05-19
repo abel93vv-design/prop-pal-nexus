@@ -22,6 +22,7 @@ import { useInterests } from "@/hooks/useInterests";
 import { InterestedClients } from "@/components/InterestManager";
 import { useMatchCenter } from "@/hooks/useMatchCenter";
 import { TopClientMatches } from "@/components/MatchScoreWidgets";
+import { useUserRole } from "@/hooks/useUserRole";
 
 const typeLabels: Record<PropertyType, string> = { piso: 'Piso', casa: 'Casa', local: 'Local', terreno: 'Terreno', parking: 'Parking' };
 const statusLabels: Record<PropertyStatus, string> = { disponible: 'Disponible', reservado: 'Reservado', vendido_alquilado: 'Vendido/Alquilado', no_disponible: 'No Disponible' };
@@ -72,6 +73,7 @@ const emptyDoc: Omit<Document, "id"> = {
 
 const Properties = () => {
   const { properties, users, agencies, clients, documents, addProperty, updateProperty, deleteProperty, convertListingType, addDocument, deleteDocument } = useData();
+  const { isAdmin } = useUserRole();
   const { toast } = useToast();
   const qc = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
@@ -299,13 +301,15 @@ const Properties = () => {
               <SelectItem value="ambos">Ambos</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={agencyFilter} onValueChange={setAgencyFilter}>
-            <SelectTrigger className="w-[160px]"><SelectValue placeholder="Inmobiliaria" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas</SelectItem>
-              {agencies.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          {isAdmin && (
+            <Select value={agencyFilter} onValueChange={setAgencyFilter}>
+              <SelectTrigger className="w-[160px]"><SelectValue placeholder="Inmobiliaria" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas</SelectItem>
+                {agencies.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">

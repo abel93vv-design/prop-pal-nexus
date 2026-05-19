@@ -474,6 +474,10 @@ Deno.serve(async (req) => {
       const prefs = prefsMap.get(client.id) || null;
 
       for (const prop of properties as Property[]) {
+        // Restringir matching a la misma inmobiliaria (legacy: si alguno es null, se permite)
+        if (client.agency_id && prop.agency_id && client.agency_id !== prop.agency_id) {
+          continue;
+        }
         const clientOp = client.operation_type || 'compra';
         const propOp = prop.operation_type || 'venta';
         const opMatch = clientOp === 'ambos' || propOp === 'ambos' ||
