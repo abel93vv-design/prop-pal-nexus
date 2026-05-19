@@ -151,7 +151,7 @@ export const usePropertyMutations = () => {
         neighborhood: p.neighborhood, floor: p.floor, community_fees: p.community_fees,
         ibi_annual: p.ibi_annual, has_elevator: p.has_elevator, has_terrace: p.has_terrace,
         has_pool: p.has_pool, has_garage: p.has_garage, has_air_conditioning: p.has_air_conditioning,
-        operation_type: p.operationType, monthly_rent: p.monthly_rent, condition: p.condition || "", unavailable_reason: p.unavailable_reason || "", listing_type: p.listing_type === "ne" ? "ne" : "noticia", ne_start_date: p.listing_type === "ne" ? (p.ne_start_date || null) : null, ne_end_date: p.listing_type === "ne" ? (p.ne_end_date || null) : null,
+        operation_type: p.operationType, monthly_rent: p.monthly_rent, condition: p.condition || "", unavailable_reason: p.unavailable_reason || "", listing_type: p.listing_type === "ne" ? "ne" : "noticia", ne_start_date: p.listing_type === "ne" ? (p.ne_start_date || null) : null, ne_end_date: p.listing_type === "ne" ? (p.ne_end_date || null) : null, contact_name: p.contact_name || "", contact_phone: p.contact_phone || "", contact_notes: p.contact_notes || "",
       }).select().single();
       if (error) throw error;
       logActivity(tenantId, user?.id, 'create', 'property', data.id, { title: p.title });
