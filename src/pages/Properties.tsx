@@ -56,6 +56,7 @@ const emptyProperty: Omit<Property, "id"> = {
   agencyId: "", category: "residencial", ...defaultExtras,
   operationType: "venta", monthly_rent: 0, condition: "", unavailable_reason: "",
   listing_type: "noticia", ne_start_date: null, ne_end_date: null,
+  contact_name: "", contact_phone: "", contact_notes: "",
 };
 
 const getDaysUntil = (dateStr?: string | null): number | null => {
