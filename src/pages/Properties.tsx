@@ -96,6 +96,7 @@ const Properties = () => {
   const [operationFilter, setOperationFilter] = useState<string>("all");
   const [agencyFilter, setAgencyFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<Property | null>(null);
   const [form, setForm] = useState<Omit<Property, "id">>(emptyProperty);
   const [deleteTarget, setDeleteTarget] = useState<Property | null>(null);
@@ -108,6 +109,26 @@ const Properties = () => {
   const [docForm, setDocForm] = useState<Omit<Document, "id">>(emptyDoc);
   const [cfValues, setCfValues] = useState<Record<string, any>>({});
   const { values: loadedCfValues, saveValues: saveCfValues } = useCustomFieldValues(editing?.id ?? null);
+
+  // Cleanup Radix overlay leftover (pointer-events:none / overflow lock) on dialog close
+  const cleanupBodyLocks = () => {
+    setTimeout(() => {
+      if (document.body.style.pointerEvents === "none") document.body.style.pointerEvents = "";
+      document.body.style.removeProperty("overflow");
+      document.body.removeAttribute("data-scroll-locked");
+    }, 50);
+  };
+
+  const handleDialogOpenChange = (open: boolean) => {
+    if (saving) return; // prevent close while saving
+    setDialogOpen(open);
+    if (!open) {
+      setEditing(null);
+      setForm(emptyProperty);
+      setCfValues({});
+      cleanupBodyLocks();
+    }
+  };
 
   const filtered = properties.filter(p => {
     const matchSearch = p.title.toLowerCase().includes(search.toLowerCase()) || p.address.toLowerCase().includes(search.toLowerCase());
