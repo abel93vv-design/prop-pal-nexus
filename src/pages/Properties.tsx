@@ -73,6 +73,7 @@ const emptyDoc: Omit<Document, "id"> = {
 
 const Properties = () => {
   const { properties, users, agencies, clients, documents, addProperty, updateProperty, deleteProperty, convertListingType, addDocument, deleteDocument } = useData();
+  const { isAdmin } = useUserRole();
   const { toast } = useToast();
   const qc = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
