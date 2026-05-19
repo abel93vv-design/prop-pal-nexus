@@ -86,5 +86,23 @@ describe("Body pointer-events guard (Radix leak fix)", () => {
 
     expect(document.body.style.pointerEvents).toBe("");
     expect(document.body.hasAttribute("data-scroll-locked")).toBe(false);
+
+  it("cleans body locks left over BEFORE the guard mounts (login → dashboard freeze)", async () => {
+    // Simulate Radix having left the body locked while we were on /auth,
+    // before the global guard mounts.
+    document.body.style.pointerEvents = "none";
+    document.body.setAttribute("data-scroll-locked", "1");
+    document.body.style.overflow = "hidden";
+    document.body.style.paddingRight = "15px";
+
+    await act(async () => {
+      render(<Harness />);
+      // initial sanitize runs synchronously on mount
+    });
+
+    expect(document.body.style.pointerEvents).toBe("");
+    expect(document.body.hasAttribute("data-scroll-locked")).toBe(false);
+    expect(document.body.style.overflow).toBe("");
+    expect(document.body.style.paddingRight).toBe("");
   });
 });
