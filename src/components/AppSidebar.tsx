@@ -39,8 +39,10 @@ const settingsItems = [
 ];
 
 export function AppSidebar() {
-  const { isAdmin, isSuperAdmin, can } = useUserRole();
-  const visibleMain = mainItems.filter((i) => !i.module || can(i.module, "view") || isAdmin);
+  const { isAdmin, isSuperAdmin, can, loading } = useUserRole();
+  const visibleMain = loading
+    ? mainItems.filter((i) => !i.module)
+    : mainItems.filter((i) => !i.module || can(i.module, "view") || isAdmin);
   const { pathname } = useLocation();
 
   return (
@@ -93,7 +95,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {isAdmin && (
+        {!loading && isAdmin && (
           <SidebarGroup className="mt-4">
             <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] uppercase tracking-widest mb-1 px-3">Admin</SidebarGroupLabel>
             <SidebarGroupContent>

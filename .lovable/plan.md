@@ -1,45 +1,46 @@
-## Diagnóstico
+## Problema
 
-He reproducido el login en `crm.valoracasa.es` con el usuario de Cártama y en mi sesión no se congeló: dashboard cargó, consola sin errores críticos, red OK y rendimiento normal.
+Al entrar o cambiar de pantalla, en el sidebar aparecen brevemente **Equipo** e **Inmobiliarias** y luego se ocultan. Esto pasa porque `useUserRole` arranca con `role = null` y `permissions = []` mientras carga desde Supabase, y la función `can()` tiene un fallback legacy:
 
-Pero sí he encontrado una causa probable del congelado intermitente:
+```ts
+if (!role) return true; // ← permite todo mientras carga
+```
 
-- El guard anti-congelado (`useBodyPointerEventsGuard`) está montado dentro de `Layout`.
-- `Layout` solo existe cuando el usuario ya está dentro del CRM.
-- Si Radix deja `pointer-events: none`, `data-scroll-locked` u `overflow: hidden` en el `<body>` durante login, cambio de auth, toast/dialog/overlay, o justo antes de montar `Layout`, el guard todavía no está activo o se desmonta entre rutas.
-- Resultado: el usuario puede ver el dashboard, pero la página queda aparentemente “congelada” porque el body sigue bloqueando los clicks.
+Resultado: durante ~200-500ms el sidebar muestra TODO el menú; cuando llega el rol real (`coordinadora`, `asesor`, etc.) y sus permisos, los módulos sin permiso desaparecen → parpadeo visible.
 
-## Plan de implementación
+## Solución
 
-1. **Mover el guard anti-bloqueo a nivel global de la app**
-   - Montar `useBodyPointerEventsGuard()` en un componente global dentro de `App`, no dentro de `Layout`.
-   - Así estará activo desde `/auth`, durante login, redirecciones y todas las rutas privadas.
+No renderizar los ítems que dependen de permisos hasta que `useUserRole` haya terminado de cargar. Así el usuario solo ve los ítems definitivos, sin parpadeo.
 
-2. **Hacer el guard más robusto**
-   - Ejecutar una limpieza inicial al montarse.
-   - Mantener el `MutationObserver` actual.
-   - Añadir comprobación diferida corta tras cambios de estilo/atributos, para capturar locks que Radix reaplique unos milisegundos después.
-   - No limpiar si hay dialog/select/overlay real abierto.
+### Cambios
 
-3. **Evitar doble montaje**
-   - Quitar el hook de `Layout` para no crear múltiples observers al navegar.
-   - Mantener un único guard global.
+**1. `src/hooks/useUserRole.tsx`**
+- Ya expone `loading`. Sin cambios de lógica.
 
-4. **Actualizar el test existente**
-   - Añadir caso que simule el problema real: el body ya viene bloqueado antes de montar el guard.
-   - Verificar que al montar el guard global se limpia y la página queda interactiva.
+**2. `src/components/AppSidebar.tsx`**
+- Leer `loading` de `useUserRole()`.
+- Al filtrar `visibleMain`:
+  - Si el ítem no tiene `module` (Dashboard) → siempre visible.
+  - Si tiene `module` y `loading === true` → ocultar (en vez del fallback actual que lo muestra).
+  - Si `loading === false` → aplicar la lógica actual `can(i.module, "view") || isAdmin`.
+- Mismo tratamiento para la sección **Admin** (Roles, Tenants, Panel Global): no mostrarla hasta que `loading` sea `false`.
 
-5. **Validación**
-   - Ejecutar el test del guard.
-   - Reprobar manualmente en navegador: login → dashboard → click en sidebar/clientes/propiedades.
+Esto evita el "flash de contenido no autorizado" sin tocar la lógica de permisos.
 
-## Archivos previstos
+### Detalle técnico
 
-- `src/App.tsx`
-- `src/components/Layout.tsx`
-- `src/hooks/useBodyPointerEventsGuard.ts`
-- `src/hooks/__tests__/useBodyPointerEventsGuard.test.tsx`
+```tsx
+const { isAdmin, isSuperAdmin, can, loading } = useUserRole();
 
-## Resultado esperado
+const visibleMain = loading
+  ? mainItems.filter((i) => !i.module) // solo Dashboard mientras carga
+  : mainItems.filter((i) => !i.module || can(i.module, "view") || isAdmin);
+```
 
-El CRM no debería quedarse congelado nada más entrar, incluso si Radix deja estilos residuales en `<body>` durante el login o la transición hacia el dashboard.
+Y envolver el bloque `{isAdmin && (...)}` con `{!loading && isAdmin && (...)}`.
+
+## Validación
+
+- Login como `cartama@valoracasa.es` (coordinadora) → el sidebar debe mostrar directamente solo los módulos permitidos, sin que Equipo / Inmobiliarias aparezcan y desaparezcan.
+- Login como admin/super_admin → siguen viendo todo (incluyendo Admin/Tenants) en cuanto carga.
+- Navegar entre páginas → sin parpadeo (el hook ya cachea por sesión vía estado de React).
