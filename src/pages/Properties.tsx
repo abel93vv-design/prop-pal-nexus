@@ -22,6 +22,7 @@ import { useInterests } from "@/hooks/useInterests";
 import { InterestedClients } from "@/components/InterestManager";
 import { useMatchCenter } from "@/hooks/useMatchCenter";
 import { TopClientMatches } from "@/components/MatchScoreWidgets";
+import { useUserRole } from "@/hooks/useUserRole";
 
 const typeLabels: Record<PropertyType, string> = { piso: 'Piso', casa: 'Casa', local: 'Local', terreno: 'Terreno', parking: 'Parking' };
 const statusLabels: Record<PropertyStatus, string> = { disponible: 'Disponible', reservado: 'Reservado', vendido_alquilado: 'Vendido/Alquilado', no_disponible: 'No Disponible' };
