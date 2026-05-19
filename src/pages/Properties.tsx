@@ -552,23 +552,6 @@ const Properties = () => {
                 ))}
               </div>
             </div>
-            <div className="rounded-md border border-border bg-muted/30 p-3 space-y-3">
-              <Label className="text-xs font-semibold">Contacto</Label>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-xs">Nombre de contacto</Label>
-                  <Input value={form.contact_name || ""} onChange={e => setForm({ ...form, contact_name: e.target.value })} placeholder="Ej.: Juan Pérez" />
-                </div>
-                <div>
-                  <Label className="text-xs">Teléfono de contacto</Label>
-                  <Input value={form.contact_phone || ""} onChange={e => setForm({ ...form, contact_phone: e.target.value })} placeholder="+34 600 000 000" />
-                </div>
-              </div>
-              <div>
-                <Label className="text-xs">Comentarios</Label>
-                <Textarea value={form.contact_notes || ""} onChange={e => setForm({ ...form, contact_notes: e.target.value })} rows={2} placeholder="Ej.: llamar por la tarde" />
-              </div>
-            </div>
             <div><Label className="text-xs">Descripción</Label><Textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={3} /></div>
             {/* Image upload */}
             <div>
