@@ -174,6 +174,9 @@ const Properties = () => {
       listing_type: p.listing_type || "noticia",
       ne_start_date: p.ne_start_date || null,
       ne_end_date: p.ne_end_date || null,
+      contact_name: (p as any).contact_name || "",
+      contact_phone: (p as any).contact_phone || "",
+      contact_notes: (p as any).contact_notes || "",
     });
     setCfValues(loadedCfValues);
     setDialogOpen(true);
