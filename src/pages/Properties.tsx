@@ -113,13 +113,19 @@ const Properties = () => {
   const [cfValues, setCfValues] = useState<Record<string, any>>({});
   const { values: loadedCfValues, saveValues: saveCfValues } = useCustomFieldValues(editing?.id ?? null);
 
-  // Cleanup Radix overlay leftover (pointer-events:none / overflow lock) on dialog close
+  // Cleanup Radix overlay leftover (pointer-events:none / overflow lock) on dialog close.
+  // Runs repeatedly to combat Radix re-applying the lock after nested Select dropdowns close.
   const cleanupBodyLocks = () => {
-    setTimeout(() => {
+    const reset = () => {
+      // Only clear if no other Radix overlay/dialog is still open
+      const stillOpen = document.querySelector('[data-state="open"][role="dialog"], [data-radix-popper-content-wrapper]');
+      if (stillOpen) return;
       if (document.body.style.pointerEvents === "none") document.body.style.pointerEvents = "";
       document.body.style.removeProperty("overflow");
+      document.body.style.removeProperty("padding-right");
       document.body.removeAttribute("data-scroll-locked");
-    }, 50);
+    };
+    [0, 50, 150, 300, 600].forEach(t => setTimeout(reset, t));
   };
 
   const handleDialogOpenChange = (open: boolean) => {
