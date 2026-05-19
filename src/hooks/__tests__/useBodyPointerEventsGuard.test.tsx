@@ -86,6 +86,7 @@ describe("Body pointer-events guard (Radix leak fix)", () => {
 
     expect(document.body.style.pointerEvents).toBe("");
     expect(document.body.hasAttribute("data-scroll-locked")).toBe(false);
+  });
 
   it("cleans body locks left over BEFORE the guard mounts (login → dashboard freeze)", async () => {
     // Simulate Radix having left the body locked while we were on /auth,
