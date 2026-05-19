@@ -110,3 +110,9 @@
     background: linear-gradient(180deg, hsl(160 40% 14%) 0%, hsl(160 40% 10%) 100%);
   }
 }
+
+/* Safety net: prevent Radix Dialog/Popover from leaving body unclickable after rapid open/close */
+body[data-scroll-locked] {
+  overflow: auto !important;
+  margin-right: 0 !important;
+}
