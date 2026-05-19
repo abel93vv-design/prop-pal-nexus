@@ -5,11 +5,9 @@ import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import { HelpChat } from "@/components/HelpChat";
 import { FeedbackTab } from "@/components/FeedbackTab";
-import { useBodyPointerEventsGuard } from "@/hooks/useBodyPointerEventsGuard";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { user, signOut } = useAuth();
-  useBodyPointerEventsGuard();
 
   return (
     <SidebarProvider>

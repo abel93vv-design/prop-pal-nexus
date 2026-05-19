@@ -9,6 +9,7 @@ import { TenantProvider } from "@/context/TenantContext";
 import { Loader2 } from "lucide-react";
 import { ForcePasswordChange } from "@/components/ForcePasswordChange";
 import { OnboardingWizard } from "@/components/OnboardingWizard";
+import { useBodyPointerEventsGuard } from "@/hooks/useBodyPointerEventsGuard";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import Index from "./pages/Index";
@@ -92,12 +93,18 @@ const AppRoutes = () => (
   </Routes>
 );
 
+const GlobalGuards = () => {
+  useBodyPointerEventsGuard();
+  return null;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
         <TenantProvider>
           <DataProvider>
+            <GlobalGuards />
             <Toaster />
             <Sonner />
             <BrowserRouter>
