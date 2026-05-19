@@ -192,20 +192,32 @@ const Properties = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [properties, searchParams]);
   const handleSave = async () => {
+    if (saving) return;
     if (!form.title.trim() || !form.address.trim()) { toast({ title: "Error", description: "Título y dirección son obligatorios", variant: "destructive" }); return; }
     if (form.listing_type === 'ne' && (!form.ne_start_date || !form.ne_end_date)) {
       toast({ title: "Error", description: "Las fechas de inicio y fin de la NE son obligatorias", variant: "destructive" });
       return;
     }
-    if (editing) {
-      await updateProperty({ ...editing, ...form });
-      await saveCfValues(editing.id, cfValues);
-      toast({ title: "Propiedad actualizada" });
-    } else {
-      await addProperty(form);
-      toast({ title: "Propiedad creada" });
+    setSaving(true);
+    try {
+      if (editing) {
+        await updateProperty({ ...editing, ...form });
+        await saveCfValues(editing.id, cfValues);
+        toast({ title: "Propiedad actualizada" });
+      } else {
+        await addProperty(form);
+        toast({ title: "Propiedad creada" });
+      }
+      setDialogOpen(false);
+      setEditing(null);
+      setForm(emptyProperty);
+      setCfValues({});
+      cleanupBodyLocks();
+    } catch (e: any) {
+      toast({ title: "Error al guardar", description: e?.message || "Inténtalo de nuevo", variant: "destructive" });
+    } finally {
+      setSaving(false);
     }
-    setDialogOpen(false);
   };
 
   const handleDelete = async () => {
