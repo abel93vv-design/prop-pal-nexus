@@ -148,9 +148,12 @@ function HistorySection() {
   useEffect(() => {
     const load = async () => {
       setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setHistory([]); setLoading(false); return; }
       let query = (supabase as any)
         .from('entity_snapshots')
         .select('*')
+        .eq('changed_by', user.id)
         .order('created_at', { ascending: false })
         .limit(50);
       if (filter !== "all") query = query.eq('entity_type', filter);

@@ -42,10 +42,13 @@ export const getSnapshots = async (entityType: string, entityId: string): Promis
 };
 
 export const getAllDeletedSnapshots = async (entityType?: string): Promise<Snapshot[]> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
   let query = (supabase as any)
     .from('entity_snapshots')
     .select('*')
     .eq('action', 'delete')
+    .eq('changed_by', user.id)
     .order('created_at', { ascending: false });
   if (entityType) query = query.eq('entity_type', entityType);
   const { data } = await query;
