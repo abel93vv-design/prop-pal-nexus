@@ -16,7 +16,7 @@ const MAX_ATTEMPTS = 5;
 
 const Auth = () => {
   const { user, loading } = useAuth();
-  const [mode, setMode] = useState<"login" | "forgot">("login");
+  const [mode, setMode] = useState<"login" | "forgot" | "contact_admin">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -24,8 +24,21 @@ const Auth = () => {
   const [locked, setLocked] = useState(false);
   const [minutesLeft, setMinutesLeft] = useState(0);
   const [attemptsRemaining, setAttemptsRemaining] = useState(MAX_ATTEMPTS);
+  const [allowRecovery, setAllowRecovery] = useState(true);
   const { signIn } = useAuth();
   const { toast } = useToast();
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const hostname = window.location.hostname;
+        const { data } = await supabase.rpc("get_tenant_by_domain", { _host: hostname });
+        if (data && data.length > 0) {
+          setAllowRecovery((data[0] as any).allow_password_recovery !== false);
+        }
+      } catch {}
+    })();
+  }, []);
 
   const checkAttempts = async (emailToCheck: string) => {
     try {
