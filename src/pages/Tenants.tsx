@@ -225,7 +225,18 @@ const Tenants = () => {
     setSigningOutAll(false);
   };
 
-  const getAccessUrl = (slug: string) => `https://${slug}.tudominio.com`;
+  const getTenantUrl = (t: Tenant) => {
+    if (t.custom_domain) return `https://${t.custom_domain}`;
+    const host = window.location.hostname;
+    const parts = host.split(".");
+    const rootDomain = parts.length >= 3 && parts[0] !== "www" ? parts.slice(1).join(".") : host;
+    return `https://${t.slug}.${rootDomain}`;
+  };
+
+  const getAccessUrl = (slug: string) => {
+    const t = tenants.find(x => x.slug === slug);
+    return t ? getTenantUrl(t) : `https://${slug}`;
+  };
 
   return (
     <Layout>
