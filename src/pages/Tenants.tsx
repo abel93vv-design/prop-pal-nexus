@@ -358,6 +358,16 @@ const Tenants = () => {
                   <Label className="text-xs">Tenant demo</Label>
                   <Switch checked={form.is_demo} onCheckedChange={v => setForm({ ...form, is_demo: v })} />
                 </div>
+                <div className="flex items-start justify-between gap-3 pt-1">
+                  <div className="flex-1">
+                    <Label className="text-xs">Permitir recuperación de contraseña por email</Label>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      Si se desactiva, los usuarios verán un mensaje para contactar con el administrador en vez de poder pedir un reset por email.
+                    </p>
+                  </div>
+                  <Switch checked={form.allow_password_recovery} onCheckedChange={v => setForm({ ...form, allow_password_recovery: v })} />
+                </div>
+
 
                 {!editing && (
                   <>
