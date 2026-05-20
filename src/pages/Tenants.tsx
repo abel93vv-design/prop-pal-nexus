@@ -38,6 +38,7 @@ interface Tenant {
   created_at: string;
   custom_domain: string | null;
   domain_verified: boolean;
+  allow_password_recovery?: boolean;
 }
 
 const generatePassword = () => {
