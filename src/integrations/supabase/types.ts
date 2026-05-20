@@ -1447,6 +1447,7 @@ export type Database = {
       }
       tenants: {
         Row: {
+          allow_password_recovery: boolean
           created_at: string
           custom_domain: string | null
           deleted_at: string | null
@@ -1464,6 +1465,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          allow_password_recovery?: boolean
           created_at?: string
           custom_domain?: string | null
           deleted_at?: string | null
@@ -1481,6 +1483,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          allow_password_recovery?: boolean
           created_at?: string
           custom_domain?: string | null
           deleted_at?: string | null
@@ -1528,6 +1531,7 @@ export type Database = {
       get_tenant_by_domain: {
         Args: { _host: string }
         Returns: {
+          allow_password_recovery: boolean
           custom_domain: string
           domain_verified: boolean
           id: string

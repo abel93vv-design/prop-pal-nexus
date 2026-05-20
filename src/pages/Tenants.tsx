@@ -38,6 +38,7 @@ interface Tenant {
   created_at: string;
   custom_domain: string | null;
   domain_verified: boolean;
+  allow_password_recovery?: boolean;
 }
 
 const generatePassword = () => {
@@ -47,7 +48,7 @@ const generatePassword = () => {
   return pw + "!1";
 };
 
-const emptyForm = { name: "", slug: "", plan: "free", is_active: true, is_demo: false };
+const emptyForm = { name: "", slug: "", plan: "free", is_active: true, is_demo: false, allow_password_recovery: true };
 const emptyProvision = { admin_email: "", admin_name: "", admin_password: generatePassword() };
 
 const Tenants = () => {
@@ -97,7 +98,7 @@ const Tenants = () => {
 
   const openEdit = (t: Tenant) => {
     setEditing(t);
-    setForm({ name: t.name, slug: t.slug, plan: t.plan, is_active: t.is_active, is_demo: t.is_demo });
+    setForm({ name: t.name, slug: t.slug, plan: t.plan, is_active: t.is_active, is_demo: t.is_demo, allow_password_recovery: t.allow_password_recovery !== false });
     setProvisionResult(null);
     setDialogOpen(true);
   };
@@ -119,7 +120,7 @@ const Tenants = () => {
     if (editing) {
       // Simple update
       const { error } = await supabase.from("tenants").update({
-        name: form.name, slug: form.slug, plan: form.plan, is_active: form.is_active, is_demo: form.is_demo,
+        name: form.name, slug: form.slug, plan: form.plan, is_active: form.is_active, is_demo: form.is_demo, allow_password_recovery: form.allow_password_recovery,
       }).eq("id", editing.id);
       if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
       else { toast({ title: "Tenant actualizado" }); setDialogOpen(false); }
@@ -357,6 +358,16 @@ const Tenants = () => {
                   <Label className="text-xs">Tenant demo</Label>
                   <Switch checked={form.is_demo} onCheckedChange={v => setForm({ ...form, is_demo: v })} />
                 </div>
+                <div className="flex items-start justify-between gap-3 pt-1">
+                  <div className="flex-1">
+                    <Label className="text-xs">Permitir recuperación de contraseña por email</Label>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      Si se desactiva, los usuarios verán un mensaje para contactar con el administrador en vez de poder pedir un reset por email.
+                    </p>
+                  </div>
+                  <Switch checked={form.allow_password_recovery} onCheckedChange={v => setForm({ ...form, allow_password_recovery: v })} />
+                </div>
+
 
                 {!editing && (
                   <>

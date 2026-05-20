@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ const MAX_ATTEMPTS = 5;
 
 const Auth = () => {
   const { user, loading } = useAuth();
-  const [mode, setMode] = useState<"login" | "forgot">("login");
+  const [mode, setMode] = useState<"login" | "forgot" | "contact_admin">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -24,8 +24,21 @@ const Auth = () => {
   const [locked, setLocked] = useState(false);
   const [minutesLeft, setMinutesLeft] = useState(0);
   const [attemptsRemaining, setAttemptsRemaining] = useState(MAX_ATTEMPTS);
+  const [allowRecovery, setAllowRecovery] = useState(true);
   const { signIn } = useAuth();
   const { toast } = useToast();
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const hostname = window.location.hostname;
+        const { data } = await supabase.rpc("get_tenant_by_domain", { _host: hostname });
+        if (data && data.length > 0) {
+          setAllowRecovery((data[0] as any).allow_password_recovery !== false);
+        }
+      } catch {}
+    })();
+  }, []);
 
   const checkAttempts = async (emailToCheck: string) => {
     try {
@@ -182,6 +195,29 @@ const Auth = () => {
     }
   };
 
+  if (mode === "contact_admin") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center space-y-3">
+            <img src={logoIsotipo} alt="KageSan CRM" className="w-14 h-14 rounded-xl mx-auto" />
+            <CardTitle className="text-xl">Recuperar contraseña</CardTitle>
+            <CardDescription>El reset por email está deshabilitado en esta inmobiliaria</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="rounded-lg border border-border bg-muted/30 p-4 text-sm text-foreground">
+              Por seguridad, la recuperación de contraseña por email está desactivada.
+              Contacta con el administrador de tu inmobiliaria para que te asigne una nueva contraseña.
+            </div>
+            <Button className="w-full" variant="outline" onClick={() => setMode("login")}>
+              Volver a iniciar sesión
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (mode === "forgot") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -274,7 +310,7 @@ const Auth = () => {
                 <button
                   type="button"
                   className="text-xs text-primary hover:underline"
-                  onClick={() => setMode("forgot")}
+                  onClick={() => setMode(allowRecovery ? "forgot" : "contact_admin")}
                 >
                   ¿Olvidaste la contraseña?
                 </button>
