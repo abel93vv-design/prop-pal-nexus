@@ -98,7 +98,7 @@ const Tenants = () => {
 
   const openEdit = (t: Tenant) => {
     setEditing(t);
-    setForm({ name: t.name, slug: t.slug, plan: t.plan, is_active: t.is_active, is_demo: t.is_demo });
+    setForm({ name: t.name, slug: t.slug, plan: t.plan, is_active: t.is_active, is_demo: t.is_demo, allow_password_recovery: t.allow_password_recovery !== false });
     setProvisionResult(null);
     setDialogOpen(true);
   };
