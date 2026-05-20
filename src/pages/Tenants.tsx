@@ -120,7 +120,7 @@ const Tenants = () => {
     if (editing) {
       // Simple update
       const { error } = await supabase.from("tenants").update({
-        name: form.name, slug: form.slug, plan: form.plan, is_active: form.is_active, is_demo: form.is_demo,
+        name: form.name, slug: form.slug, plan: form.plan, is_active: form.is_active, is_demo: form.is_demo, allow_password_recovery: form.allow_password_recovery,
       }).eq("id", editing.id);
       if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
       else { toast({ title: "Tenant actualizado" }); setDialogOpen(false); }
