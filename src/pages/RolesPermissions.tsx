@@ -75,6 +75,8 @@ const RolesPermissions = () => {
   const [savingMember, setSavingMember] = useState(false);
   const [deletingMember, setDeletingMember] = useState<MemberRow | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [existingEmail, setExistingEmail] = useState<string | null>(null);
+  const [sendingReset, setSendingReset] = useState(false);
 
   const loadAll = async () => {
     if (!tenantId) return;
@@ -171,6 +173,9 @@ const RolesPermissions = () => {
       });
       if (error) {
         toast({ title: "Error", description: error.message, variant: "destructive" });
+      } else if (data?.code === "email_exists") {
+        setCreateOpen(false);
+        setExistingEmail(data.email || newUser.email);
       } else if (data?.error) {
         toast({ title: "Error", description: data.error, variant: "destructive" });
       } else {
@@ -500,6 +505,41 @@ const RolesPermissions = () => {
               <AlertDialogCancel>Cancelar</AlertDialogCancel>
               <AlertDialogAction onClick={handleDeleteMember} disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                 {deleting && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}Eliminar
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Email already exists dialog */}
+        <AlertDialog open={!!existingEmail} onOpenChange={(open) => !open && setExistingEmail(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Este usuario ya existe</AlertDialogTitle>
+              <AlertDialogDescription>
+                El email <strong>{existingEmail}</strong> ya está registrado en el sistema. Puedes enviarle un email para que recupere su contraseña y acceda al CRM.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={sendingReset}>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                disabled={sendingReset}
+                onClick={async (e) => {
+                  e.preventDefault();
+                  if (!existingEmail) return;
+                  setSendingReset(true);
+                  const { error } = await supabase.auth.resetPasswordForEmail(existingEmail, {
+                    redirectTo: `${window.location.origin}/reset-password`,
+                  });
+                  setSendingReset(false);
+                  if (error) {
+                    toast({ title: "Error", description: error.message, variant: "destructive" });
+                  } else {
+                    toast({ title: "Email enviado", description: `Se envió un enlace de recuperación a ${existingEmail}.` });
+                    setExistingEmail(null);
+                  }
+                }}
+              >
+                {sendingReset && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}Recuperar contraseña
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

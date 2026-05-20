@@ -1,27 +1,25 @@
-# Ajustar Onboarding Wizard según contexto del usuario
+# Detectar email duplicado al crear usuario
 
-## Objetivo
-Cuando un usuario ya está asociado a un tenant existente (por ejemplo, un asesor invitado por un admin), no tiene sentido mostrarle el paso 2 ("Tu inmobiliaria") del wizard, porque la inmobiliaria ya existe y no debería crear una nueva.
+Cuando el admin intenta crear un usuario con un email que ya existe en el sistema de autenticación, la función falla con un 400 genérico y la UI solo muestra "Edge Function returned a non-2xx status code". Solucionamos esto para que se vea un mensaje claro y se ofrezca enviar el email de recuperación de contraseña.
 
-## Comportamiento esperado
+## Cambios
 
-- **Usuario nuevo sin tenant / primer admin de un tenant recién creado** → ve los 3 pasos actuales (Bienvenida → Inmobiliaria → Listo).
-- **Usuario ya asociado a un tenant con al menos 1 agencia existente** → ve solo 2 pasos (Bienvenida → Listo), saltándose la creación de inmobiliaria.
+### 1. `supabase/functions/create-team-member/index.ts`
+Cuando `auth.admin.createUser` devuelva el error `email_exists` (o mensaje "already been registered"), responder con **HTTP 200** y cuerpo:
+```json
+{ "error": "Este email ya está registrado en el sistema...", "code": "email_exists", "email": "..." }
+```
+Se usa 200 porque `supabase.functions.invoke` no expone el cuerpo en respuestas no-2xx; así la UI puede leer `data.code`.
 
-## Criterio técnico
+### 2. `src/pages/RolesPermissions.tsx`
+En `handleCreateUser`, cuando `data?.code === "email_exists"`:
+- Guardar el email en un nuevo estado `existingEmail`.
+- Abrir un `AlertDialog` con el mensaje "Este email ya está registrado" y dos botones:
+  - **Cancelar**
+  - **Enviar email de recuperación** → llama a `supabase.auth.resetPasswordForEmail(email, { redirectTo: ${window.location.origin}/reset-password })` y muestra un toast de confirmación.
 
-En `OnboardingWizard.tsx`, al abrir el wizard:
-1. Consultar si ya existe alguna `agencies` para el `tenantId` actual (count rápido, `head: true`).
-2. Si existe ≥ 1 agencia → marcar `skipAgencyStep = true`.
-3. Ajustar el array `steps` para excluir el paso "agency".
-4. En el paso "Bienvenida", el botón "Comenzar configuración" salta directamente al paso final cuando `skipAgencyStep` es true.
-5. La barra de progreso refleja el número real de pasos (2 vs 3).
-
-## Archivo a modificar
-
-- `src/components/OnboardingWizard.tsx` — Añadir efecto que consulta agencias del tenant, estado `skipAgencyStep`, y lógica condicional para `steps` y navegación.
+Resto de errores se siguen mostrando como toast destructivo igual que ahora.
 
 ## Sin cambios
-
-- `OnboardingGuard` en `App.tsx` sigue decidiendo si mostrar el wizard según `onboarding_completed`.
-- No se toca backend ni RLS.
+- No tocamos el flujo de creación normal ni `manage-team-member`.
+- No se vincula automáticamente el usuario existente a este tenant (riesgo de robarlo de otro tenant); el admin debe coordinarlo con soporte si aplica.
