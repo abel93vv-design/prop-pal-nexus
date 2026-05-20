@@ -270,7 +270,7 @@ const Tenants = () => {
                       <h3 className="font-bold text-foreground truncate">{t.name}</h3>
                       <p className="text-xs text-muted-foreground flex items-center gap-1">
                         <Globe className="w-3 h-3" />
-                        <span className="truncate">{t.slug}.tudominio.com</span>
+                        <span className="truncate">{getTenantUrl(t).replace(/^https?:\/\//, "")}</span>
                       </p>
                     </div>
                   </div>
