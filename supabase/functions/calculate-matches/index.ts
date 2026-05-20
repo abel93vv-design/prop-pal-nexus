@@ -507,7 +507,7 @@ Deno.serve(async (req) => {
 
         upserts.push({
           tenant_id,
-          agency_id: client.agency_id || prop.agency_id || null,
+          agency_id: matchAgencyId,
           client_id: client.id,
           property_id: prop.id,
           property_score: propResult.score,
