@@ -173,6 +173,9 @@ const RolesPermissions = () => {
       });
       if (error) {
         toast({ title: "Error", description: error.message, variant: "destructive" });
+      } else if (data?.code === "email_exists") {
+        setCreateOpen(false);
+        setExistingEmail(data.email || newUser.email);
       } else if (data?.error) {
         toast({ title: "Error", description: data.error, variant: "destructive" });
       } else {
