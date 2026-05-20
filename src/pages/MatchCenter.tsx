@@ -82,11 +82,13 @@ const MatchCenter = () => {
   const filtered = useMemo(() => {
     return matches
       .filter((m) => {
+        // Defensa: descartar matches huérfanos (cliente o propiedad ya no visibles)
+        const client = clients.find((c) => c.id === m.client_id);
+        const property = properties.find((p) => p.id === m.property_id);
+        if (!client || !property) return false;
         if (filterCategory !== "all" && m.category !== filterCategory) return false;
         if (filterViability !== "all" && m.viability_status !== filterViability) return false;
         if (search) {
-          const client = clients.find((c) => c.id === m.client_id);
-          const property = properties.find((p) => p.id === m.property_id);
           const q = search.toLowerCase();
           const phoneNorm = (client?.phone || "").replace(/\D/g, "");
           const qNorm = q.replace(/\D/g, "");
@@ -98,7 +100,6 @@ const MatchCenter = () => {
           ) return false;
         }
         if (filterAgent !== "all") {
-          const property = properties.find((p) => p.id === m.property_id);
           if (property?.agentId !== filterAgent) return false;
         }
         return true;

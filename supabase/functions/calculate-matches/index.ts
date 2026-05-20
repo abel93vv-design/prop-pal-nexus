@@ -405,6 +405,7 @@ Deno.serve(async (req) => {
       .from("clients")
       .select("id, agency_id, operation_type")
       .eq("tenant_id", tenant_id)
+      .is("deleted_at", null)
       .in("type", ["comprador", "arrendatario"]);
     if (client_id) clientsQuery = clientsQuery.eq("id", client_id);
     const { data: clients } = await clientsQuery;
@@ -413,6 +414,7 @@ Deno.serve(async (req) => {
       .from("properties")
       .select("id, price, surface, built_surface, plot_surface, bedrooms, bathrooms, floor, type, address, neighborhood, postal_code, status, agency_id, community_fees, ibi_annual, has_elevator, has_terrace, has_pool, has_garage, has_air_conditioning, accepts_pets, operation_type, monthly_rent")
       .eq("tenant_id", tenant_id)
+      .is("deleted_at", null)
       .in("status", ["disponible", "reservado"]);
     if (property_id) propsQuery = propsQuery.eq("id", property_id);
     const { data: properties } = await propsQuery;

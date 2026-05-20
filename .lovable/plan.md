@@ -1,39 +1,23 @@
-## Objetivo
-
-Que cada inmobiliaria (agency) vea únicamente sus propios matches en Match Center. Los asesores de una misma inmobiliaria comparten vista; admins del tenant siguen viendo todo.
-
 ## Diagnóstico
 
-Hoy hay dos puntos donde se filtra el agency:
+En el Match Center de `huelin@valoracasa.es` aparecen filas con cliente y/o propiedad vacíos ("—"). La causa es que la edge function `calculate-matches` está generando matches contra **clientes y propiedades borrados** (`deleted_at IS NOT NULL`).
 
-1. **Edge function `calculate-matches`** — empareja todos los clientes × propiedades del tenant y solo descarta el cruce cuando AMBOS (cliente y propiedad) tienen `agency_id` y son distintos. Si alguno es `null`, se crea el match (lógica "legacy").
-2. **RLS de `match_scores`** — los asesores pueden leer filas donde `agency_id = su agencia` **O** `agency_id IS NULL` **O** no tienen agencia asignada.
+Confirmado en BD: muchas filas de `match_scores` del tenant referencian propiedades cuyo `deleted_at` no es nulo (ej. `prueba 34`, `H322A`, `H600A` borradas el 2026-05-19). El frontend carga propiedades con `deleted_at IS NULL` (vía RLS + filtros del hook), así que esas referencias no resuelven y se muestran como "—".
 
-Resultado: cualquier propiedad/cliente sin `agency_id` o cualquier match con `agency_id` nulo se ve entre inmobiliarias.
+El mismo problema ocurre con clientes borrados, aunque en el caso visible el cliente "María García" sigue vivo y por eso sí se ve.
 
 ## Cambios
 
-### 1. Edge function `supabase/functions/calculate-matches/index.ts`
-- Cambiar el filtro de emparejamiento por una regla estricta: solo emparejar cliente y propiedad cuando **`client.agency_id === prop.agency_id`** y **ambos son no nulos**. Saltar el resto.
-- Guardar siempre `agency_id` de la propiedad (= del cliente) en la fila resultante; nunca `null`.
-- Las propiedades o clientes sin inmobiliaria asignada no generan matches (se mostrarán cero matches hasta que se les asigne agencia).
+### 1. `supabase/functions/calculate-matches/index.ts`
+- Añadir `.is("deleted_at", null)` tanto en `clientsQuery` como en `propsQuery` antes del emparejamiento, para que nunca se generen matches contra registros borrados.
 
-### 2. RLS de `match_scores` (migración SQL)
-- Reemplazar la policy de SELECT para que sea estrictamente:
-  - `tenant_id = get_user_tenant_id()` Y
-  - (`is_tenant_admin(...)` Ó `agency_id = get_user_agency_id()`).
-- Quitar las ramas permisivas (`agency_id IS NULL`, `get_user_agency_id() IS NULL`).
-- Aplicar la misma regla en INSERT/UPDATE/DELETE para evitar inserciones cruzadas.
+### 2. Migración SQL — limpieza de datos
+- Borrar de `match_scores` toda fila cuyo `client_id` o `property_id` apunte a un registro con `deleted_at IS NOT NULL` (incluye los huérfanos ya existentes). Esto deja la tabla coherente con la nueva regla.
 
-### 3. Limpieza de datos existentes
-- Borrar de `match_scores` las filas con `agency_id IS NULL` (residuo legacy que ya no encaja con el nuevo modelo). El siguiente "Recalcular" repoblará lo que corresponda.
+### 3. UI (defensa adicional, opcional pero recomendado)
+- En `src/pages/MatchCenter.tsx`, filtrar `paged`/`filtered` descartando matches donde no se encuentre cliente **o** propiedad en los arrays cargados. Así, aunque por race condition o por borrado posterior queden referencias rotas momentáneas, nunca se renderizan filas vacías.
 
-### 4. UI (sin cambios funcionales)
-- `src/pages/MatchCenter.tsx` y `src/hooks/useMatchCenter.tsx` no requieren cambios: ya filtran por `tenant_id` y dependen de RLS para el filtro por inmobiliaria.
-- El usuario verá menos resultados si tiene clientes/propiedades sin agencia asignada — eso es el comportamiento deseado.
+## Notas
 
-## Notas técnicas
-
-- `get_user_agency_id()` ya existe y devuelve la primera agencia del usuario en `team_members`.
-- `is_tenant_admin()` ya existe; admins del tenant siguen viendo todo.
-- Tras el deploy, el usuario debe pulsar "Recalcular Matches" para regenerar con la nueva lógica.
+- Tras aplicar, el usuario debe pulsar **Recalcular Matches** para regenerar con los datos vivos. El count "70 matches calculados" bajará a los que realmente correspondan.
+- El cambio no afecta a la regla de aislamiento por inmobiliaria implementada anteriormente.
