@@ -363,7 +363,7 @@ const Tenants = () => {
                   <Label className="text-xs">Slug (subdominio) *</Label>
                   <Input value={form.slug} onChange={e => setForm({ ...form, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") })} placeholder="valoracasa" />
                   <p className="text-[10px] text-muted-foreground mt-1">
-                    URL: <span className="font-mono font-medium">{form.slug || "slug"}.tudominio.com</span>
+                    URL: <span className="font-mono font-medium">{form.slug || "slug"}.{(() => { const h = window.location.hostname; const p = h.split("."); return p.length >= 3 && p[0] !== "www" ? p.slice(1).join(".") : h; })()}</span>
                   </p>
                 </div>
                 <div>
