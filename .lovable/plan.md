@@ -1,23 +1,27 @@
-## Diagnóstico
+# Ajustar Onboarding Wizard según contexto del usuario
 
-En el Match Center de `huelin@valoracasa.es` aparecen filas con cliente y/o propiedad vacíos ("—"). La causa es que la edge function `calculate-matches` está generando matches contra **clientes y propiedades borrados** (`deleted_at IS NOT NULL`).
+## Objetivo
+Cuando un usuario ya está asociado a un tenant existente (por ejemplo, un asesor invitado por un admin), no tiene sentido mostrarle el paso 2 ("Tu inmobiliaria") del wizard, porque la inmobiliaria ya existe y no debería crear una nueva.
 
-Confirmado en BD: muchas filas de `match_scores` del tenant referencian propiedades cuyo `deleted_at` no es nulo (ej. `prueba 34`, `H322A`, `H600A` borradas el 2026-05-19). El frontend carga propiedades con `deleted_at IS NULL` (vía RLS + filtros del hook), así que esas referencias no resuelven y se muestran como "—".
+## Comportamiento esperado
 
-El mismo problema ocurre con clientes borrados, aunque en el caso visible el cliente "María García" sigue vivo y por eso sí se ve.
+- **Usuario nuevo sin tenant / primer admin de un tenant recién creado** → ve los 3 pasos actuales (Bienvenida → Inmobiliaria → Listo).
+- **Usuario ya asociado a un tenant con al menos 1 agencia existente** → ve solo 2 pasos (Bienvenida → Listo), saltándose la creación de inmobiliaria.
 
-## Cambios
+## Criterio técnico
 
-### 1. `supabase/functions/calculate-matches/index.ts`
-- Añadir `.is("deleted_at", null)` tanto en `clientsQuery` como en `propsQuery` antes del emparejamiento, para que nunca se generen matches contra registros borrados.
+En `OnboardingWizard.tsx`, al abrir el wizard:
+1. Consultar si ya existe alguna `agencies` para el `tenantId` actual (count rápido, `head: true`).
+2. Si existe ≥ 1 agencia → marcar `skipAgencyStep = true`.
+3. Ajustar el array `steps` para excluir el paso "agency".
+4. En el paso "Bienvenida", el botón "Comenzar configuración" salta directamente al paso final cuando `skipAgencyStep` es true.
+5. La barra de progreso refleja el número real de pasos (2 vs 3).
 
-### 2. Migración SQL — limpieza de datos
-- Borrar de `match_scores` toda fila cuyo `client_id` o `property_id` apunte a un registro con `deleted_at IS NOT NULL` (incluye los huérfanos ya existentes). Esto deja la tabla coherente con la nueva regla.
+## Archivo a modificar
 
-### 3. UI (defensa adicional, opcional pero recomendado)
-- En `src/pages/MatchCenter.tsx`, filtrar `paged`/`filtered` descartando matches donde no se encuentre cliente **o** propiedad en los arrays cargados. Así, aunque por race condition o por borrado posterior queden referencias rotas momentáneas, nunca se renderizan filas vacías.
+- `src/components/OnboardingWizard.tsx` — Añadir efecto que consulta agencias del tenant, estado `skipAgencyStep`, y lógica condicional para `steps` y navegación.
 
-## Notas
+## Sin cambios
 
-- Tras aplicar, el usuario debe pulsar **Recalcular Matches** para regenerar con los datos vivos. El count "70 matches calculados" bajará a los que realmente correspondan.
-- El cambio no afecta a la regla de aislamiento por inmobiliaria implementada anteriormente.
+- `OnboardingGuard` en `App.tsx` sigue decidiendo si mostrar el wizard según `onboarding_completed`.
+- No se toca backend ni RLS.

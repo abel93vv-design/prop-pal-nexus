@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,7 @@ interface OnboardingWizardProps {
   onComplete: () => void;
 }
 
-const steps = [
+const allSteps = [
   { id: "welcome", icon: Sparkles, title: "¡Bienvenido a KageSan CRM!", subtitle: "Configuremos tu cuenta en 2 minutos" },
   { id: "agency", icon: Building2, title: "Tu inmobiliaria", subtitle: "Datos básicos de tu empresa" },
   { id: "ready", icon: CheckCircle2, title: "¡Todo listo!", subtitle: "Tu cuenta está configurada" },
@@ -30,6 +30,25 @@ export const OnboardingWizard = ({ open, onComplete }: OnboardingWizardProps) =>
   const [agencyPhone, setAgencyPhone] = useState("");
   const [agencyEmail, setAgencyEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [skipAgencyStep, setSkipAgencyStep] = useState(false);
+
+  useEffect(() => {
+    if (!open || !tenantId) return;
+    let cancelled = false;
+    (async () => {
+      const { count } = await supabase
+        .from("agencies")
+        .select("id", { count: "exact", head: true })
+        .eq("tenant_id", tenantId);
+      if (!cancelled && (count ?? 0) > 0) setSkipAgencyStep(true);
+    })();
+    return () => { cancelled = true; };
+  }, [open, tenantId]);
+
+  const steps = useMemo(
+    () => skipAgencyStep ? allSteps.filter(s => s.id !== "agency") : allSteps,
+    [skipAgencyStep]
+  );
 
   const handleCreateAgency = async () => {
     if (!agencyName.trim()) {
@@ -63,8 +82,9 @@ export const OnboardingWizard = ({ open, onComplete }: OnboardingWizardProps) =>
     onComplete();
   };
 
-  const currentStep = steps[step];
+  const currentStep = allSteps[step];
   const Icon = currentStep.icon;
+  const visibleIndex = steps.findIndex(s => s.id === currentStep.id);
 
   return (
     <Dialog open={open} onOpenChange={() => {}}>
@@ -81,7 +101,7 @@ export const OnboardingWizard = ({ open, onComplete }: OnboardingWizardProps) =>
         {/* Progress */}
         <div className="flex gap-1.5 px-8 pt-4">
           {steps.map((_, i) => (
-            <div key={i} className={`h-1 flex-1 rounded-full transition-colors ${i <= step ? 'bg-primary' : 'bg-muted'}`} />
+            <div key={i} className={`h-1 flex-1 rounded-full transition-colors ${i <= visibleIndex ? 'bg-primary' : 'bg-muted'}`} />
           ))}
         </div>
 
@@ -102,7 +122,7 @@ export const OnboardingWizard = ({ open, onComplete }: OnboardingWizardProps) =>
                   </Card>
                 ))}
               </div>
-              <Button className="w-full" onClick={() => setStep(1)}>
+              <Button className="w-full" onClick={() => setStep(skipAgencyStep ? 2 : 1)}>
                 Comenzar configuración <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </div>
