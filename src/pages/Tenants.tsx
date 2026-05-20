@@ -578,6 +578,23 @@ const Tenants = () => {
         onClose={() => setDomainTenant(null)}
         onSaved={fetchTenants}
       />
+
+      {/* Confirm sign out all */}
+      <Dialog open={confirmSignoutAll} onOpenChange={v => !v && setConfirmSignoutAll(false)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>¿Cerrar sesión de todos los usuarios?</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Se cerrarán todas las sesiones activas de los usuarios de <strong>{detailTenant?.name}</strong>. Los usuarios se mantienen guardados y podrán volver a iniciar sesión con sus credenciales.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmSignoutAll(false)}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleSignoutAll} disabled={signingOutAll}>
+              {signingOutAll && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
+              Cerrar sesiones
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 };
