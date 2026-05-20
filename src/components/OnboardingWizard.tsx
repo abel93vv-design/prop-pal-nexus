@@ -15,7 +15,7 @@ interface OnboardingWizardProps {
   onComplete: () => void;
 }
 
-const steps = [
+const allSteps = [
   { id: "welcome", icon: Sparkles, title: "¡Bienvenido a KageSan CRM!", subtitle: "Configuremos tu cuenta en 2 minutos" },
   { id: "agency", icon: Building2, title: "Tu inmobiliaria", subtitle: "Datos básicos de tu empresa" },
   { id: "ready", icon: CheckCircle2, title: "¡Todo listo!", subtitle: "Tu cuenta está configurada" },
