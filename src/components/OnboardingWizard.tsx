@@ -101,7 +101,7 @@ export const OnboardingWizard = ({ open, onComplete }: OnboardingWizardProps) =>
         {/* Progress */}
         <div className="flex gap-1.5 px-8 pt-4">
           {steps.map((_, i) => (
-            <div key={i} className={`h-1 flex-1 rounded-full transition-colors ${i <= step ? 'bg-primary' : 'bg-muted'}`} />
+            <div key={i} className={`h-1 flex-1 rounded-full transition-colors ${i <= visibleIndex ? 'bg-primary' : 'bg-muted'}`} />
           ))}
         </div>
 
