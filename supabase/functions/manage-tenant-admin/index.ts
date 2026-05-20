@@ -98,6 +98,27 @@ serve(async (req) => {
       });
     }
 
+    if (action === "signout_all_users") {
+      if (!tenant_id) throw new Error("tenant_id es obligatorio");
+      const { data: profiles, error: profErr } = await adminClient
+        .from("profiles")
+        .select("user_id")
+        .eq("tenant_id", tenant_id);
+      if (profErr) throw new Error(profErr.message);
+
+      let signedOut = 0;
+      const errors: string[] = [];
+      for (const p of profiles || []) {
+        const { error } = await adminClient.auth.admin.signOut(p.user_id, "global");
+        if (error) errors.push(`${p.user_id}: ${error.message}`);
+        else signedOut++;
+      }
+
+      return new Response(JSON.stringify({ success: true, signed_out: signedOut, total: profiles?.length || 0, errors }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (action === "get_activity_logs") {
       if (!tenant_id) throw new Error("tenant_id es obligatorio");
       const { data: logs, error: logErr } = await adminClient
