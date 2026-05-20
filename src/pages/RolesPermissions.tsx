@@ -509,6 +509,41 @@ const RolesPermissions = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Email already exists dialog */}
+        <AlertDialog open={!!existingEmail} onOpenChange={(open) => !open && setExistingEmail(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Este usuario ya existe</AlertDialogTitle>
+              <AlertDialogDescription>
+                El email <strong>{existingEmail}</strong> ya está registrado en el sistema. Puedes enviarle un email para que recupere su contraseña y acceda al CRM.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={sendingReset}>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                disabled={sendingReset}
+                onClick={async (e) => {
+                  e.preventDefault();
+                  if (!existingEmail) return;
+                  setSendingReset(true);
+                  const { error } = await supabase.auth.resetPasswordForEmail(existingEmail, {
+                    redirectTo: `${window.location.origin}/reset-password`,
+                  });
+                  setSendingReset(false);
+                  if (error) {
+                    toast({ title: "Error", description: error.message, variant: "destructive" });
+                  } else {
+                    toast({ title: "Email enviado", description: `Se envió un enlace de recuperación a ${existingEmail}.` });
+                    setExistingEmail(null);
+                  }
+                }}
+              >
+                {sendingReset && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}Recuperar contraseña
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Layout>
   );
