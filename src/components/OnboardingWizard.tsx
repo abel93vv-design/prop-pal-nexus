@@ -30,6 +30,25 @@ export const OnboardingWizard = ({ open, onComplete }: OnboardingWizardProps) =>
   const [agencyPhone, setAgencyPhone] = useState("");
   const [agencyEmail, setAgencyEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [skipAgencyStep, setSkipAgencyStep] = useState(false);
+
+  useEffect(() => {
+    if (!open || !tenantId) return;
+    let cancelled = false;
+    (async () => {
+      const { count } = await supabase
+        .from("agencies")
+        .select("id", { count: "exact", head: true })
+        .eq("tenant_id", tenantId);
+      if (!cancelled && (count ?? 0) > 0) setSkipAgencyStep(true);
+    })();
+    return () => { cancelled = true; };
+  }, [open, tenantId]);
+
+  const steps = useMemo(
+    () => skipAgencyStep ? allSteps.filter(s => s.id !== "agency") : allSteps,
+    [skipAgencyStep]
+  );
 
   const handleCreateAgency = async () => {
     if (!agencyName.trim()) {
