@@ -122,7 +122,7 @@ export const OnboardingWizard = ({ open, onComplete }: OnboardingWizardProps) =>
                   </Card>
                 ))}
               </div>
-              <Button className="w-full" onClick={() => setStep(1)}>
+              <Button className="w-full" onClick={() => setStep(skipAgencyStep ? 2 : 1)}>
                 Comenzar configuración <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </div>
