@@ -405,6 +405,7 @@ Deno.serve(async (req) => {
       .from("clients")
       .select("id, agency_id, operation_type")
       .eq("tenant_id", tenant_id)
+      .is("deleted_at", null)
       .in("type", ["comprador", "arrendatario"]);
     if (client_id) clientsQuery = clientsQuery.eq("id", client_id);
     const { data: clients } = await clientsQuery;
