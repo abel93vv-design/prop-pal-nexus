@@ -149,13 +149,11 @@ const Properties = () => {
     return matchSearch && matchType && matchStatus && matchOp && matchListing && matchAgency;
   });
 
-  if (activeListing === 'ne') {
-    filtered.sort((a, b) => {
-      const da = a.ne_end_date ? new Date(a.ne_end_date).getTime() : Number.POSITIVE_INFINITY;
-      const db = b.ne_end_date ? new Date(b.ne_end_date).getTime() : Number.POSITIVE_INFINITY;
-      return da - db;
-    });
-  }
+  filtered.sort((a, b) => {
+    const da = a.ne_end_date ? new Date(a.ne_end_date).getTime() : Number.POSITIVE_INFINITY;
+    const db = b.ne_end_date ? new Date(b.ne_end_date).getTime() : Number.POSITIVE_INFINITY;
+    return da - db;
+  });
 
   const openCreate = () => {
     setEditing(null);
