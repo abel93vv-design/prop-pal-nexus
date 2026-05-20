@@ -75,6 +75,8 @@ const RolesPermissions = () => {
   const [savingMember, setSavingMember] = useState(false);
   const [deletingMember, setDeletingMember] = useState<MemberRow | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [existingEmail, setExistingEmail] = useState<string | null>(null);
+  const [sendingReset, setSendingReset] = useState(false);
 
   const loadAll = async () => {
     if (!tenantId) return;
