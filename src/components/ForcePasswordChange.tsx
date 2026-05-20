@@ -14,6 +14,8 @@ export const ForcePasswordChange = () => {
   const [mustChange, setMustChange] = useState(false);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
