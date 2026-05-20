@@ -210,6 +210,21 @@ const Tenants = () => {
     setResettingPassword(false);
   };
 
+  const handleSignoutAll = async () => {
+    if (!detailTenant) return;
+    setSigningOutAll(true);
+    const { data, error } = await supabase.functions.invoke("manage-tenant-admin", {
+      body: { action: "signout_all_users", tenant_id: detailTenant.id },
+    });
+    if (error || !data?.success) {
+      toast({ title: "Error", description: data?.error || error?.message, variant: "destructive" });
+    } else {
+      toast({ title: "Sesiones cerradas", description: `Se han cerrado las sesiones de ${data.signed_out} usuario(s).` });
+      setConfirmSignoutAll(false);
+    }
+    setSigningOutAll(false);
+  };
+
   const getAccessUrl = (slug: string) => `https://${slug}.tudominio.com`;
 
   return (
