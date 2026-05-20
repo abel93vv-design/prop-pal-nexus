@@ -1,25 +1,15 @@
-# Detectar email duplicado al crear usuario
+# Saltar paso "Tu inmobiliaria" siempre que el usuario ya pertenezca a un tenant
 
-Cuando el admin intenta crear un usuario con un email que ya existe en el sistema de autenticación, la función falla con un 400 genérico y la UI solo muestra "Edge Function returned a non-2xx status code". Solucionamos esto para que se vea un mensaje claro y se ofrezca enviar el email de recuperación de contraseña.
+## Problema
+La lógica actual sólo salta el paso si el tenant ya tiene ≥ 1 agencia. Pero usuarios como `informaticovaloracasa@gmail.com`, que pertenecen a un tenant existente sin agencias creadas todavía, siguen viendo el paso. El admin del tenant debería ser quien crea las agencias, no un asesor invitado.
 
-## Cambios
+## Cambio
+`src/components/OnboardingWizard.tsx`: simplificar `skipAgencyStep` para que sea `true` siempre que `tenantId` esté presente (el usuario ya está asociado a una inmobiliaria), sin importar si hay agencias. Quitar el `useEffect` que consulta `agencies`.
 
-### 1. `supabase/functions/create-team-member/index.ts`
-Cuando `auth.admin.createUser` devuelva el error `email_exists` (o mensaje "already been registered"), responder con **HTTP 200** y cuerpo:
-```json
-{ "error": "Este email ya está registrado en el sistema...", "code": "email_exists", "email": "..." }
-```
-Se usa 200 porque `supabase.functions.invoke` no expone el cuerpo en respuestas no-2xx; así la UI puede leer `data.code`.
-
-### 2. `src/pages/RolesPermissions.tsx`
-En `handleCreateUser`, cuando `data?.code === "email_exists"`:
-- Guardar el email en un nuevo estado `existingEmail`.
-- Abrir un `AlertDialog` con el mensaje "Este email ya está registrado" y dos botones:
-  - **Cancelar**
-  - **Enviar email de recuperación** → llama a `supabase.auth.resetPasswordForEmail(email, { redirectTo: ${window.location.origin}/reset-password })` y muestra un toast de confirmación.
-
-Resto de errores se siguen mostrando como toast destructivo igual que ahora.
+- `skipAgencyStep = !!tenantId`
+- El botón "Comenzar configuración" salta a `step 2` cuando `skipAgencyStep` es true (ya lo hace).
+- El `steps` filtrado y la barra de progreso siguen igual (2 pasos visibles).
 
 ## Sin cambios
-- No tocamos el flujo de creación normal ni `manage-team-member`.
-- No se vincula automáticamente el usuario existente a este tenant (riesgo de robarlo de otro tenant); el admin debe coordinarlo con soporte si aplica.
+- Backend, RLS, o lógica de creación de agencia.
+- Usuarios sin tenant (caso muy raro) seguirán viendo los 3 pasos.
