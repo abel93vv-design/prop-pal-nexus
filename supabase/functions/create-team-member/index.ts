@@ -106,6 +106,22 @@ Deno.serve(async (req) => {
     });
 
     if (authError) {
+      const msg = (authError.message || "").toLowerCase();
+      const isEmailExists =
+        (authError as any).code === "email_exists" ||
+        msg.includes("already been registered") ||
+        msg.includes("already registered") ||
+        msg.includes("user already");
+      if (isEmailExists) {
+        return new Response(
+          JSON.stringify({
+            error: "Este email ya está registrado en el sistema. El usuario puede recuperar su contraseña para acceder.",
+            code: "email_exists",
+            email,
+          }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
       return new Response(JSON.stringify({ error: authError.message }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
