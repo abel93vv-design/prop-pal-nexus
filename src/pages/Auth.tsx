@@ -310,7 +310,7 @@ const Auth = () => {
                 <button
                   type="button"
                   className="text-xs text-primary hover:underline"
-                  onClick={() => setMode("forgot")}
+                  onClick={() => setMode(allowRecovery ? "forgot" : "contact_admin")}
                 >
                   ¿Olvidaste la contraseña?
                 </button>
