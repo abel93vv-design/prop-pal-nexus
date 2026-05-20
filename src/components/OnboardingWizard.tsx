@@ -82,8 +82,9 @@ export const OnboardingWizard = ({ open, onComplete }: OnboardingWizardProps) =>
     onComplete();
   };
 
-  const currentStep = steps[step];
+  const currentStep = allSteps[step];
   const Icon = currentStep.icon;
+  const visibleIndex = steps.findIndex(s => s.id === currentStep.id);
 
   return (
     <Dialog open={open} onOpenChange={() => {}}>
