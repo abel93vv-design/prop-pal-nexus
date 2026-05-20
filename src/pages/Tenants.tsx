@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Building2, Plus, Pencil, Trash2, Loader2, Globe, Copy, CheckCircle2, AlertCircle, Eye, EyeOff, Users, KeyRound, ExternalLink, Activity, ShieldCheck, ShieldAlert } from "lucide-react";
+import { Building2, Plus, Pencil, Trash2, Loader2, Globe, Copy, CheckCircle2, AlertCircle, Eye, EyeOff, Users, KeyRound, ExternalLink, Activity, ShieldCheck, ShieldAlert, LogOut } from "lucide-react";
 import { ActivityLogViewer } from "@/components/ActivityLogViewer";
 import { TenantDomainDialog } from "@/components/TenantDomainDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -71,6 +71,8 @@ const Tenants = () => {
   const [newPassword, setNewPassword] = useState("");
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [resettingPassword, setResettingPassword] = useState(false);
+  const [signingOutAll, setSigningOutAll] = useState(false);
+  const [confirmSignoutAll, setConfirmSignoutAll] = useState(false);
   const [domainTenant, setDomainTenant] = useState<Tenant | null>(null);
 
   
@@ -206,6 +208,21 @@ const Tenants = () => {
       setNewPassword("");
     }
     setResettingPassword(false);
+  };
+
+  const handleSignoutAll = async () => {
+    if (!detailTenant) return;
+    setSigningOutAll(true);
+    const { data, error } = await supabase.functions.invoke("manage-tenant-admin", {
+      body: { action: "signout_all_users", tenant_id: detailTenant.id },
+    });
+    if (error || !data?.success) {
+      toast({ title: "Error", description: data?.error || error?.message, variant: "destructive" });
+    } else {
+      toast({ title: "Sesiones cerradas", description: `Se han cerrado las sesiones de ${data.signed_out} usuario(s).` });
+      setConfirmSignoutAll(false);
+    }
+    setSigningOutAll(false);
   };
 
   const getAccessUrl = (slug: string) => `https://${slug}.tudominio.com`;
@@ -462,7 +479,18 @@ const Tenants = () => {
                     <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => copyToClipboard(getAccessUrl(detailTenant.slug))}>
                       <Copy className="w-3 h-3" />
                     </Button>
-                  </div>
+                </div>
+
+                {/* Force sign out all users */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full border-destructive/50 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                  onClick={() => setConfirmSignoutAll(true)}
+                  disabled={tenantUsers.length === 0}
+                >
+                  <LogOut className="w-3 h-3 mr-1" /> Cerrar sesión de todos los usuarios
+                </Button>
                 </div>
 
                 {/* Users */}
@@ -550,6 +578,23 @@ const Tenants = () => {
         onClose={() => setDomainTenant(null)}
         onSaved={fetchTenants}
       />
+
+      {/* Confirm sign out all */}
+      <Dialog open={confirmSignoutAll} onOpenChange={v => !v && setConfirmSignoutAll(false)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>¿Cerrar sesión de todos los usuarios?</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Se cerrarán todas las sesiones activas de los usuarios de <strong>{detailTenant?.name}</strong>. Los usuarios se mantienen guardados y podrán volver a iniciar sesión con sus credenciales.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmSignoutAll(false)}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleSignoutAll} disabled={signingOutAll}>
+              {signingOutAll && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
+              Cerrar sesiones
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 };
