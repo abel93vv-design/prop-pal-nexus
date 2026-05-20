@@ -71,6 +71,8 @@ const Tenants = () => {
   const [newPassword, setNewPassword] = useState("");
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [resettingPassword, setResettingPassword] = useState(false);
+  const [signingOutAll, setSigningOutAll] = useState(false);
+  const [confirmSignoutAll, setConfirmSignoutAll] = useState(false);
   const [domainTenant, setDomainTenant] = useState<Tenant | null>(null);
 
   
