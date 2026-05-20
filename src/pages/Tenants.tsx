@@ -490,6 +490,7 @@ const Tenants = () => {
                   disabled={tenantUsers.length === 0}
                 >
                   <LogOut className="w-3 h-3 mr-1" /> Cerrar sesión de todos los usuarios
+                </Button>
                 </div>
 
                 {/* Users */}
