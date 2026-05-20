@@ -48,7 +48,7 @@ const generatePassword = () => {
   return pw + "!1";
 };
 
-const emptyForm = { name: "", slug: "", plan: "free", is_active: true, is_demo: false };
+const emptyForm = { name: "", slug: "", plan: "free", is_active: true, is_demo: false, allow_password_recovery: true };
 const emptyProvision = { admin_email: "", admin_name: "", admin_password: generatePassword() };
 
 const Tenants = () => {
