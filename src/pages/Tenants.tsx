@@ -479,7 +479,17 @@ const Tenants = () => {
                     <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => copyToClipboard(getAccessUrl(detailTenant.slug))}>
                       <Copy className="w-3 h-3" />
                     </Button>
-                  </div>
+                </div>
+
+                {/* Force sign out all users */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full border-destructive/50 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                  onClick={() => setConfirmSignoutAll(true)}
+                  disabled={tenantUsers.length === 0}
+                >
+                  <LogOut className="w-3 h-3 mr-1" /> Cerrar sesión de todos los usuarios
                 </div>
 
                 {/* Users */}
