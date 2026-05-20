@@ -474,10 +474,12 @@ Deno.serve(async (req) => {
       const prefs = prefsMap.get(client.id) || null;
 
       for (const prop of properties as Property[]) {
-        // Restringir matching a la misma inmobiliaria (legacy: si alguno es null, se permite)
-        if (client.agency_id && prop.agency_id && client.agency_id !== prop.agency_id) {
+        // Aislamiento estricto por inmobiliaria: solo emparejar cuando cliente y propiedad
+        // pertenecen a la MISMA agencia, y ambos tienen agencia asignada.
+        if (!client.agency_id || !prop.agency_id || client.agency_id !== prop.agency_id) {
           continue;
         }
+        const matchAgencyId = client.agency_id;
         const clientOp = client.operation_type || 'compra';
         const propOp = prop.operation_type || 'venta';
         const opMatch = clientOp === 'ambos' || propOp === 'ambos' ||
@@ -486,7 +488,7 @@ Deno.serve(async (req) => {
 
         if (!opMatch) {
           upserts.push({
-            tenant_id, agency_id: client.agency_id || prop.agency_id || null,
+            tenant_id, agency_id: matchAgencyId,
             client_id: client.id, property_id: prop.id,
             property_score: 0, financial_score: 0, total_score: 0,
             category: "low", viability_status: "Not Viable",
