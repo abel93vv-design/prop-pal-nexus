@@ -225,7 +225,18 @@ const Tenants = () => {
     setSigningOutAll(false);
   };
 
-  const getAccessUrl = (slug: string) => `https://${slug}.tudominio.com`;
+  const getTenantUrl = (t: Tenant) => {
+    if (t.custom_domain) return `https://${t.custom_domain}`;
+    const host = window.location.hostname;
+    const parts = host.split(".");
+    const rootDomain = parts.length >= 3 && parts[0] !== "www" ? parts.slice(1).join(".") : host;
+    return `https://${t.slug}.${rootDomain}`;
+  };
+
+  const getAccessUrl = (slug: string) => {
+    const t = tenants.find(x => x.slug === slug);
+    return t ? getTenantUrl(t) : `https://${slug}`;
+  };
 
   return (
     <Layout>
@@ -259,7 +270,7 @@ const Tenants = () => {
                       <h3 className="font-bold text-foreground truncate">{t.name}</h3>
                       <p className="text-xs text-muted-foreground flex items-center gap-1">
                         <Globe className="w-3 h-3" />
-                        <span className="truncate">{t.slug}.tudominio.com</span>
+                        <span className="truncate">{getTenantUrl(t).replace(/^https?:\/\//, "")}</span>
                       </p>
                     </div>
                   </div>
@@ -352,7 +363,7 @@ const Tenants = () => {
                   <Label className="text-xs">Slug (subdominio) *</Label>
                   <Input value={form.slug} onChange={e => setForm({ ...form, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") })} placeholder="valoracasa" />
                   <p className="text-[10px] text-muted-foreground mt-1">
-                    URL: <span className="font-mono font-medium">{form.slug || "slug"}.tudominio.com</span>
+                    URL: <span className="font-mono font-medium">{form.slug || "slug"}.{(() => { const h = window.location.hostname; const p = h.split("."); return p.length >= 3 && p[0] !== "www" ? p.slice(1).join(".") : h; })()}</span>
                   </p>
                 </div>
                 <div>
