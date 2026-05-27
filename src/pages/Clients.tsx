@@ -254,7 +254,7 @@ const ClientDocumentsSection = ({ clientId, documents, onAdd, onDelete }: {
   const [customName, setCustomName] = useState("");
   const [type, setType] = useState<DocumentType>('proteccion_datos');
   const [uploading, setUploading] = useState(false);
-  const fileInputRef = useState<HTMLInputElement | null>(null);
+  
 
   const handleFile = async (file: File) => {
     if (!file) return;
