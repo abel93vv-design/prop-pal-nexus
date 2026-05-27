@@ -23,10 +23,10 @@ serve(async (req) => {
       global: { headers: { Authorization: authHeader } },
     });
 
-    const { data: claimsData, error: claimsError } = await callerClient.auth.getClaims(authHeader.replace("Bearer ", ""));
-    if (claimsError || !claimsData?.claims) throw new Error("No autorizado");
+    const { data: userData, error: userErr } = await callerClient.auth.getUser();
+    if (userErr || !userData?.user) throw new Error("No autorizado");
 
-    const callerId = claimsData.claims.sub;
+    const callerId = userData.user.id;
 
     // Check admin role server-side (super_admin OR admin)
     const { data: roleData } = await adminClient
