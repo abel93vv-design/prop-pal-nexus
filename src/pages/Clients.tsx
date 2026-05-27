@@ -729,9 +729,10 @@ const Clients = () => {
                 <ClientDocumentsSection
                   clientId={editing.id}
                   documents={documents.filter(d => d.clientId === editing.id)}
-                  onAdd={async (name, type) => { await addDocument({ name, type, file: '', propertyId: '', clientId: editing.id, uploadedAt: new Date().toISOString() }); toast({ title: 'Documento añadido' }); }}
-                  onDelete={async (id) => { await deleteDocument(id); toast({ title: 'Documento eliminado' }); }}
+                  onAdd={async (name, type, filePath) => { await addDocument({ name, type, file: filePath, propertyId: '', clientId: editing.id, uploadedAt: new Date().toISOString() }); toast({ title: 'Documento añadido' }); }}
+                  onDelete={async (id, filePath) => { if (filePath) { await supabase.storage.from('documents').remove([filePath]); } await deleteDocument(id); toast({ title: 'Documento eliminado' }); }}
                 />
+
               </>
             ) : (
               <>
