@@ -1,36 +1,31 @@
-# Verificación: redirección de login para usuarios ya autenticados
+## Problema
 
-## Resultado
+En la ficha del cliente, el botón "Añadir" de Protección de Datos solo crea un registro en `documents` con el campo `file` vacío: nunca se sube un archivo real al storage, por eso no hay nada que visualizar.
 
-**Funciona correctamente.** No hay nada que arreglar.
+## Solución
 
-## Prueba realizada
+Convertir el flujo en una subida real al bucket `documents` y añadir un botón "Ver" que abra el archivo.
 
-Navegué a `/auth` con una sesión activa en el navegador. El sistema redirigió automáticamente a `/` (dashboard) sin mostrar el formulario de login.
+### Cambios
 
-## Cómo está implementado
+1. **`ClientDocumentsSection` en `src/pages/Clients.tsx`**
+   - Sustituir el botón "Añadir" por un `<input type="file">` (PDF / imágenes).
+   - Al seleccionar el archivo:
+     - Subirlo a `documents/{tenant_id}/clients/{clientId}/{timestamp}-{nombre}` con `supabase.storage.from('documents').upload(...)`.
+     - Guardar la ruta resultante en `documents.file` al llamar a `addDocument` (en vez de `file: ''`).
+   - Mostrar estado de carga y `toast` de error/éxito.
 
-- **`src/App.tsx:38`** — `ProtectedRoute`: si no hay `user`, manda a `/auth`. Si hay `user`, renderiza la página protegida.
-- **`src/pages/Auth.tsx:91`** — `if (user) return <Navigate to="/" replace />`: si entras a `/auth` con sesión, te manda al dashboard.
-- **`src/hooks/useAuth.tsx`** — `AuthProvider` mantiene `loading=true` hasta que `getSession()` resuelve, evitando flashes del login durante la rehidratación.
+2. **Visualización**
+   - Añadir un botón "Ver" (icono ojo) en cada documento listado.
+   - Al pulsar: `supabase.storage.from('documents').createSignedUrl(d.file, 60)` y abrir la URL en una pestaña nueva.
+   - Solo mostrar "Ver" cuando `d.file` no esté vacío (los registros antiguos sin archivo seguirán visibles pero sin botón).
 
-## Flujo confirmado
+3. **Borrado**
+   - En `onDelete`, si `d.file` existe, eliminar también el objeto del storage (`storage.from('documents').remove([d.file])`) antes de borrar el registro.
 
-```text
-Usuario logueado entra a crm.valoracasa.es/
-  → ProtectedRoute ve user → renderiza Index (dashboard)
+### Notas técnicas
 
-Usuario logueado entra a crm.valoracasa.es/auth
-  → Auth.tsx detecta user → Navigate a "/"
-  → ProtectedRoute renderiza Index
-
-Usuario sin sesión entra a crm.valoracasa.es/
-  → ProtectedRoute no ve user → Navigate a "/auth"
-  → Auth.tsx muestra formulario
-```
-
-## Nota
-
-Si en algún caso real ves que un usuario logueado sí ve el login, lo más probable es que `TenantContext` lo haya cerrado sesión porque su `profile.tenant_id` no coincide con el tenant resuelto por el dominio (protección multi-tenant). Avísame si quieres revisar ese caso concreto.
-
-## No hay cambios de código en este plan
+- El bucket `documents` ya existe y tiene policies para usuarios autenticados; no se requiere migración.
+- Se respeta el aislamiento por tenant al prefijar la ruta con `tenant_id` (obtenido vía `get_user_tenant_id` o desde `useUserRole`).
+- No se cambian tipos ni tablas: el campo `documents.file` ya está en el esquema.
+- Misma mejora se podrá replicar en Properties más adelante (fuera del alcance de esta tarea).
