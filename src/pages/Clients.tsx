@@ -245,25 +245,57 @@ const AVAILABLE_CLIENT_DOC_TYPES: { value: DocumentType; label: string }[] = [
 
 const ClientDocumentsSection = ({ clientId, documents, onAdd, onDelete }: {
   clientId: string;
-  documents: { id: string; name: string; type: DocumentType; uploadedAt: string }[];
-  onAdd: (name: string, type: DocumentType) => Promise<void>;
-  onDelete: (id: string) => Promise<void>;
+  documents: { id: string; name: string; type: DocumentType; uploadedAt: string; file?: string }[];
+  onAdd: (name: string, type: DocumentType, filePath: string) => Promise<void>;
+  onDelete: (id: string, filePath?: string) => Promise<void>;
 }) => {
+  const { tenantId } = useUserRole();
+  const { toast } = useToast();
   const [customName, setCustomName] = useState("");
   const [type, setType] = useState<DocumentType>('proteccion_datos');
-  const handleAdd = async () => {
-    if (type === 'otros' && !customName.trim()) return;
-    const finalName = type === 'proteccion_datos'
-      ? CLIENT_DOC_TYPE_LABELS.proteccion_datos
-      : customName.trim();
-    await onAdd(finalName, type);
-    setCustomName("");
-    setType('proteccion_datos');
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useState<HTMLInputElement | null>(null);
+
+  const handleFile = async (file: File) => {
+    if (!file) return;
+    if (!tenantId) { toast({ title: 'Sin tenant activo', variant: 'destructive' }); return; }
+    if (type === 'otros' && !customName.trim()) {
+      toast({ title: 'Indica un nombre', variant: 'destructive' });
+      return;
+    }
+    setUploading(true);
+    try {
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const path = `${tenantId}/clients/${clientId}/${Date.now()}-${safeName}`;
+      const { error: upErr } = await supabase.storage.from('documents').upload(path, file, { upsert: false });
+      if (upErr) throw upErr;
+      const finalName = type === 'proteccion_datos'
+        ? CLIENT_DOC_TYPE_LABELS.proteccion_datos
+        : (customName.trim() || file.name);
+      await onAdd(finalName, type, path);
+      setCustomName("");
+      setType('proteccion_datos');
+    } catch (e: any) {
+      toast({ title: 'Error subiendo documento', description: e.message, variant: 'destructive' });
+    } finally {
+      setUploading(false);
+    }
   };
+
+  const handleView = async (filePath: string) => {
+    try {
+      const { data, error } = await supabase.storage.from('documents').createSignedUrl(filePath, 60);
+      if (error) throw error;
+      window.open(data.signedUrl, '_blank', 'noopener');
+    } catch (e: any) {
+      toast({ title: 'No se pudo abrir el documento', description: e.message, variant: 'destructive' });
+    }
+  };
+
   return (
     <div className="space-y-2 p-3 rounded-lg border border-border bg-muted/30">
       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Documentos del cliente</p>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         <Select value={type} onValueChange={(v) => setType(v as DocumentType)}>
           <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
           <SelectContent>
@@ -277,12 +309,25 @@ const ClientDocumentsSection = ({ clientId, documents, onAdd, onDelete }: {
             placeholder="Nombre del documento"
             value={customName}
             onChange={e => setCustomName(e.target.value)}
-            className="flex-1"
+            className="flex-1 min-w-[150px]"
           />
         )}
-        <Button size="sm" onClick={handleAdd} disabled={type === 'otros' && !customName.trim()}>
-          <Upload className="w-3.5 h-3.5 mr-1" />Añadir
-        </Button>
+        <label className="inline-flex">
+          <input
+            type="file"
+            accept="application/pdf,image/*"
+            className="hidden"
+            disabled={uploading}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) handleFile(f);
+              e.target.value = '';
+            }}
+          />
+          <Button asChild size="sm" disabled={uploading}>
+            <span><Upload className="w-3.5 h-3.5 mr-1" />{uploading ? 'Subiendo…' : 'Subir archivo'}</span>
+          </Button>
+        </label>
       </div>
       {documents.length === 0
         ? <p className="text-xs text-muted-foreground text-center py-2">Sin documentos.</p>
@@ -296,9 +341,16 @@ const ClientDocumentsSection = ({ clientId, documents, onAdd, onDelete }: {
                     <p className="text-xs text-muted-foreground">{CLIENT_DOC_TYPE_LABELS[d.type] || d.type} · {new Date(d.uploadedAt).toLocaleDateString('es-ES')}</p>
                   </div>
                 </div>
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => onDelete(d.id)}>
-                  <X className="w-3.5 h-3.5" />
-                </Button>
+                <div className="flex items-center gap-1">
+                  {d.file && (
+                    <Button variant="ghost" size="sm" className="h-7" onClick={() => handleView(d.file!)}>
+                      Ver
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => onDelete(d.id, d.file)}>
+                    <X className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
               </div>
             ))}
           </div>}
