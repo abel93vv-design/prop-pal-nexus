@@ -1568,6 +1568,14 @@ export type Database = {
           subscription_status: string
         }[]
       }
+      get_tenant_domain_info: {
+        Args: { _tenant_id: string }
+        Returns: {
+          custom_domain: string
+          domain_verification_token: string
+          domain_verified: boolean
+        }[]
+      }
       get_user_agency_id: { Args: never; Returns: string }
       get_user_role_in_tenant: {
         Args: { _tenant_id: string; _user_id: string }
