@@ -161,13 +161,8 @@ const Auth = () => {
                 if (parts.length === 2 && parts[1] === "localhost") sub = parts[0];
                 else if (parts.length >= 3) sub = parts[0];
                 if (sub && sub !== "www") {
-                  const { data: tBySlug } = await supabase
-                    .from("tenants")
-                    .select("id")
-                    .eq("slug", sub)
-                    .eq("is_active", true)
-                    .maybeSingle();
-                  if (tBySlug) hostTenantId = tBySlug.id;
+                  const { data: tBySlug } = await supabase.rpc("get_tenant_by_slug", { _slug: sub });
+                  if (tBySlug && tBySlug.length > 0) hostTenantId = tBySlug[0].id;
                 }
               }
 

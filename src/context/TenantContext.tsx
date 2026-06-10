@@ -93,30 +93,23 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
       if (!isLovable) {
         const { data: byDomain } = await supabase.rpc("get_tenant_by_domain", { _host: hostname });
         if (byDomain && byDomain.length > 0 && byDomain[0].domain_verified && byDomain[0].is_active) {
-          const { data: full } = await supabase
-            .from("tenants")
-            .select("*")
-            .eq("id", byDomain[0].id)
-            .single();
-          if (full) {
-            // Cross-tenant session guard
-            if (session?.user?.id) {
-              const { data: isSuper } = await supabase.rpc("is_super_admin", { _user_id: session.user.id });
-              if (!isSuper) {
-                const { data: profile } = await supabase
-                  .from("profiles")
-                  .select("tenant_id")
-                  .eq("user_id", session.user.id)
-                  .maybeSingle();
-                if (!profile || profile.tenant_id !== full.id) {
-                  await supabase.auth.signOut();
-                }
+          const full = byDomain[0];
+          if (session?.user?.id) {
+            const { data: isSuper } = await supabase.rpc("is_super_admin", { _user_id: session.user.id });
+            if (!isSuper) {
+              const { data: profile } = await supabase
+                .from("profiles")
+                .select("tenant_id")
+                .eq("user_id", session.user.id)
+                .maybeSingle();
+              if (!profile || profile.tenant_id !== full.id) {
+                await supabase.auth.signOut();
               }
             }
-            setTenant(mapTenant(full));
-            setLoading(false);
-            return;
           }
+          setTenant(mapTenant(full));
+          setLoading(false);
+          return;
         }
       }
 
@@ -124,15 +117,10 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
 
       // --- Priority 1: Subdomain-based resolution ---
       if (subdomain) {
-        const { data: tenantBySlug } = await supabase
-          .from("tenants")
-          .select("*")
-          .eq("slug", subdomain)
-          .eq("is_active", true)
-          .single();
+        const { data: bySlug } = await supabase.rpc("get_tenant_by_slug", { _slug: subdomain });
+        const tenantBySlug = bySlug && bySlug.length > 0 ? bySlug[0] : null;
 
         if (tenantBySlug) {
-          // Cross-tenant session guard
           if (session?.user?.id) {
             const { data: isSuper } = await supabase.rpc("is_super_admin", { _user_id: session.user.id });
             if (!isSuper) {
@@ -151,14 +139,8 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
           return;
         }
 
-        // Slug not found → try demo tenant fallback
-        const { data: demoTenant } = await supabase
-          .from("tenants")
-          .select("*")
-          .eq("is_demo", true)
-          .eq("is_active", true)
-          .limit(1)
-          .single();
+        const { data: demoRows } = await supabase.rpc("get_demo_tenant");
+        const demoTenant = demoRows && demoRows.length > 0 ? demoRows[0] : null;
 
         if (demoTenant) {
           setTenant(mapTenant(demoTenant));
