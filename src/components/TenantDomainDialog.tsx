@@ -35,14 +35,12 @@ export const TenantDomainDialog = ({ tenantId, tenantName, onClose, onSaved }: P
     if (!tenantId) return;
     setLoading(true);
     supabase
-      .from("tenants")
-      .select("custom_domain, domain_verified, domain_verification_token")
-      .eq("id", tenantId)
-      .maybeSingle()
+      .rpc("get_tenant_domain_info", { _tenant_id: tenantId })
       .then(({ data }) => {
-        if (data) {
-          setState(data as DomainState);
-          setDomainInput(data.custom_domain || "");
+        const row = Array.isArray(data) ? data[0] : data;
+        if (row) {
+          setState(row as DomainState);
+          setDomainInput(row.custom_domain || "");
         }
         setLoading(false);
       });
@@ -70,11 +68,9 @@ export const TenantDomainDialog = ({ tenantId, tenantName, onClose, onSaved }: P
     } else {
       toast({ title: "Dominio guardado", description: clean ? "Configura los DNS y verifica." : "Dominio eliminado." });
       const { data } = await supabase
-        .from("tenants")
-        .select("custom_domain, domain_verified, domain_verification_token")
-        .eq("id", tenantId)
-        .maybeSingle();
-      if (data) setState(data as DomainState);
+        .rpc("get_tenant_domain_info", { _tenant_id: tenantId });
+      const row = Array.isArray(data) ? data[0] : data;
+      if (row) setState(row as DomainState);
       onSaved?.();
     }
     setSaving(false);
