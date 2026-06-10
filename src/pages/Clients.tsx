@@ -254,6 +254,7 @@ const ClientDocumentsSection = ({ clientId, documents, onAdd, onDelete }: {
   const [customName, setCustomName] = useState("");
   const [type, setType] = useState<DocumentType>('proteccion_datos');
   const [uploading, setUploading] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   
 
   const handleFile = async (file: File) => {
@@ -289,6 +290,16 @@ const ClientDocumentsSection = ({ clientId, documents, onAdd, onDelete }: {
       window.open(data.signedUrl, '_blank', 'noopener');
     } catch (e: any) {
       toast({ title: 'No se pudo abrir el documento', description: e.message, variant: 'destructive' });
+    }
+  };
+
+  const handleDelete = async (id: string, filePath?: string) => {
+    if (deletingId) return;
+    setDeletingId(id);
+    try {
+      await onDelete(id, filePath);
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -347,7 +358,7 @@ const ClientDocumentsSection = ({ clientId, documents, onAdd, onDelete }: {
                       Ver
                     </Button>
                   )}
-                  <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => onDelete(d.id, d.file)}>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" disabled={deletingId === d.id} onClick={() => handleDelete(d.id, d.file)}>
                     <X className="w-3.5 h-3.5" />
                   </Button>
                 </div>
