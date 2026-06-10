@@ -1635,6 +1635,26 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      soft_delete_document: {
+        Args: { _id: string }
+        Returns: {
+          client_id: string | null
+          deleted_at: string | null
+          file: string | null
+          id: string
+          name: string
+          property_id: string | null
+          tenant_id: string | null
+          type: string
+          uploaded_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "documents"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       soft_delete_property: {
         Args: { _id: string }
         Returns: {

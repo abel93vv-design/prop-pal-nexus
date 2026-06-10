@@ -425,9 +425,8 @@ export const useDocumentMutations = () => {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('documents').update({ deleted_at: new Date().toISOString() } as any).eq('id', id);
+      const { error } = await (supabase as any).rpc('soft_delete_document', { _id: id });
       if (error) throw error;
-      logActivity(tenantId, user?.id, 'delete', 'document', id);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['documents'] }),
   });
