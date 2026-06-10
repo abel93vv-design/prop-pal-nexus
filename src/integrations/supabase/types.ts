@@ -1528,6 +1528,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_demo_tenant: {
+        Args: never
+        Returns: {
+          id: string
+          is_active: boolean
+          is_demo: boolean
+          name: string
+          plan: string
+          slug: string
+          subscription_status: string
+        }[]
+      }
       get_tenant_by_domain: {
         Args: { _host: string }
         Returns: {
@@ -1536,8 +1548,24 @@ export type Database = {
           domain_verified: boolean
           id: string
           is_active: boolean
+          is_demo: boolean
           name: string
+          plan: string
           slug: string
+          subscription_status: string
+        }[]
+      }
+      get_tenant_by_slug: {
+        Args: { _slug: string }
+        Returns: {
+          allow_password_recovery: boolean
+          id: string
+          is_active: boolean
+          is_demo: boolean
+          name: string
+          plan: string
+          slug: string
+          subscription_status: string
         }[]
       }
       get_user_agency_id: { Args: never; Returns: string }
