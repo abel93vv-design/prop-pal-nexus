@@ -730,7 +730,17 @@ const Clients = () => {
                   clientId={editing.id}
                   documents={documents.filter(d => d.clientId === editing.id)}
                   onAdd={async (name, type, filePath) => { await addDocument({ name, type, file: filePath, propertyId: '', clientId: editing.id, uploadedAt: new Date().toISOString() }); toast({ title: 'Documento añadido' }); }}
-                  onDelete={async (id, filePath) => { if (filePath) { await supabase.storage.from('documents').remove([filePath]); } await deleteDocument(id); toast({ title: 'Documento eliminado' }); }}
+                  onDelete={async (id, filePath) => {
+                    if (filePath) {
+                      try { await supabase.storage.from('documents').remove([filePath]); } catch (e) { console.warn('No se pudo borrar el archivo del storage:', e); }
+                    }
+                    try {
+                      await deleteDocument(id);
+                      toast({ title: 'Documento eliminado' });
+                    } catch (e: any) {
+                      toast({ title: 'Error al eliminar', description: e?.message || 'Inténtalo de nuevo', variant: 'destructive' });
+                    }
+                  }}
                 />
 
               </>
