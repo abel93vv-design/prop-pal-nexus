@@ -8,7 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, TrendingUp, TrendingDown, Minus, StickyNote } from "lucide-react";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useAuth } from "@/hooks/useAuth";
+import { Loader2, Save, TrendingUp, TrendingDown, Minus, StickyNote, Users } from "lucide-react";
 import {
   LEAD_SOURCES,
   LEAD_COLUMNS,
@@ -18,11 +20,13 @@ import {
   type LeadSource,
   type LeadColumnKey,
   type GlobalColumnKey,
+  type ScopeUserId,
   useDailyLeads,
   useDailyGlobal,
   useUpsertDay,
   useRangeLeads,
   useRangeGlobals,
+  useTenantUsers,
   emptyLeadRow,
   emptyGlobalRow,
 } from "@/hooks/useControlLeads";
