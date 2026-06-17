@@ -467,6 +467,9 @@ export type Database = {
           date: string
           emails_enviados: number
           emails_respondidos: number
+          entrantes_otros: number
+          entrantes_pedidos_compra: number
+          entrantes_vendedores: number
           id: string
           notes: string | null
           pedidos_alquiler: number
@@ -486,6 +489,9 @@ export type Database = {
           date: string
           emails_enviados?: number
           emails_respondidos?: number
+          entrantes_otros?: number
+          entrantes_pedidos_compra?: number
+          entrantes_vendedores?: number
           id?: string
           notes?: string | null
           pedidos_alquiler?: number
@@ -505,6 +511,9 @@ export type Database = {
           date?: string
           emails_enviados?: number
           emails_respondidos?: number
+          entrantes_otros?: number
+          entrantes_pedidos_compra?: number
+          entrantes_vendedores?: number
           id?: string
           notes?: string | null
           pedidos_alquiler?: number
