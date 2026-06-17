@@ -755,6 +755,263 @@ function ComparativeView({ scopeUserId }: { scopeUserId: ScopeUserId }) {
   );
 }
 
+// ---------- ASESORES (advisor daily sheet) ----------
+function AsesoresView({ scopeUserId }: { scopeUserId: ScopeUserId }) {
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const { data: tenantUsers = [] } = useTenantUsers(true);
+  const [date, setDate] = useState<string>(todayStr());
+  const isViewingOther =
+    scopeUserId === "all" || (!!scopeUserId && scopeUserId !== user?.id);
+  const { data: sheetData, isLoading } = useAdvisorSheet(date, scopeUserId);
+  const upsert = useUpsertAdvisorSheet();
+
+  const [sheet, setSheet] = useState<AdvisorSheet>(emptyAdvisorSheet());
+  const [dirty, setDirty] = useState(false);
+
+  useEffect(() => {
+    if (sheetData) {
+      setSheet(sheetData);
+      setDirty(false);
+    }
+  }, [sheetData]);
+
+  const advisorName = useMemo(() => {
+    if (scopeUserId === "all") return "Todos los asesores";
+    const targetId = scopeUserId && scopeUserId !== "all" ? scopeUserId : user?.id;
+    const match = tenantUsers.find((u) => u.user_id === targetId);
+    if (match) return match.name;
+    return (user?.user_metadata as any)?.full_name || user?.email || "Asesor";
+  }, [scopeUserId, tenantUsers, user]);
+
+  const updateZone = (idx: number, key: keyof ZoneRow, val: string | number) => {
+    setSheet((s) => ({
+      ...s,
+      zone_rows: s.zone_rows.map((r, i) => (i === idx ? { ...r, [key]: val } : r)),
+    }));
+    setDirty(true);
+  };
+  const updateMarketing = (source: string, key: keyof Omit<MarketingRow, "source">, val: number) => {
+    setSheet((s) => ({
+      ...s,
+      marketing_rows: s.marketing_rows.map((r) =>
+        r.source === source ? { ...r, [key]: val } : r
+      ),
+    }));
+    setDirty(true);
+  };
+  const updateCalls = (source: string, key: keyof Omit<CallsRow, "source">, val: number) => {
+    setSheet((s) => ({
+      ...s,
+      calls_rows: s.calls_rows.map((r) =>
+        r.source === source ? { ...r, [key]: val } : r
+      ),
+    }));
+    setDirty(true);
+  };
+
+  const handleSave = async () => {
+    try {
+      await upsert.mutateAsync({ date, sheet });
+      toast({ title: "Ficha guardada", description: `Datos del ${date} actualizados.` });
+      setDirty(false);
+    } catch (err: any) {
+      toast({
+        title: "Error al guardar",
+        description: err?.message ?? "No se pudo guardar la ficha.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const todayHuman = new Date(date + "T00:00:00").toLocaleDateString("es-ES", {
+    weekday: "long", day: "2-digit", month: "long", year: "numeric",
+  });
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+          <div>
+            <CardTitle>Ficha de control diario</CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              <span className="font-medium text-foreground">{advisorName}</span>
+              <span className="mx-2">·</span>
+              <span className="capitalize">{todayHuman}</span>
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Label htmlFor="as-date" className="text-sm">Fecha</Label>
+            <Input
+              id="as-date"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-44"
+            />
+            <Button onClick={handleSave} disabled={upsert.isPending || !dirty || isViewingOther} title={isViewingOther ? "Viendo datos de otro usuario (solo lectura)" : ""}>
+              {upsert.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+              Guardar ficha
+            </Button>
+          </div>
+        </CardHeader>
+      </Card>
+
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12 text-muted-foreground">
+          <Loader2 className="w-5 h-5 animate-spin mr-2" /> Cargando…
+        </div>
+      ) : (
+        <>
+          {/* Tabla 1: Zona */}
+          <Card>
+            <CardHeader><CardTitle>Zona</CardTitle></CardHeader>
+            <CardContent>
+              <div className="overflow-auto border border-border rounded-lg">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/40">
+                    <tr>
+                      {ZONE_COLUMNS.map((c) => (
+                        <th key={c.key} className="text-left font-medium px-2 py-2 whitespace-nowrap">
+                          {c.label}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Array.from({ length: ZONE_ROW_COUNT }, (_, i) => (
+                      <tr key={i} className="border-t border-border hover:bg-muted/20">
+                        {ZONE_COLUMNS.map((c) => (
+                          <td key={c.key} className="px-1 py-1">
+                            <Input
+                              type={c.type}
+                              min={c.type === "number" ? 0 : undefined}
+                              disabled={isViewingOther}
+                              value={(sheet.zone_rows[i]?.[c.key] ?? (c.type === "number" ? 0 : "")) as any}
+                              onChange={(e) =>
+                                updateZone(
+                                  i,
+                                  c.key as keyof ZoneRow,
+                                  c.type === "number" ? Number(e.target.value) || 0 : e.target.value
+                                )
+                              }
+                              className={c.type === "number" ? "h-8 w-24 text-right" : "h-8 min-w-[140px]"}
+                            />
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Tabla 2: Marketing */}
+          <Card>
+            <CardHeader><CardTitle>Marketing</CardTitle></CardHeader>
+            <CardContent>
+              <div className="overflow-auto border border-border rounded-lg">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/40">
+                    <tr>
+                      <th className="text-left font-medium px-3 py-2 sticky left-0 bg-muted/40 z-10 min-w-[140px]">
+                        Fuente
+                      </th>
+                      {MARKETING_COLUMNS.map((c) => (
+                        <th key={c.key} className="text-left font-medium px-2 py-2 whitespace-nowrap">
+                          {c.label}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sheet.marketing_rows.map((row) => (
+                      <tr key={row.source} className="border-t border-border hover:bg-muted/20">
+                        <td className="px-3 py-1.5 font-medium sticky left-0 bg-card z-10">
+                          {MARKETING_SOURCES.find((s) => s.value === row.source)?.label}
+                        </td>
+                        {MARKETING_COLUMNS.map((c) => (
+                          <td key={c.key} className="px-1 py-1">
+                            <Input
+                              type="number"
+                              min={0}
+                              disabled={isViewingOther}
+                              value={(row as any)[c.key] ?? 0}
+                              onChange={(e) =>
+                                updateMarketing(
+                                  row.source,
+                                  c.key as keyof Omit<MarketingRow, "source">,
+                                  Number(e.target.value) || 0
+                                )
+                              }
+                              className="h-8 w-20 text-right"
+                            />
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Tabla 3: Llamadas */}
+          <Card>
+            <CardHeader><CardTitle>Llamadas</CardTitle></CardHeader>
+            <CardContent>
+              <div className="overflow-auto border border-border rounded-lg">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/40">
+                    <tr>
+                      <th className="text-left font-medium px-3 py-2 sticky left-0 bg-muted/40 z-10 min-w-[140px]">
+                        Fuente
+                      </th>
+                      {CALLS_COLUMNS.map((c) => (
+                        <th key={c.key} className="text-left font-medium px-2 py-2 whitespace-nowrap">
+                          {c.label}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sheet.calls_rows.map((row) => (
+                      <tr key={row.source} className="border-t border-border hover:bg-muted/20">
+                        <td className="px-3 py-1.5 font-medium sticky left-0 bg-card z-10">
+                          {CALLS_SOURCES.find((s) => s.value === row.source)?.label}
+                        </td>
+                        {CALLS_COLUMNS.map((c) => (
+                          <td key={c.key} className="px-1 py-1">
+                            <Input
+                              type="number"
+                              min={0}
+                              disabled={isViewingOther}
+                              value={(row as any)[c.key] ?? 0}
+                              onChange={(e) =>
+                                updateCalls(
+                                  row.source,
+                                  c.key as keyof Omit<CallsRow, "source">,
+                                  Number(e.target.value) || 0
+                                )
+                              }
+                              className="h-8 w-20 text-right"
+                            />
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ---------- PAGE ----------
 export default function ControlLeads() {
   const { user } = useAuth();
@@ -806,19 +1063,33 @@ export default function ControlLeads() {
           )}
         </div>
 
-        <Tabs defaultValue="daily" className="w-full">
+        <Tabs defaultValue="coordinadoras" className="w-full">
           <TabsList>
-            <TabsTrigger value="daily">Diario</TabsTrigger>
-            <TabsTrigger value="monthly">Mensual</TabsTrigger>
-            <TabsTrigger value="yearly">Anual</TabsTrigger>
-            <TabsTrigger value="compare">Comparativa</TabsTrigger>
+            <TabsTrigger value="coordinadoras">Coordinadoras</TabsTrigger>
+            <TabsTrigger value="asesores">Asesores</TabsTrigger>
           </TabsList>
-          <TabsContent value="daily" className="mt-6"><DailyView scopeUserId={effectiveScope} /></TabsContent>
-          <TabsContent value="monthly" className="mt-6"><MonthlyView scopeUserId={effectiveScope} /></TabsContent>
-          <TabsContent value="yearly" className="mt-6"><YearlyView scopeUserId={effectiveScope} /></TabsContent>
-          <TabsContent value="compare" className="mt-6"><ComparativeView scopeUserId={effectiveScope} /></TabsContent>
+
+          <TabsContent value="coordinadoras" className="mt-6">
+            <Tabs defaultValue="daily" className="w-full">
+              <TabsList>
+                <TabsTrigger value="daily">Diario</TabsTrigger>
+                <TabsTrigger value="monthly">Mensual</TabsTrigger>
+                <TabsTrigger value="yearly">Anual</TabsTrigger>
+                <TabsTrigger value="compare">Comparativa</TabsTrigger>
+              </TabsList>
+              <TabsContent value="daily" className="mt-6"><DailyView scopeUserId={effectiveScope} /></TabsContent>
+              <TabsContent value="monthly" className="mt-6"><MonthlyView scopeUserId={effectiveScope} /></TabsContent>
+              <TabsContent value="yearly" className="mt-6"><YearlyView scopeUserId={effectiveScope} /></TabsContent>
+              <TabsContent value="compare" className="mt-6"><ComparativeView scopeUserId={effectiveScope} /></TabsContent>
+            </Tabs>
+          </TabsContent>
+
+          <TabsContent value="asesores" className="mt-6">
+            <AsesoresView scopeUserId={effectiveScope} />
+          </TabsContent>
         </Tabs>
       </div>
     </Layout>
   );
 }
+
