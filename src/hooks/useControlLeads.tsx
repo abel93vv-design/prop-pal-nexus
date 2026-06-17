@@ -74,6 +74,7 @@ export interface DailyGlobalRow {
   respuestas_alquiler: number;
   pedidos_alquiler: number;
   cv_alquiler: number;
+  notes: string;
 }
 
 export interface DailyLeadRowWithDate extends DailyLeadRow {
@@ -101,6 +102,7 @@ const emptyGlobalRow = (): DailyGlobalRow => ({
   respuestas_alquiler: 0,
   pedidos_alquiler: 0,
   cv_alquiler: 0,
+  notes: "",
 });
 
 const sb: any = supabase;
@@ -131,7 +133,7 @@ export function useDailyGlobal(date: string) {
         .eq("date", date)
         .maybeSingle();
       if (error) throw error;
-      return data ?? emptyGlobalRow();
+      return data ? { ...emptyGlobalRow(), ...data, notes: data.notes ?? "" } : emptyGlobalRow();
     },
   });
 }
