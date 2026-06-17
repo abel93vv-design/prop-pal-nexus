@@ -42,6 +42,11 @@ import {
   emptyAdvisorSheet,
   useAdvisorSheet,
   useUpsertAdvisorSheet,
+  useAdvisorRange,
+  aggregateMarketing,
+  aggregateCalls,
+  aggregateZoneTotals,
+
   type AdvisorSheet,
   type ZoneRow,
   type MarketingRow,
