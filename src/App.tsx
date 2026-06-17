@@ -29,6 +29,7 @@ import SignUp from "./pages/SignUp";
 import NotFound from "./pages/NotFound";
 import RolesPermissions from "./pages/RolesPermissions";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
+import ControlLeads from "./pages/ControlLeads";
 
 const queryClient = new QueryClient();
 
@@ -86,6 +87,7 @@ const AppRoutes = () => (
     <Route path="/ajustes" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
     <Route path="/pipeline" element={<ProtectedRoute><Pipeline /></ProtectedRoute>} />
     <Route path="/match-center" element={<ProtectedRoute><MatchCenter /></ProtectedRoute>} />
+    <Route path="/control-leads" element={<ProtectedRoute><ControlLeads /></ProtectedRoute>} />
     <Route path="/tenants" element={<ProtectedRoute><Tenants /></ProtectedRoute>} />
     <Route path="/roles" element={<ProtectedRoute><RolesPermissions /></ProtectedRoute>} />
     <Route path="/admin" element={<ProtectedRoute><SuperAdminDashboard /></ProtectedRoute>} />
