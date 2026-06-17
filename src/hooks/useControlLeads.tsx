@@ -13,6 +13,7 @@ export const LEAD_SOURCES = [
   { value: "marketplace", label: "Marketplace" },
   { value: "instagram", label: "Instagram" },
   { value: "instagram_personal", label: "Instagram Personal" },
+  { value: "tiktok", label: "TikTok" },
   { value: "whatsapp", label: "Whatsapp" },
   { value: "telegram", label: "Telegram" },
   { value: "oficina", label: "Oficina" },
@@ -22,9 +23,10 @@ export const LEAD_SOURCES = [
   { value: "zona", label: "Zona" },
   { value: "referidos", label: "Referidos" },
   { value: "valoracasa", label: "Valoracasa" },
-  { value: "base_de_datos", label: "Base de datos" },
+  { value: "base_de_datos", label: "CRM" },
   { value: "otros", label: "Otros" },
 ] as const;
+
 
 export type LeadSource = (typeof LEAD_SOURCES)[number]["value"];
 
@@ -44,12 +46,11 @@ export type LeadColumnKey = (typeof LEAD_COLUMNS)[number]["key"];
 
 export const GLOBAL_COLUMNS = [
   { key: "emails_enviados", label: "Emails enviados" },
-  { key: "personas_escaparates", label: "Personas escaparates" },
+  { key: "emails_respondidos", label: "Emails respondidos" },
+  { key: "personas_escaparate", label: "Personas escaparate" },
   { key: "personas_atendidas", label: "Personas atendidas" },
-  { key: "personas_que_entran", label: "Personas que entran" },
-  { key: "respuestas_alquiler", label: "Respuestas alquiler" },
   { key: "pedidos_alquiler", label: "Pedidos alquiler" },
-  { key: "cv_alquiler", label: "CV alquiler" },
+  { key: "citas_alquiler", label: "Citas de alquiler" },
 ] as const;
 
 export type GlobalColumnKey = (typeof GLOBAL_COLUMNS)[number]["key"];
@@ -69,12 +70,11 @@ export interface DailyLeadRow {
 
 export interface DailyGlobalRow {
   emails_enviados: number;
-  personas_escaparates: number;
+  emails_respondidos: number;
+  personas_escaparate: number;
   personas_atendidas: number;
-  personas_que_entran: number;
-  respuestas_alquiler: number;
   pedidos_alquiler: number;
-  cv_alquiler: number;
+  citas_alquiler: number;
   notes: string;
 }
 
@@ -98,14 +98,14 @@ const emptyLeadRow = (source: LeadSource): DailyLeadRow => ({
 
 const emptyGlobalRow = (): DailyGlobalRow => ({
   emails_enviados: 0,
-  personas_escaparates: 0,
+  emails_respondidos: 0,
+  personas_escaparate: 0,
   personas_atendidas: 0,
-  personas_que_entran: 0,
-  respuestas_alquiler: 0,
   pedidos_alquiler: 0,
-  cv_alquiler: 0,
+  citas_alquiler: 0,
   notes: "",
 });
+
 
 const sb: any = supabase;
 
