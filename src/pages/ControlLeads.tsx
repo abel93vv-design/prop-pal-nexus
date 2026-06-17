@@ -700,14 +700,53 @@ function ComparativeView({ scopeUserId }: { scopeUserId: ScopeUserId }) {
 
 // ---------- PAGE ----------
 export default function ControlLeads() {
+  const { user } = useAuth();
+  const { isAdmin, isSuperAdmin } = useUserRole();
+  const canSeeAll = isAdmin || isSuperAdmin;
+  const [scopeUserId, setScopeUserId] = useState<ScopeUserId>(undefined);
+  const { data: tenantUsers = [] } = useTenantUsers(canSeeAll);
+
+  // Resolve effective scope: admin keeps the dropdown choice; non-admin always sees own.
+  const effectiveScope: ScopeUserId = canSeeAll ? scopeUserId : undefined;
+  const selectValue = scopeUserId ?? "self";
+
   return (
     <Layout>
       <div className="max-w-7xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">Control de leads</h1>
-          <p className="text-sm text-muted-foreground">
-            Tracker diario de leads por fuente de origen con vistas agregadas y comparativas.
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold">Control de leads</h1>
+            <p className="text-sm text-muted-foreground">
+              Tracker diario de leads por fuente de origen con vistas agregadas y comparativas.
+            </p>
+          </div>
+          {canSeeAll && (
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4 text-muted-foreground" />
+              <Label htmlFor="cl-user-scope" className="text-sm whitespace-nowrap">
+                Ver datos de
+              </Label>
+              <Select
+                value={selectValue}
+                onValueChange={(v) => setScopeUserId(v === "self" ? undefined : (v as ScopeUserId))}
+              >
+                <SelectTrigger id="cl-user-scope" className="w-64">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="self">Mis datos</SelectItem>
+                  <SelectItem value="all">Total del equipo</SelectItem>
+                  {tenantUsers
+                    .filter((u) => u.user_id !== user?.id)
+                    .map((u) => (
+                      <SelectItem key={u.user_id} value={u.user_id}>
+                        {u.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
 
         <Tabs defaultValue="daily" className="w-full">
@@ -717,10 +756,10 @@ export default function ControlLeads() {
             <TabsTrigger value="yearly">Anual</TabsTrigger>
             <TabsTrigger value="compare">Comparativa</TabsTrigger>
           </TabsList>
-          <TabsContent value="daily" className="mt-6"><DailyView /></TabsContent>
-          <TabsContent value="monthly" className="mt-6"><MonthlyView /></TabsContent>
-          <TabsContent value="yearly" className="mt-6"><YearlyView /></TabsContent>
-          <TabsContent value="compare" className="mt-6"><ComparativeView /></TabsContent>
+          <TabsContent value="daily" className="mt-6"><DailyView scopeUserId={effectiveScope} /></TabsContent>
+          <TabsContent value="monthly" className="mt-6"><MonthlyView scopeUserId={effectiveScope} /></TabsContent>
+          <TabsContent value="yearly" className="mt-6"><YearlyView scopeUserId={effectiveScope} /></TabsContent>
+          <TabsContent value="compare" className="mt-6"><ComparativeView scopeUserId={effectiveScope} /></TabsContent>
         </Tabs>
       </div>
     </Layout>
