@@ -8,7 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, TrendingUp, TrendingDown, Minus, StickyNote } from "lucide-react";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useAuth } from "@/hooks/useAuth";
+import { Loader2, Save, TrendingUp, TrendingDown, Minus, StickyNote, Users } from "lucide-react";
 import {
   LEAD_SOURCES,
   LEAD_COLUMNS,
@@ -18,11 +20,13 @@ import {
   type LeadSource,
   type LeadColumnKey,
   type GlobalColumnKey,
+  type ScopeUserId,
   useDailyLeads,
   useDailyGlobal,
   useUpsertDay,
   useRangeLeads,
   useRangeGlobals,
+  useTenantUsers,
   emptyLeadRow,
   emptyGlobalRow,
 } from "@/hooks/useControlLeads";
@@ -55,11 +59,14 @@ function yearRange(year: number): { from: string; to: string } {
 }
 
 // ---------- DAILY ----------
-function DailyView() {
+function DailyView({ scopeUserId }: { scopeUserId: ScopeUserId }) {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [date, setDate] = useState<string>(todayStr());
-  const { data: leadsData, isLoading: loadingLeads } = useDailyLeads(date);
-  const { data: globalData, isLoading: loadingGlobal } = useDailyGlobal(date);
+  const isViewingOther =
+    scopeUserId === "all" || (!!scopeUserId && scopeUserId !== user?.id);
+  const { data: leadsData, isLoading: loadingLeads } = useDailyLeads(date, scopeUserId);
+  const { data: globalData, isLoading: loadingGlobal } = useDailyGlobal(date, scopeUserId);
   const upsert = useUpsertDay();
 
   const [leads, setLeads] = useState<DailyLeadRow[]>([]);
@@ -125,7 +132,7 @@ function DailyView() {
               onChange={(e) => setDate(e.target.value)}
               className="w-44"
             />
-            <Button onClick={handleSave} disabled={upsert.isPending || !dirty}>
+            <Button onClick={handleSave} disabled={upsert.isPending || !dirty || isViewingOther} title={isViewingOther ? "Viendo datos de otro usuario (solo lectura)" : ""}>
               {upsert.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
               Guardar día
             </Button>
@@ -163,6 +170,7 @@ function DailyView() {
                             type="number"
                             min={0}
                             value={row[c.key] ?? 0}
+                            disabled={isViewingOther}
                             onChange={(e) =>
                               updateCell(row.source, c.key, Number(e.target.value) || 0)
                             }
@@ -199,6 +207,7 @@ function DailyView() {
                     id={`g-${c.key}`}
                     type="number"
                     min={0}
+                    disabled={isViewingOther}
                     value={globals[c.key] ?? 0}
                     onChange={(e) => updateGlobal(c.key, Number(e.target.value) || 0)}
                   />
@@ -224,6 +233,7 @@ function DailyView() {
             <Textarea
               placeholder="Escribe aquí cualquier nota, observación o incidencia del día…"
               value={globals.notes ?? ""}
+              disabled={isViewingOther}
               onChange={(e) => updateGlobal("notes", e.target.value)}
               rows={5}
             />
@@ -259,13 +269,13 @@ function totalsOf(rows: DailyLeadRow[]) {
 }
 
 // ---------- MONTHLY ----------
-function MonthlyView() {
+function MonthlyView({ scopeUserId }: { scopeUserId: ScopeUserId }) {
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth());
   const { from, to } = useMemo(() => monthRange(year, month), [year, month]);
-  const { data: rows = [], isLoading } = useRangeLeads(from, to);
-  const { data: globalsRange = [] } = useRangeGlobals(from, to);
+  const { data: rows = [], isLoading } = useRangeLeads(from, to, scopeUserId);
+  const { data: globalsRange = [] } = useRangeGlobals(from, to, scopeUserId);
   const notes = useMemo(
     () =>
       (globalsRange as any[])
@@ -441,11 +451,11 @@ function SourceTable({ rows }: { rows: DailyLeadRow[] }) {
 }
 
 // ---------- YEARLY ----------
-function YearlyView() {
+function YearlyView({ scopeUserId }: { scopeUserId: ScopeUserId }) {
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const { from, to } = useMemo(() => yearRange(year), [year]);
-  const { data: rows = [], isLoading } = useRangeLeads(from, to);
+  const { data: rows = [], isLoading } = useRangeLeads(from, to, scopeUserId);
 
   // rows by month
   const monthly = useMemo(() => {
@@ -578,7 +588,7 @@ function YearlyView() {
 
 // ---------- COMPARE ----------
 type PeriodKind = "month" | "year";
-function ComparativeView() {
+function ComparativeView({ scopeUserId }: { scopeUserId: ScopeUserId }) {
   const now = new Date();
   const [kind, setKind] = useState<PeriodKind>("month");
   const [aYear, setAYear] = useState(now.getFullYear());
@@ -590,8 +600,8 @@ function ComparativeView() {
   const rangeA = kind === "month" ? monthRange(aYear, aMonth) : yearRange(aYear);
   const rangeB = kind === "month" ? monthRange(bYear, bMonth) : yearRange(bYear);
 
-  const { data: rowsA = [] } = useRangeLeads(rangeA.from, rangeA.to);
-  const { data: rowsB = [] } = useRangeLeads(rangeB.from, rangeB.to);
+  const { data: rowsA = [] } = useRangeLeads(rangeA.from, rangeA.to, scopeUserId);
+  const { data: rowsB = [] } = useRangeLeads(rangeB.from, rangeB.to, scopeUserId);
 
   const aBySource = useMemo(() => aggregateBySource(rowsA), [rowsA]);
   const bBySource = useMemo(() => aggregateBySource(rowsB), [rowsB]);
@@ -690,14 +700,53 @@ function ComparativeView() {
 
 // ---------- PAGE ----------
 export default function ControlLeads() {
+  const { user } = useAuth();
+  const { isAdmin, isSuperAdmin } = useUserRole();
+  const canSeeAll = isAdmin || isSuperAdmin;
+  const [scopeUserId, setScopeUserId] = useState<ScopeUserId>(undefined);
+  const { data: tenantUsers = [] } = useTenantUsers(canSeeAll);
+
+  // Resolve effective scope: admin keeps the dropdown choice; non-admin always sees own.
+  const effectiveScope: ScopeUserId = canSeeAll ? scopeUserId : undefined;
+  const selectValue = scopeUserId ?? "self";
+
   return (
     <Layout>
       <div className="max-w-7xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">Control de leads</h1>
-          <p className="text-sm text-muted-foreground">
-            Tracker diario de leads por fuente de origen con vistas agregadas y comparativas.
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold">Control de leads</h1>
+            <p className="text-sm text-muted-foreground">
+              Tracker diario de leads por fuente de origen con vistas agregadas y comparativas.
+            </p>
+          </div>
+          {canSeeAll && (
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4 text-muted-foreground" />
+              <Label htmlFor="cl-user-scope" className="text-sm whitespace-nowrap">
+                Ver datos de
+              </Label>
+              <Select
+                value={selectValue}
+                onValueChange={(v) => setScopeUserId(v === "self" ? undefined : (v as ScopeUserId))}
+              >
+                <SelectTrigger id="cl-user-scope" className="w-64">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="self">Mis datos</SelectItem>
+                  <SelectItem value="all">Total del equipo</SelectItem>
+                  {tenantUsers
+                    .filter((u) => u.user_id !== user?.id)
+                    .map((u) => (
+                      <SelectItem key={u.user_id} value={u.user_id}>
+                        {u.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
 
         <Tabs defaultValue="daily" className="w-full">
@@ -707,10 +756,10 @@ export default function ControlLeads() {
             <TabsTrigger value="yearly">Anual</TabsTrigger>
             <TabsTrigger value="compare">Comparativa</TabsTrigger>
           </TabsList>
-          <TabsContent value="daily" className="mt-6"><DailyView /></TabsContent>
-          <TabsContent value="monthly" className="mt-6"><MonthlyView /></TabsContent>
-          <TabsContent value="yearly" className="mt-6"><YearlyView /></TabsContent>
-          <TabsContent value="compare" className="mt-6"><ComparativeView /></TabsContent>
+          <TabsContent value="daily" className="mt-6"><DailyView scopeUserId={effectiveScope} /></TabsContent>
+          <TabsContent value="monthly" className="mt-6"><MonthlyView scopeUserId={effectiveScope} /></TabsContent>
+          <TabsContent value="yearly" className="mt-6"><YearlyView scopeUserId={effectiveScope} /></TabsContent>
+          <TabsContent value="compare" className="mt-6"><ComparativeView scopeUserId={effectiveScope} /></TabsContent>
         </Tabs>
       </div>
     </Layout>

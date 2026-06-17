@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useAuth } from "@/hooks/useAuth";
 
 export const LEAD_SOURCES = [
   { value: "fotocasa", label: "Fotocasa" },
@@ -79,6 +80,7 @@ export interface DailyGlobalRow {
 
 export interface DailyLeadRowWithDate extends DailyLeadRow {
   date: string;
+  user_id?: string;
 }
 
 const emptyLeadRow = (source: LeadSource): DailyLeadRow => ({
@@ -107,40 +109,90 @@ const emptyGlobalRow = (): DailyGlobalRow => ({
 
 const sb: any = supabase;
 
-export function useDailyLeads(date: string) {
+/**
+ * userId: 
+ *  - undefined => own data (default)
+ *  - "all" => all users in tenant (admin only)
+ *  - "<uuid>" => specific user (admin only)
+ */
+export type ScopeUserId = string | "all" | undefined;
+
+function applyUserFilter(query: any, userId: ScopeUserId, ownId: string | null) {
+  if (userId === "all") return query;
+  if (userId && userId !== "all") return query.eq("user_id", userId);
+  if (ownId) return query.eq("user_id", ownId);
+  return query;
+}
+
+export function useDailyLeads(date: string, userId?: ScopeUserId) {
+  const { user } = useAuth();
+  const ownId = user?.id ?? null;
   return useQuery({
-    queryKey: ["daily_leads", date],
+    queryKey: ["daily_leads", date, userId ?? ownId ?? "self"],
     queryFn: async (): Promise<DailyLeadRow[]> => {
-      const { data, error } = await sb
-        .from("daily_leads")
-        .select("*")
-        .eq("date", date);
+      let q = sb.from("daily_leads").select("*").eq("date", date);
+      q = applyUserFilter(q, userId, ownId);
+      const { data, error } = await q;
       if (error) throw error;
+
+      // Aggregate across users when "all"
+      if (userId === "all") {
+        const map = new Map<LeadSource, DailyLeadRow>();
+        LEAD_SOURCES.forEach((s) => map.set(s.value, emptyLeadRow(s.value)));
+        (data || []).forEach((r: any) => {
+          const cur = map.get(r.source) ?? emptyLeadRow(r.source);
+          LEAD_COLUMNS.forEach((c) => {
+            (cur as any)[c.key] += Number((r as any)[c.key] ?? 0);
+          });
+          map.set(r.source, cur);
+        });
+        return LEAD_SOURCES.map((s) => map.get(s.value)!);
+      }
+
       const map = new Map<LeadSource, DailyLeadRow>();
       (data || []).forEach((r: any) => map.set(r.source, r));
       return LEAD_SOURCES.map((s) => map.get(s.value) ?? emptyLeadRow(s.value));
     },
+    enabled: !!ownId,
   });
 }
 
-export function useDailyGlobal(date: string) {
+export function useDailyGlobal(date: string, userId?: ScopeUserId) {
+  const { user } = useAuth();
+  const ownId = user?.id ?? null;
   return useQuery({
-    queryKey: ["daily_global_metrics", date],
+    queryKey: ["daily_global_metrics", date, userId ?? ownId ?? "self"],
     queryFn: async (): Promise<DailyGlobalRow> => {
-      const { data, error } = await sb
-        .from("daily_global_metrics")
-        .select("*")
-        .eq("date", date)
-        .maybeSingle();
+      let q = sb.from("daily_global_metrics").select("*").eq("date", date);
+      q = applyUserFilter(q, userId, ownId);
+
+      if (userId === "all") {
+        const { data, error } = await q;
+        if (error) throw error;
+        const agg = emptyGlobalRow();
+        const notes: string[] = [];
+        (data || []).forEach((r: any) => {
+          GLOBAL_COLUMNS.forEach((c) => {
+            (agg as any)[c.key] += Number((r as any)[c.key] ?? 0);
+          });
+          if (r.notes && String(r.notes).trim()) notes.push(String(r.notes));
+        });
+        agg.notes = notes.join("\n---\n");
+        return agg;
+      }
+
+      const { data, error } = await q.maybeSingle();
       if (error) throw error;
       return data ? { ...emptyGlobalRow(), ...data, notes: data.notes ?? "" } : emptyGlobalRow();
     },
+    enabled: !!ownId,
   });
 }
 
 export function useUpsertDay() {
   const qc = useQueryClient();
   const { tenantId } = useUserRole();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async (payload: {
@@ -149,57 +201,86 @@ export function useUpsertDay() {
       global: DailyGlobalRow;
     }) => {
       if (!tenantId) throw new Error("No se pudo identificar la inmobiliaria activa");
-      const leadsRows = payload.leads.map((r) => ({ ...r, date: payload.date, tenant_id: tenantId }));
+      if (!user?.id) throw new Error("Debes iniciar sesión");
+      const leadsRows = payload.leads.map((r) => ({
+        ...r,
+        date: payload.date,
+        tenant_id: tenantId,
+        user_id: user.id,
+      }));
       const { error: e1 } = await sb
         .from("daily_leads")
-        .upsert(leadsRows, { onConflict: "tenant_id,date,source" });
+        .upsert(leadsRows, { onConflict: "tenant_id,user_id,date,source" });
       if (e1) throw e1;
       const { error: e2 } = await sb
         .from("daily_global_metrics")
         .upsert(
-          [{ ...payload.global, date: payload.date, tenant_id: tenantId }],
-          { onConflict: "tenant_id,date" }
+          [{ ...payload.global, date: payload.date, tenant_id: tenantId, user_id: user.id }],
+          { onConflict: "tenant_id,user_id,date" }
         );
       if (e2) throw e2;
     },
-    onSuccess: (_d, vars) => {
-      qc.invalidateQueries({ queryKey: ["daily_leads", vars.date] });
-      qc.invalidateQueries({ queryKey: ["daily_global_metrics", vars.date] });
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["daily_leads"] });
+      qc.invalidateQueries({ queryKey: ["daily_global_metrics"] });
       qc.invalidateQueries({ queryKey: ["daily_leads_range"] });
       qc.invalidateQueries({ queryKey: ["daily_global_range"] });
     },
   });
 }
 
-export function useRangeLeads(from: string, to: string) {
+export function useRangeLeads(from: string, to: string, userId?: ScopeUserId) {
+  const { user } = useAuth();
+  const ownId = user?.id ?? null;
   return useQuery({
-    queryKey: ["daily_leads_range", from, to],
+    queryKey: ["daily_leads_range", from, to, userId ?? ownId ?? "self"],
     queryFn: async (): Promise<DailyLeadRowWithDate[]> => {
-      const { data, error } = await sb
-        .from("daily_leads")
-        .select("*")
-        .gte("date", from)
-        .lte("date", to);
+      let q = sb.from("daily_leads").select("*").gte("date", from).lte("date", to);
+      q = applyUserFilter(q, userId, ownId);
+      const { data, error } = await q;
       if (error) throw error;
       return (data || []) as DailyLeadRowWithDate[];
     },
-    enabled: !!from && !!to,
+    enabled: !!from && !!to && !!ownId,
   });
 }
 
-export function useRangeGlobals(from: string, to: string) {
+export function useRangeGlobals(from: string, to: string, userId?: ScopeUserId) {
+  const { user } = useAuth();
+  const ownId = user?.id ?? null;
   return useQuery({
-    queryKey: ["daily_global_range", from, to],
+    queryKey: ["daily_global_range", from, to, userId ?? ownId ?? "self"],
     queryFn: async () => {
-      const { data, error } = await sb
-        .from("daily_global_metrics")
-        .select("*")
-        .gte("date", from)
-        .lte("date", to);
+      let q = sb.from("daily_global_metrics").select("*").gte("date", from).lte("date", to);
+      q = applyUserFilter(q, userId, ownId);
+      const { data, error } = await q;
       if (error) throw error;
-      return (data || []) as Array<DailyGlobalRow & { date: string }>;
+      return (data || []) as Array<DailyGlobalRow & { date: string; user_id?: string }>;
     },
-    enabled: !!from && !!to,
+    enabled: !!from && !!to && !!ownId,
+  });
+}
+
+/** Lists tenant users that have entries OR are team members; admin only. */
+export function useTenantUsers(enabled: boolean) {
+  const { tenantId } = useUserRole();
+  return useQuery({
+    queryKey: ["control_leads_tenant_users", tenantId],
+    queryFn: async (): Promise<Array<{ user_id: string; name: string }>> => {
+      if (!tenantId) return [];
+      const { data, error } = await sb
+        .from("team_members")
+        .select("user_id, name, email")
+        .eq("tenant_id", tenantId)
+        .is("deleted_at", null)
+        .not("user_id", "is", null);
+      if (error) throw error;
+      return (data || []).map((m: any) => ({
+        user_id: m.user_id,
+        name: m.name || m.email || "Usuario",
+      }));
+    },
+    enabled: enabled && !!tenantId,
   });
 }
 
