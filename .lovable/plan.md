@@ -1,51 +1,42 @@
-# Plan: Cambios Control de Leads
+## Objetivo
 
-## 1. Fuentes (`LEAD_SOURCES` en `src/hooks/useControlLeads.tsx`)
-- Renombrar la etiqueta de `base_de_datos` de "Base de datos" a **"CRM"** (valor en BD intacto).
-- Añadir nueva fuente **`tiktok`** con etiqueta "TikTok". Aparecerá automáticamente en diario / mensual / anual / comparativa (las filas se generan desde `LEAD_SOURCES`).
-- Sin migración: el campo `source` es `text`, no enum.
+Que **Control de leads** se comporte como **Propiedades** en el sidebar: al estar dentro de la sección se despliegan dos subitems —**Coordinadoras** y **Asesores**— en vez de las dos pestañas internas actuales en `/control-leads`.
 
-## 2. Métricas globales del día (sustituyen el bloque actual)
-Nueva estructura en `ControlLeads.tsx`, 3 filas con dos placeholders cada una, lado a lado:
+## Cambios
+
+### 1. Sidebar (`src/components/AppSidebar.tsx`)
+Añadir `controlLeadsSubItems` y enlazarlo al ítem "Control de leads":
 
 ```text
-[ Emails enviados      ] [ Emails respondidos ]
-[ Personas escaparate  ] [ Personas atendidas ]
-[ Pedidos alquiler     ] [ Citas de alquiler  ]
+Control de leads  (/control-leads)
+ ├─ Coordinadoras  (/control-leads/coordinadoras)
+ └─ Asesores       (/control-leads/asesores)
 ```
 
-Campos en BD (nuevas columnas en `daily_global_metrics`):
-- `emails_enviados` (ya existe, se reutiliza)
-- `emails_respondidos` (nueva)
-- `personas_escaparate` (nueva — se añade en singular; la antigua `personas_escaparates` queda en la tabla pero oculta)
-- `personas_atendidas` (ya existe)
-- `pedidos_alquiler` (ya existe)
-- `citas_alquiler` (nueva)
+Iconos: `Users` para Coordinadoras, `UserCog` (o similar) para Asesores. Ambos sub-items usan el mismo `module: "control_leads"` para el gating de permisos.
 
-Las columnas antiguas que dejan de usarse (`personas_escaparates`, `personas_que_entran`, `respuestas_alquiler`, `cv_alquiler`) se **mantienen en la tabla** para conservar datos históricos, pero desaparecen de la UI y de `GLOBAL_COLUMNS`.
+### 2. Rutas (`src/App.tsx`)
+Añadir dos rutas nuevas, ambas protegidas con `ProtectedRoute` y apuntando al mismo componente `ControlLeads`:
 
-> Nota: he eliminado la fila de "Personas que entran" y sus 4 sub-campos según tu indicación ("por 3 nada más"). Si querías conservarla sin los 4 sub-placeholders, dímelo y la añado.
+- `/control-leads/coordinadoras`
+- `/control-leads/asesores`
 
-## 3. Cambios técnicos
+La ruta existente `/control-leads` se mantiene y redirige a `/control-leads/coordinadoras` (vista por defecto al hacer clic en el ítem padre, igual que Propiedades).
 
-**Migración SQL** (`daily_global_metrics`):
-- Añadir columnas `emails_respondidos integer not null default 0`, `personas_escaparate integer not null default 0`, `citas_alquiler integer not null default 0`.
-- No se tocan columnas existentes ni RLS/GRANTs.
+### 3. Página (`src/pages/ControlLeads.tsx`)
+- Eliminar las `Tabs` de primer nivel "Coordinadoras / Asesores" que se añadieron antes.
+- En su lugar, decidir qué vista renderizar a partir de la URL (`useLocation`):
+  - `/control-leads/asesores` → renderiza `<AsesoresView>`.
+  - cualquier otra (`/control-leads` o `/control-leads/coordinadoras`) → renderiza el bloque actual con las pestañas internas **Diario / Mensual / Anual / Comparativa**.
+- El selector "Ver datos de" (admin/super admin) y el título de la página se mantienen en la cabecera común para ambas subsecciones.
 
-**`src/hooks/useControlLeads.tsx`:**
-- Actualizar `LEAD_SOURCES` (label CRM + nueva tiktok).
-- Reescribir `GLOBAL_COLUMNS` con los 6 campos nuevos en el orden de la maqueta.
-- Actualizar `DailyGlobalRow` y `emptyGlobalRow()` con los campos nuevos; quitar los obsoletos del tipo (la fila de BD puede traer más columnas, las ignoramos).
-- Mantener lógica de upsert / aggregation tal cual (itera sobre `GLOBAL_COLUMNS`).
+### 4. Sin cambios en
+- Hooks (`useControlLeads`, `useAdvisorSheet`).
+- Tablas de base de datos.
+- Permisos (`role_permissions`): se sigue usando el módulo `control_leads`.
 
-**`src/pages/ControlLeads.tsx`:**
-- Sección "Métricas del día" pasa de grid plano a 3 filas × 2 columnas (grid-cols-2 con gap), inputs numéricos con label encima.
-- Tabs Mensual / Anual / Comparativa: las tablas que listan métricas globales se generan desde `GLOBAL_COLUMNS`, por lo que se actualizan solas.
-- Notas mensuales: sin cambios.
+## Resultado visual
 
-**`src/integrations/supabase/types.ts`:** se regenera tras la migración.
-
-## 4. Verificación
-1. Aplicar migración.
-2. Comprobar en preview: nueva fuente TikTok visible, etiqueta CRM, layout de métricas 3×2.
-3. Guardar un día de prueba y recargar para confirmar persistencia.
+- Click en "Control de leads" en el sidebar → entra a `/control-leads/coordinadoras` y aparecen los subitems desplegados debajo, como en Propiedades.
+- Click en "Asesores" → navega a `/control-leads/asesores` y muestra la ficha de control diario con las 3 tablas (Zona, Marketing, Llamadas).
+- El subitem activo queda resaltado igual que en Propiedades.
