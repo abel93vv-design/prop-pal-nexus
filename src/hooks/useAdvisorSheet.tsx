@@ -136,6 +136,86 @@ export function useAdvisorSheet(date: string, userId?: ScopeUserId) {
   });
 }
 
+export interface AdvisorSheetWithDate extends AdvisorSheet {
+  date: string;
+  user_id?: string;
+}
+
+export function useAdvisorRange(from: string, to: string, userId?: ScopeUserId) {
+  const { user } = useAuth();
+  const ownId = user?.id ?? null;
+  return useQuery({
+    queryKey: ["advisor_daily_sheet_range", from, to, userId ?? ownId ?? "self"],
+    queryFn: async (): Promise<AdvisorSheetWithDate[]> => {
+      let q = sb
+        .from("advisor_daily_sheets")
+        .select("date, user_id, zone_rows, marketing_rows, calls_rows")
+        .gte("date", from)
+        .lte("date", to);
+      if (userId === "all") {
+        // no user filter
+      } else if (userId && userId !== "all") {
+        q = q.eq("user_id", userId);
+      } else if (ownId) {
+        q = q.eq("user_id", ownId);
+      }
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data || []).map((r: any) => ({ ...normalizeSheet(r), date: r.date, user_id: r.user_id }));
+    },
+    enabled: !!from && !!to && !!ownId,
+  });
+}
+
+// Aggregate marketing rows across multiple sheets (sum numeric metrics by source)
+export function aggregateMarketing(sheets: AdvisorSheet[]): MarketingRow[] {
+  const acc = new Map<string, MarketingRow>();
+  MARKETING_SOURCES.forEach((s) =>
+    acc.set(s.value, { source: s.value, publicaciones: 0, contactos: 0, pedidos: 0, noticias: 0, av: 0 })
+  );
+  sheets.forEach((s) => {
+    s.marketing_rows.forEach((r) => {
+      const cur = acc.get(r.source);
+      if (!cur) return;
+      cur.publicaciones += Number(r.publicaciones || 0);
+      cur.contactos += Number(r.contactos || 0);
+      cur.pedidos += Number(r.pedidos || 0);
+      cur.noticias += Number(r.noticias || 0);
+      cur.av += Number(r.av || 0);
+    });
+  });
+  return Array.from(acc.values());
+}
+
+export function aggregateCalls(sheets: AdvisorSheet[]): CallsRow[] {
+  const acc = new Map<string, CallsRow>();
+  CALLS_SOURCES.forEach((s) => acc.set(s.value, { source: s.value, llamadas: 0, contactadas: 0, av: 0 }));
+  sheets.forEach((s) => {
+    s.calls_rows.forEach((r) => {
+      const cur = acc.get(r.source);
+      if (!cur) return;
+      cur.llamadas += Number(r.llamadas || 0);
+      cur.contactadas += Number(r.contactadas || 0);
+      cur.av += Number(r.av || 0);
+    });
+  });
+  return Array.from(acc.values());
+}
+
+export function aggregateZoneTotals(sheets: AdvisorSheet[]) {
+  const t = { puertas: 0, contactos: 0, noticias: 0, av: 0 };
+  sheets.forEach((s) => {
+    s.zone_rows.forEach((r) => {
+      t.puertas += Number(r.puertas || 0);
+      t.contactos += Number(r.contactos || 0);
+      t.noticias += Number(r.noticias || 0);
+      t.av += Number(r.av || 0);
+    });
+  });
+  return t;
+}
+
+
 export function useUpsertAdvisorSheet() {
   const qc = useQueryClient();
   const { tenantId } = useUserRole();
