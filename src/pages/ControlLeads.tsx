@@ -132,7 +132,7 @@ function DailyView({ scopeUserId }: { scopeUserId: ScopeUserId }) {
               onChange={(e) => setDate(e.target.value)}
               className="w-44"
             />
-            <Button onClick={handleSave} disabled={upsert.isPending || !dirty}>
+            <Button onClick={handleSave} disabled={upsert.isPending || !dirty || isViewingOther} title={isViewingOther ? "Viendo datos de otro usuario (solo lectura)" : ""}>
               {upsert.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
               Guardar día
             </Button>
