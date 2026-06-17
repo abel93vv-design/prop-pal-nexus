@@ -55,6 +55,42 @@ export type Database = {
           },
         ]
       }
+      advisor_daily_sheets: {
+        Row: {
+          calls_rows: Json
+          created_at: string
+          date: string
+          id: string
+          marketing_rows: Json
+          tenant_id: string
+          updated_at: string
+          user_id: string
+          zone_rows: Json
+        }
+        Insert: {
+          calls_rows?: Json
+          created_at?: string
+          date: string
+          id?: string
+          marketing_rows?: Json
+          tenant_id: string
+          updated_at?: string
+          user_id: string
+          zone_rows?: Json
+        }
+        Update: {
+          calls_rows?: Json
+          created_at?: string
+          date?: string
+          id?: string
+          marketing_rows?: Json
+          tenant_id?: string
+          updated_at?: string
+          user_id?: string
+          zone_rows?: Json
+        }
+        Relationships: []
+      }
       agencies: {
         Row: {
           address: string | null
