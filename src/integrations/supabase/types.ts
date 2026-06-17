@@ -466,6 +466,7 @@ export type Database = {
           date: string
           emails_enviados: number
           id: string
+          notes: string | null
           pedidos_alquiler: number
           personas_atendidas: number
           personas_escaparates: number
@@ -480,6 +481,7 @@ export type Database = {
           date: string
           emails_enviados?: number
           id?: string
+          notes?: string | null
           pedidos_alquiler?: number
           personas_atendidas?: number
           personas_escaparates?: number
@@ -494,6 +496,7 @@ export type Database = {
           date?: string
           emails_enviados?: number
           id?: string
+          notes?: string | null
           pedidos_alquiler?: number
           personas_atendidas?: number
           personas_escaparates?: number
