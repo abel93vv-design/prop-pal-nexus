@@ -265,6 +265,14 @@ function MonthlyView() {
   const [month, setMonth] = useState(now.getMonth());
   const { from, to } = useMemo(() => monthRange(year, month), [year, month]);
   const { data: rows = [], isLoading } = useRangeLeads(from, to);
+  const { data: globalsRange = [] } = useRangeGlobals(from, to);
+  const notes = useMemo(
+    () =>
+      (globalsRange as any[])
+        .filter((g) => g.notes && String(g.notes).trim().length > 0)
+        .sort((a, b) => (a.date < b.date ? 1 : -1)),
+    [globalsRange]
+  );
 
   const bySource = useMemo(() => aggregateBySource(rows), [rows]);
   const totals = useMemo(() => totalsOf(bySource), [bySource]);
@@ -360,6 +368,34 @@ function MonthlyView() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <StickyNote className="w-4 h-4" /> Notas del mes
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {notes.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-6 text-center">
+              No hay notas registradas para este mes.
+            </p>
+          ) : (
+            <ul className="divide-y divide-border">
+              {notes.map((n: any) => (
+                <li key={n.date} className="py-3 flex gap-4">
+                  <div className="text-xs font-medium text-muted-foreground tabular-nums w-24 shrink-0">
+                    {new Date(n.date + "T00:00:00").toLocaleDateString("es-ES", {
+                      day: "2-digit", month: "short", year: "numeric",
+                    })}
+                  </div>
+                  <div className="text-sm whitespace-pre-wrap flex-1">{n.notes}</div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
