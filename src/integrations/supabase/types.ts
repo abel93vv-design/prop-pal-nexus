@@ -461,14 +461,17 @@ export type Database = {
       }
       daily_global_metrics: {
         Row: {
+          citas_alquiler: number
           created_at: string
           cv_alquiler: number
           date: string
           emails_enviados: number
+          emails_respondidos: number
           id: string
           notes: string | null
           pedidos_alquiler: number
           personas_atendidas: number
+          personas_escaparate: number
           personas_escaparates: number
           personas_que_entran: number
           respuestas_alquiler: number
@@ -477,14 +480,17 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          citas_alquiler?: number
           created_at?: string
           cv_alquiler?: number
           date: string
           emails_enviados?: number
+          emails_respondidos?: number
           id?: string
           notes?: string | null
           pedidos_alquiler?: number
           personas_atendidas?: number
+          personas_escaparate?: number
           personas_escaparates?: number
           personas_que_entran?: number
           respuestas_alquiler?: number
@@ -493,14 +499,17 @@ export type Database = {
           user_id: string
         }
         Update: {
+          citas_alquiler?: number
           created_at?: string
           cv_alquiler?: number
           date?: string
           emails_enviados?: number
+          emails_respondidos?: number
           id?: string
           notes?: string | null
           pedidos_alquiler?: number
           personas_atendidas?: number
+          personas_escaparate?: number
           personas_escaparates?: number
           personas_que_entran?: number
           respuestas_alquiler?: number
