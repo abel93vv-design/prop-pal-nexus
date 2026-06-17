@@ -3,11 +3,12 @@ import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { Loader2, Save, TrendingUp, TrendingDown, Minus, StickyNote } from "lucide-react";
 import {
   LEAD_SOURCES,
   LEAD_COLUMNS,
@@ -84,8 +85,8 @@ function DailyView() {
     );
     setDirty(true);
   };
-  const updateGlobal = (key: GlobalColumnKey, val: number) => {
-    setGlobals((g) => ({ ...g, [key]: val }));
+  const updateGlobal = (key: GlobalColumnKey | "notes", val: number | string) => {
+    setGlobals((g) => ({ ...g, [key]: val } as DailyGlobalRow));
     setDirty(true);
   };
 
@@ -204,6 +205,28 @@ function DailyView() {
                 </div>
               ))}
             </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <StickyNote className="w-4 h-4" /> Notas del día
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex items-center justify-center py-6 text-muted-foreground">
+              <Loader2 className="w-5 h-5 animate-spin mr-2" /> Cargando…
+            </div>
+          ) : (
+            <Textarea
+              placeholder="Escribe aquí cualquier nota, observación o incidencia del día…"
+              value={globals.notes ?? ""}
+              onChange={(e) => updateGlobal("notes", e.target.value)}
+              rows={5}
+            />
           )}
         </CardContent>
       </Card>
