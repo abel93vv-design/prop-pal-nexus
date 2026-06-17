@@ -233,6 +233,7 @@ function DailyView({ scopeUserId }: { scopeUserId: ScopeUserId }) {
             <Textarea
               placeholder="Escribe aquí cualquier nota, observación o incidencia del día…"
               value={globals.notes ?? ""}
+              disabled={isViewingOther}
               onChange={(e) => updateGlobal("notes", e.target.value)}
               rows={5}
             />
