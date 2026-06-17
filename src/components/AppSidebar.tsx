@@ -23,17 +23,23 @@ const propertySubItems = [
   { title: "Noticias", url: "/propiedades/noticias", icon: Newspaper, module: "noticias" },
 ];
 
+const controlLeadsSubItems = [
+  { title: "Coordinadoras", url: "/control-leads/coordinadoras", icon: Users, module: "control_leads" },
+  { title: "Asesores", url: "/control-leads/asesores", icon: UserCog, module: "control_leads" },
+];
+
 const mainItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard, module: null },
   { title: "Pipeline", url: "/pipeline", icon: Kanban, module: "pipeline" },
   { title: "Match Center", url: "/match-center", icon: Target, module: "match_center" },
-  { title: "Control de leads", url: "/control-leads", icon: LineChart, module: "control_leads" },
+  { title: "Control de leads", url: "/control-leads", icon: LineChart, subItems: controlLeadsSubItems, module: "control_leads" },
   { title: "Propiedades", url: "/propiedades", icon: Building2, subItems: propertySubItems, module: "ne" },
   { title: "Clientes", url: "/clientes", icon: Users, module: "clientes" },
   { title: "Tareas", url: "/tareas", icon: ClipboardList, module: "tareas" },
   { title: "Equipo", url: "/equipo", icon: UserCog, module: "equipo" },
   { title: "Inmobiliarias", url: "/inmobiliarias", icon: Landmark, module: "ajustes" },
 ];
+
 
 const settingsItems = [
   { title: "Ajustes", url: "/ajustes", icon: Settings },
