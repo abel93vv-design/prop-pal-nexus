@@ -51,6 +51,10 @@ export const GLOBAL_COLUMNS = [
   { key: "personas_atendidas", label: "Personas atendidas" },
   { key: "pedidos_alquiler", label: "Pedidos alquiler" },
   { key: "citas_alquiler", label: "Citas de alquiler" },
+  { key: "personas_que_entran", label: "Personas que entran" },
+  { key: "entrantes_pedidos_compra", label: "Pedidos compra" },
+  { key: "entrantes_vendedores", label: "Vendedores" },
+  { key: "entrantes_otros", label: "Otros" },
 ] as const;
 
 export type GlobalColumnKey = (typeof GLOBAL_COLUMNS)[number]["key"];
@@ -75,6 +79,10 @@ export interface DailyGlobalRow {
   personas_atendidas: number;
   pedidos_alquiler: number;
   citas_alquiler: number;
+  personas_que_entran: number;
+  entrantes_pedidos_compra: number;
+  entrantes_vendedores: number;
+  entrantes_otros: number;
   notes: string;
 }
 
@@ -103,6 +111,10 @@ const emptyGlobalRow = (): DailyGlobalRow => ({
   personas_atendidas: 0,
   pedidos_alquiler: 0,
   citas_alquiler: 0,
+  personas_que_entran: 0,
+  entrantes_pedidos_compra: 0,
+  entrantes_vendedores: 0,
+  entrantes_otros: 0,
   notes: "",
 });
 
