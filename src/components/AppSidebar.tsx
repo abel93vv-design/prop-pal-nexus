@@ -1,4 +1,4 @@
-import { Building2, Users, ClipboardList, LayoutDashboard, UserCog, Landmark, Settings, ShieldCheck, Kanban, Target, FileSignature, Newspaper, KeyRound, Crown } from "lucide-react";
+import { Building2, Users, ClipboardList, LayoutDashboard, UserCog, Landmark, Settings, ShieldCheck, Kanban, Target, FileSignature, Newspaper, KeyRound, Crown, LineChart } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -27,6 +27,7 @@ const mainItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard, module: null },
   { title: "Pipeline", url: "/pipeline", icon: Kanban, module: "pipeline" },
   { title: "Match Center", url: "/match-center", icon: Target, module: "match_center" },
+  { title: "Control de leads", url: "/control-leads", icon: LineChart, module: "control_leads" },
   { title: "Propiedades", url: "/propiedades", icon: Building2, subItems: propertySubItems, module: "ne" },
   { title: "Clientes", url: "/clientes", icon: Users, module: "clientes" },
   { title: "Tareas", url: "/tareas", icon: ClipboardList, module: "tareas" },
