@@ -269,13 +269,13 @@ function totalsOf(rows: DailyLeadRow[]) {
 }
 
 // ---------- MONTHLY ----------
-function MonthlyView() {
+function MonthlyView({ scopeUserId }: { scopeUserId: ScopeUserId }) {
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth());
   const { from, to } = useMemo(() => monthRange(year, month), [year, month]);
-  const { data: rows = [], isLoading } = useRangeLeads(from, to);
-  const { data: globalsRange = [] } = useRangeGlobals(from, to);
+  const { data: rows = [], isLoading } = useRangeLeads(from, to, scopeUserId);
+  const { data: globalsRange = [] } = useRangeGlobals(from, to, scopeUserId);
   const notes = useMemo(
     () =>
       (globalsRange as any[])
