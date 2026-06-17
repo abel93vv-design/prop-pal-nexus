@@ -588,7 +588,7 @@ function YearlyView({ scopeUserId }: { scopeUserId: ScopeUserId }) {
 
 // ---------- COMPARE ----------
 type PeriodKind = "month" | "year";
-function ComparativeView() {
+function ComparativeView({ scopeUserId }: { scopeUserId: ScopeUserId }) {
   const now = new Date();
   const [kind, setKind] = useState<PeriodKind>("month");
   const [aYear, setAYear] = useState(now.getFullYear());
@@ -600,8 +600,8 @@ function ComparativeView() {
   const rangeA = kind === "month" ? monthRange(aYear, aMonth) : yearRange(aYear);
   const rangeB = kind === "month" ? monthRange(bYear, bMonth) : yearRange(bYear);
 
-  const { data: rowsA = [] } = useRangeLeads(rangeA.from, rangeA.to);
-  const { data: rowsB = [] } = useRangeLeads(rangeB.from, rangeB.to);
+  const { data: rowsA = [] } = useRangeLeads(rangeA.from, rangeA.to, scopeUserId);
+  const { data: rowsB = [] } = useRangeLeads(rangeB.from, rangeB.to, scopeUserId);
 
   const aBySource = useMemo(() => aggregateBySource(rowsA), [rowsA]);
   const bBySource = useMemo(() => aggregateBySource(rowsB), [rowsB]);
