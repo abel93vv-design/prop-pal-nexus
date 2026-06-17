@@ -59,11 +59,14 @@ function yearRange(year: number): { from: string; to: string } {
 }
 
 // ---------- DAILY ----------
-function DailyView() {
+function DailyView({ scopeUserId }: { scopeUserId: ScopeUserId }) {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [date, setDate] = useState<string>(todayStr());
-  const { data: leadsData, isLoading: loadingLeads } = useDailyLeads(date);
-  const { data: globalData, isLoading: loadingGlobal } = useDailyGlobal(date);
+  const isViewingOther =
+    scopeUserId === "all" || (!!scopeUserId && scopeUserId !== user?.id);
+  const { data: leadsData, isLoading: loadingLeads } = useDailyLeads(date, scopeUserId);
+  const { data: globalData, isLoading: loadingGlobal } = useDailyGlobal(date, scopeUserId);
   const upsert = useUpsertDay();
 
   const [leads, setLeads] = useState<DailyLeadRow[]>([]);
