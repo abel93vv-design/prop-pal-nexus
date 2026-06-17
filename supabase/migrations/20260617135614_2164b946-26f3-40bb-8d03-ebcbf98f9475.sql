@@ -1,0 +1,1 @@
+ALTER TABLE public.daily_global_metrics ADD COLUMN IF NOT EXISTS notes text;
