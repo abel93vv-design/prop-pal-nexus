@@ -1020,7 +1020,377 @@ function AsesoresDaily({ scopeUserId }: { scopeUserId: ScopeUserId }) {
   );
 }
 
+// ---------- ASESORES helpers ----------
+function MarketingAggregateTable({ rows }: { rows: MarketingRow[] }) {
+  return (
+    <div className="overflow-auto border border-border rounded-lg">
+      <table className="w-full text-sm">
+        <thead className="bg-muted/40">
+          <tr>
+            <th className="text-left px-3 py-2">Fuente</th>
+            {MARKETING_COLUMNS.map((c) => (
+              <th key={c.key} className="text-right px-2 py-2 whitespace-nowrap">{c.label}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.source} className="border-t border-border hover:bg-muted/20">
+              <td className="px-3 py-1.5 font-medium">
+                {MARKETING_SOURCES.find((s) => s.value === r.source)?.label}
+              </td>
+              {MARKETING_COLUMNS.map((c) => (
+                <td key={c.key} className="px-2 py-1.5 text-right tabular-nums">{(r as any)[c.key]}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function CallsAggregateTable({ rows }: { rows: CallsRow[] }) {
+  return (
+    <div className="overflow-auto border border-border rounded-lg">
+      <table className="w-full text-sm">
+        <thead className="bg-muted/40">
+          <tr>
+            <th className="text-left px-3 py-2">Fuente</th>
+            {CALLS_COLUMNS.map((c) => (
+              <th key={c.key} className="text-right px-2 py-2 whitespace-nowrap">{c.label}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.source} className="border-t border-border hover:bg-muted/20">
+              <td className="px-3 py-1.5 font-medium">
+                {CALLS_SOURCES.find((s) => s.value === r.source)?.label}
+              </td>
+              {CALLS_COLUMNS.map((c) => (
+                <td key={c.key} className="px-2 py-1.5 text-right tabular-nums">{(r as any)[c.key]}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function AsesoresMonthly({ scopeUserId }: { scopeUserId: ScopeUserId }) {
+  const now = new Date();
+  const [year, setYear] = useState(now.getFullYear());
+  const [month, setMonth] = useState(now.getMonth());
+  const { from, to } = useMemo(() => monthRange(year, month), [year, month]);
+  const { data: sheets = [], isLoading } = useAdvisorRange(from, to, scopeUserId);
+  const marketing = useMemo(() => aggregateMarketing(sheets), [sheets]);
+  const calls = useMemo(() => aggregateCalls(sheets), [sheets]);
+  const zoneTotals = useMemo(() => aggregateZoneTotals(sheets), [sheets]);
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <CardTitle>Vista mensual</CardTitle>
+          <div className="flex items-center gap-2">
+            <Select value={String(month)} onValueChange={(v) => setMonth(Number(v))}>
+              <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {MONTHS_ES.map((m, i) => <SelectItem key={i} value={String(i)}>{m}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Input
+              type="number"
+              value={year}
+              onChange={(e) => setYear(Number(e.target.value) || now.getFullYear())}
+              className="w-24"
+            />
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12 text-muted-foreground">
+              <Loader2 className="w-5 h-5 animate-spin mr-2" /> Cargando…
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                <KpiCard label="Zona · Puertas" value={zoneTotals.puertas} />
+                <KpiCard label="Zona · Contactos" value={zoneTotals.contactos} />
+                <KpiCard label="Zona · Noticias" value={zoneTotals.noticias} />
+                <KpiCard label="Zona · AV" value={zoneTotals.av} />
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-semibold mb-2">Marketing</h3>
+                  <MarketingAggregateTable rows={marketing} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold mb-2">Llamadas</h3>
+                  <CallsAggregateTable rows={calls} />
+                </div>
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function AsesoresYearly({ scopeUserId }: { scopeUserId: ScopeUserId }) {
+  const now = new Date();
+  const [year, setYear] = useState(now.getFullYear());
+  const { from, to } = useMemo(() => yearRange(year), [year]);
+  const { data: sheets = [], isLoading } = useAdvisorRange(from, to, scopeUserId);
+  const marketing = useMemo(() => aggregateMarketing(sheets), [sheets]);
+  const calls = useMemo(() => aggregateCalls(sheets), [sheets]);
+  const zoneTotals = useMemo(() => aggregateZoneTotals(sheets), [sheets]);
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <CardTitle>Vista anual</CardTitle>
+          <Input
+            type="number"
+            value={year}
+            onChange={(e) => setYear(Number(e.target.value) || now.getFullYear())}
+            className="w-28"
+          />
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12 text-muted-foreground">
+              <Loader2 className="w-5 h-5 animate-spin mr-2" /> Cargando…
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                <KpiCard label="Zona · Puertas" value={zoneTotals.puertas} />
+                <KpiCard label="Zona · Contactos" value={zoneTotals.contactos} />
+                <KpiCard label="Zona · Noticias" value={zoneTotals.noticias} />
+                <KpiCard label="Zona · AV" value={zoneTotals.av} />
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-semibold mb-2">Marketing</h3>
+                  <MarketingAggregateTable rows={marketing} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold mb-2">Llamadas</h3>
+                  <CallsAggregateTable rows={calls} />
+                </div>
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function AsesoresCompare({ scopeUserId }: { scopeUserId: ScopeUserId }) {
+  const now = new Date();
+  const [kind, setKind] = useState<"month" | "year">("month");
+  const [aYear, setAYear] = useState(now.getFullYear());
+  const [aMonth, setAMonth] = useState(now.getMonth());
+  const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const [bYear, setBYear] = useState(prev.getFullYear());
+  const [bMonth, setBMonth] = useState(prev.getMonth());
+
+  const rangeA = kind === "month" ? monthRange(aYear, aMonth) : yearRange(aYear);
+  const rangeB = kind === "month" ? monthRange(bYear, bMonth) : yearRange(bYear);
+  const { data: sheetsA = [] } = useAdvisorRange(rangeA.from, rangeA.to, scopeUserId);
+  const { data: sheetsB = [] } = useAdvisorRange(rangeB.from, rangeB.to, scopeUserId);
+
+  const mA = useMemo(() => aggregateMarketing(sheetsA), [sheetsA]);
+  const mB = useMemo(() => aggregateMarketing(sheetsB), [sheetsB]);
+  const cA = useMemo(() => aggregateCalls(sheetsA), [sheetsA]);
+  const cB = useMemo(() => aggregateCalls(sheetsB), [sheetsB]);
+  const zA = useMemo(() => aggregateZoneTotals(sheetsA), [sheetsA]);
+  const zB = useMemo(() => aggregateZoneTotals(sheetsB), [sheetsB]);
+
+  const labelA = kind === "month" ? `${MONTHS_ES[aMonth]} ${aYear}` : `${aYear}`;
+  const labelB = kind === "month" ? `${MONTHS_ES[bMonth]} ${bYear}` : `${bYear}`;
+
+  const renderDiff = (a: number, b: number) => {
+    const diff = a - b;
+    const pct = b === 0 ? (a === 0 ? 0 : 100) : (diff / b) * 100;
+    const Icon = diff > 0 ? TrendingUp : diff < 0 ? TrendingDown : Minus;
+    const colorCls = diff > 0 ? "text-success" : diff < 0 ? "text-destructive" : "text-muted-foreground";
+    return (
+      <>
+        <td className="px-3 py-1.5 text-right tabular-nums">{a}</td>
+        <td className="px-3 py-1.5 text-right tabular-nums">{b}</td>
+        <td className={`px-3 py-1.5 text-right tabular-nums font-medium ${colorCls}`}>
+          <span className="inline-flex items-center gap-1 justify-end">
+            <Icon className="w-3.5 h-3.5" />
+            {diff > 0 ? "+" : ""}{diff}
+          </span>
+        </td>
+        <td className={`px-3 py-1.5 text-right tabular-nums ${colorCls}`}>
+          {b === 0 && a === 0 ? "—" : `${pct > 0 ? "+" : ""}${pct.toFixed(1)}%`}
+        </td>
+      </>
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader className="flex flex-col gap-4">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <CardTitle>Vista comparativa</CardTitle>
+            <Select value={kind} onValueChange={(v) => setKind(v as "month" | "year")}>
+              <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="month">Por mes</SelectItem>
+                <SelectItem value="year">Por año</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">Periodo A (actual)</Label>
+              <div className="flex gap-2">
+                {kind === "month" && (
+                  <Select value={String(aMonth)} onValueChange={(v) => setAMonth(Number(v))}>
+                    <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {MONTHS_ES.map((m, i) => <SelectItem key={i} value={String(i)}>{m}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                )}
+                <Input type="number" value={aYear} onChange={(e) => setAYear(Number(e.target.value) || now.getFullYear())} className="w-28" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">Periodo B (anterior)</Label>
+              <div className="flex gap-2">
+                {kind === "month" && (
+                  <Select value={String(bMonth)} onValueChange={(v) => setBMonth(Number(v))}>
+                    <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {MONTHS_ES.map((m, i) => <SelectItem key={i} value={String(i)}>{m}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                )}
+                <Input type="number" value={bYear} onChange={(e) => setBYear(Number(e.target.value) || now.getFullYear())} className="w-28" />
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div>
+            <h3 className="text-sm font-semibold mb-2">Zona — totales</h3>
+            <div className="overflow-auto border border-border rounded-lg">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/40">
+                  <tr>
+                    <th className="text-left px-3 py-2">Métrica</th>
+                    <th className="text-right px-3 py-2">A · {labelA}</th>
+                    <th className="text-right px-3 py-2">B · {labelB}</th>
+                    <th className="text-right px-3 py-2">Δ Absoluta</th>
+                    <th className="text-right px-3 py-2">Δ %</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(["puertas","contactos","noticias","av"] as const).map((k) => (
+                    <tr key={k} className="border-t border-border hover:bg-muted/20">
+                      <td className="px-3 py-1.5 font-medium capitalize">{k}</td>
+                      {renderDiff(zA[k], zB[k])}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-semibold mb-2">Marketing — pedidos por fuente</h3>
+            <div className="overflow-auto border border-border rounded-lg">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/40">
+                  <tr>
+                    <th className="text-left px-3 py-2">Fuente</th>
+                    <th className="text-right px-3 py-2">A · {labelA}</th>
+                    <th className="text-right px-3 py-2">B · {labelB}</th>
+                    <th className="text-right px-3 py-2">Δ Absoluta</th>
+                    <th className="text-right px-3 py-2">Δ %</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {MARKETING_SOURCES.map((s) => {
+                    const a = mA.find((r) => r.source === s.value)?.pedidos ?? 0;
+                    const b = mB.find((r) => r.source === s.value)?.pedidos ?? 0;
+                    return (
+                      <tr key={s.value} className="border-t border-border hover:bg-muted/20">
+                        <td className="px-3 py-1.5 font-medium">{s.label}</td>
+                        {renderDiff(a, b)}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-semibold mb-2">Llamadas — contactadas por fuente</h3>
+            <div className="overflow-auto border border-border rounded-lg">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/40">
+                  <tr>
+                    <th className="text-left px-3 py-2">Fuente</th>
+                    <th className="text-right px-3 py-2">A · {labelA}</th>
+                    <th className="text-right px-3 py-2">B · {labelB}</th>
+                    <th className="text-right px-3 py-2">Δ Absoluta</th>
+                    <th className="text-right px-3 py-2">Δ %</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {CALLS_SOURCES.map((s) => {
+                    const a = cA.find((r) => r.source === s.value)?.contactadas ?? 0;
+                    const b = cB.find((r) => r.source === s.value)?.contactadas ?? 0;
+                    return (
+                      <tr key={s.value} className="border-t border-border hover:bg-muted/20">
+                        <td className="px-3 py-1.5 font-medium">{s.label}</td>
+                        {renderDiff(a, b)}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function AsesoresView({ scopeUserId }: { scopeUserId: ScopeUserId }) {
+  return (
+    <Tabs defaultValue="daily" className="w-full">
+      <TabsList>
+        <TabsTrigger value="daily">Diario</TabsTrigger>
+        <TabsTrigger value="monthly">Mensual</TabsTrigger>
+        <TabsTrigger value="yearly">Anual</TabsTrigger>
+        <TabsTrigger value="compare">Comparativa</TabsTrigger>
+      </TabsList>
+      <TabsContent value="daily" className="mt-6"><AsesoresDaily scopeUserId={scopeUserId} /></TabsContent>
+      <TabsContent value="monthly" className="mt-6"><AsesoresMonthly scopeUserId={scopeUserId} /></TabsContent>
+      <TabsContent value="yearly" className="mt-6"><AsesoresYearly scopeUserId={scopeUserId} /></TabsContent>
+      <TabsContent value="compare" className="mt-6"><AsesoresCompare scopeUserId={scopeUserId} /></TabsContent>
+    </Tabs>
+  );
+}
+
 // ---------- PAGE ----------
+
 export default function ControlLeads() {
   const { user } = useAuth();
   const { isAdmin, isSuperAdmin } = useUserRole();
