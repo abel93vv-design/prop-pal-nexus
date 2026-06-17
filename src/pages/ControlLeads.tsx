@@ -170,6 +170,7 @@ function DailyView({ scopeUserId }: { scopeUserId: ScopeUserId }) {
                             type="number"
                             min={0}
                             value={row[c.key] ?? 0}
+                            disabled={isViewingOther}
                             onChange={(e) =>
                               updateCell(row.source, c.key, Number(e.target.value) || 0)
                             }
