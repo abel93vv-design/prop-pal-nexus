@@ -13,6 +13,7 @@ export const LEAD_SOURCES = [
   { value: "marketplace", label: "Marketplace" },
   { value: "instagram", label: "Instagram" },
   { value: "instagram_personal", label: "Instagram Personal" },
+  { value: "tiktok", label: "TikTok" },
   { value: "whatsapp", label: "Whatsapp" },
   { value: "telegram", label: "Telegram" },
   { value: "oficina", label: "Oficina" },
@@ -22,9 +23,10 @@ export const LEAD_SOURCES = [
   { value: "zona", label: "Zona" },
   { value: "referidos", label: "Referidos" },
   { value: "valoracasa", label: "Valoracasa" },
-  { value: "base_de_datos", label: "Base de datos" },
+  { value: "base_de_datos", label: "CRM" },
   { value: "otros", label: "Otros" },
 ] as const;
+
 
 export type LeadSource = (typeof LEAD_SOURCES)[number]["value"];
 
