@@ -474,6 +474,7 @@ export type Database = {
           respuestas_alquiler: number
           tenant_id: string
           updated_at: string
+          user_id: string
         }
         Insert: {
           created_at?: string
@@ -489,6 +490,7 @@ export type Database = {
           respuestas_alquiler?: number
           tenant_id: string
           updated_at?: string
+          user_id: string
         }
         Update: {
           created_at?: string
@@ -504,6 +506,7 @@ export type Database = {
           respuestas_alquiler?: number
           tenant_id?: string
           updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -524,6 +527,7 @@ export type Database = {
           tenant_id: string
           total_pedidos: number
           updated_at: string
+          user_id: string
         }
         Insert: {
           asesoramientos?: number
@@ -541,6 +545,7 @@ export type Database = {
           tenant_id: string
           total_pedidos?: number
           updated_at?: string
+          user_id: string
         }
         Update: {
           asesoramientos?: number
@@ -558,6 +563,7 @@ export type Database = {
           tenant_id?: string
           total_pedidos?: number
           updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
