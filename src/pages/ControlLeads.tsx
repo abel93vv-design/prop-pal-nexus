@@ -31,6 +31,21 @@ import {
   emptyGlobalRow,
 } from "@/hooks/useControlLeads";
 import {
+  ZONE_COLUMNS,
+  ZONE_ROW_COUNT,
+  MARKETING_SOURCES,
+  MARKETING_COLUMNS,
+  CALLS_SOURCES,
+  CALLS_COLUMNS,
+  emptyAdvisorSheet,
+  useAdvisorSheet,
+  useUpsertAdvisorSheet,
+  type AdvisorSheet,
+  type ZoneRow,
+  type MarketingRow,
+  type CallsRow,
+} from "@/hooks/useAdvisorSheet";
+import {
   ResponsiveContainer,
   BarChart,
   Bar,
@@ -42,6 +57,7 @@ import {
   Line,
   Legend,
 } from "recharts";
+
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
 const MONTHS_ES = [
