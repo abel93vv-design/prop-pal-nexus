@@ -207,6 +207,7 @@ function DailyView({ scopeUserId }: { scopeUserId: ScopeUserId }) {
                     id={`g-${c.key}`}
                     type="number"
                     min={0}
+                    disabled={isViewingOther}
                     value={globals[c.key] ?? 0}
                     onChange={(e) => updateGlobal(c.key, Number(e.target.value) || 0)}
                   />
