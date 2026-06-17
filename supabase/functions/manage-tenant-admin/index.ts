@@ -86,7 +86,7 @@ serve(async (req) => {
     if (action === "reset_password") {
       if (!user_id || !new_password) throw new Error("user_id y new_password son obligatorios");
 
-      const { error } = await adminClient.auth.admin.updateUser(user_id, {
+      const { error } = await adminClient.auth.admin.updateUserById(user_id, {
         password: new_password,
       });
       if (error) throw new Error(`Error actualizando contraseña: ${error.message}`);
