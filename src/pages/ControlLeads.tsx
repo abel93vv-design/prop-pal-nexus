@@ -1019,19 +1019,30 @@ export default function ControlLeads() {
   const canSeeAll = isAdmin || isSuperAdmin;
   const [scopeUserId, setScopeUserId] = useState<ScopeUserId>(undefined);
   const { data: tenantUsers = [] } = useTenantUsers(canSeeAll);
+  const { subSection } = useParams<{ subSection?: string }>();
+  const isAsesores = subSection === "asesores";
 
   // Resolve effective scope: admin keeps the dropdown choice; non-admin always sees own.
   const effectiveScope: ScopeUserId = canSeeAll ? scopeUserId : undefined;
   const selectValue = scopeUserId ?? "self";
+
+  // Redirect bare /control-leads to coordinadoras subsection
+  if (!subSection) {
+    return <Navigate to="/control-leads/coordinadoras" replace />;
+  }
 
   return (
     <Layout>
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold">Control de leads</h1>
+            <h1 className="text-2xl font-bold">
+              Control de leads · {isAsesores ? "Asesores" : "Coordinadoras"}
+            </h1>
             <p className="text-sm text-muted-foreground">
-              Tracker diario de leads por fuente de origen con vistas agregadas y comparativas.
+              {isAsesores
+                ? "Ficha de control diario del asesor con zona, marketing y llamadas."
+                : "Tracker diario de leads por fuente de origen con vistas agregadas y comparativas."}
             </p>
           </div>
           {canSeeAll && (
@@ -1063,33 +1074,25 @@ export default function ControlLeads() {
           )}
         </div>
 
-        <Tabs defaultValue="coordinadoras" className="w-full">
-          <TabsList>
-            <TabsTrigger value="coordinadoras">Coordinadoras</TabsTrigger>
-            <TabsTrigger value="asesores">Asesores</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="coordinadoras" className="mt-6">
-            <Tabs defaultValue="daily" className="w-full">
-              <TabsList>
-                <TabsTrigger value="daily">Diario</TabsTrigger>
-                <TabsTrigger value="monthly">Mensual</TabsTrigger>
-                <TabsTrigger value="yearly">Anual</TabsTrigger>
-                <TabsTrigger value="compare">Comparativa</TabsTrigger>
-              </TabsList>
-              <TabsContent value="daily" className="mt-6"><DailyView scopeUserId={effectiveScope} /></TabsContent>
-              <TabsContent value="monthly" className="mt-6"><MonthlyView scopeUserId={effectiveScope} /></TabsContent>
-              <TabsContent value="yearly" className="mt-6"><YearlyView scopeUserId={effectiveScope} /></TabsContent>
-              <TabsContent value="compare" className="mt-6"><ComparativeView scopeUserId={effectiveScope} /></TabsContent>
-            </Tabs>
-          </TabsContent>
-
-          <TabsContent value="asesores" className="mt-6">
-            <AsesoresView scopeUserId={effectiveScope} />
-          </TabsContent>
-        </Tabs>
+        {isAsesores ? (
+          <AsesoresView scopeUserId={effectiveScope} />
+        ) : (
+          <Tabs defaultValue="daily" className="w-full">
+            <TabsList>
+              <TabsTrigger value="daily">Diario</TabsTrigger>
+              <TabsTrigger value="monthly">Mensual</TabsTrigger>
+              <TabsTrigger value="yearly">Anual</TabsTrigger>
+              <TabsTrigger value="compare">Comparativa</TabsTrigger>
+            </TabsList>
+            <TabsContent value="daily" className="mt-6"><DailyView scopeUserId={effectiveScope} /></TabsContent>
+            <TabsContent value="monthly" className="mt-6"><MonthlyView scopeUserId={effectiveScope} /></TabsContent>
+            <TabsContent value="yearly" className="mt-6"><YearlyView scopeUserId={effectiveScope} /></TabsContent>
+            <TabsContent value="compare" className="mt-6"><ComparativeView scopeUserId={effectiveScope} /></TabsContent>
+          </Tabs>
+        )}
       </div>
     </Layout>
   );
 }
+
 
