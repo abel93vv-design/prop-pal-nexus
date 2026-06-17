@@ -459,6 +459,105 @@ export type Database = {
           },
         ]
       }
+      daily_global_metrics: {
+        Row: {
+          created_at: string
+          cv_alquiler: number
+          date: string
+          emails_enviados: number
+          id: string
+          pedidos_alquiler: number
+          personas_atendidas: number
+          personas_escaparates: number
+          personas_que_entran: number
+          respuestas_alquiler: number
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          cv_alquiler?: number
+          date: string
+          emails_enviados?: number
+          id?: string
+          pedidos_alquiler?: number
+          personas_atendidas?: number
+          personas_escaparates?: number
+          personas_que_entran?: number
+          respuestas_alquiler?: number
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          cv_alquiler?: number
+          date?: string
+          emails_enviados?: number
+          id?: string
+          pedidos_alquiler?: number
+          personas_atendidas?: number
+          personas_escaparates?: number
+          personas_que_entran?: number
+          respuestas_alquiler?: number
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      daily_leads: {
+        Row: {
+          asesoramientos: number
+          av: number
+          created_at: string
+          cv: number
+          date: string
+          id: string
+          pedidos_actualizados: number
+          pedidos_insertados: number
+          pedidos_llamados: number
+          pedidos_llamados_contactados: number
+          pedidos_sin_contactar: number
+          source: Database["public"]["Enums"]["lead_source"]
+          tenant_id: string
+          total_pedidos: number
+          updated_at: string
+        }
+        Insert: {
+          asesoramientos?: number
+          av?: number
+          created_at?: string
+          cv?: number
+          date: string
+          id?: string
+          pedidos_actualizados?: number
+          pedidos_insertados?: number
+          pedidos_llamados?: number
+          pedidos_llamados_contactados?: number
+          pedidos_sin_contactar?: number
+          source: Database["public"]["Enums"]["lead_source"]
+          tenant_id: string
+          total_pedidos?: number
+          updated_at?: string
+        }
+        Update: {
+          asesoramientos?: number
+          av?: number
+          created_at?: string
+          cv?: number
+          date?: string
+          id?: string
+          pedidos_actualizados?: number
+          pedidos_insertados?: number
+          pedidos_llamados?: number
+          pedidos_llamados_contactados?: number
+          pedidos_sin_contactar?: number
+          source?: Database["public"]["Enums"]["lead_source"]
+          tenant_id?: string
+          total_pedidos?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       documents: {
         Row: {
           client_id: string | null
@@ -1729,6 +1828,27 @@ export type Database = {
         | "socio"
         | "coordinadora"
         | "asesor"
+      lead_source:
+        | "fotocasa"
+        | "habitaclia"
+        | "idealista"
+        | "facebook"
+        | "facebook_personal"
+        | "grupos_facebook"
+        | "marketplace"
+        | "instagram"
+        | "instagram_personal"
+        | "whatsapp"
+        | "telegram"
+        | "oficina"
+        | "escaparate"
+        | "wallapop"
+        | "publicidad"
+        | "zona"
+        | "referidos"
+        | "valoracasa"
+        | "base_de_datos"
+        | "otros"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1864,6 +1984,28 @@ export const Constants = {
         "socio",
         "coordinadora",
         "asesor",
+      ],
+      lead_source: [
+        "fotocasa",
+        "habitaclia",
+        "idealista",
+        "facebook",
+        "facebook_personal",
+        "grupos_facebook",
+        "marketplace",
+        "instagram",
+        "instagram_personal",
+        "whatsapp",
+        "telegram",
+        "oficina",
+        "escaparate",
+        "wallapop",
+        "publicidad",
+        "zona",
+        "referidos",
+        "valoracasa",
+        "base_de_datos",
+        "otros",
       ],
     },
   },
