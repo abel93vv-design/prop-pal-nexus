@@ -451,11 +451,11 @@ function SourceTable({ rows }: { rows: DailyLeadRow[] }) {
 }
 
 // ---------- YEARLY ----------
-function YearlyView() {
+function YearlyView({ scopeUserId }: { scopeUserId: ScopeUserId }) {
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const { from, to } = useMemo(() => yearRange(year), [year]);
-  const { data: rows = [], isLoading } = useRangeLeads(from, to);
+  const { data: rows = [], isLoading } = useRangeLeads(from, to, scopeUserId);
 
   // rows by month
   const monthly = useMemo(() => {
