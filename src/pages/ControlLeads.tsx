@@ -197,7 +197,7 @@ function DailyView({ scopeUserId }: { scopeUserId: ScopeUserId }) {
               <Loader2 className="w-5 h-5 animate-spin mr-2" /> Cargando…
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl">
               {GLOBAL_COLUMNS.map((c) => (
                 <div key={c.key} className="space-y-1">
                   <Label htmlFor={`g-${c.key}`} className="text-xs text-muted-foreground">
