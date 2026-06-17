@@ -758,7 +758,8 @@ function ComparativeView({ scopeUserId }: { scopeUserId: ScopeUserId }) {
 }
 
 // ---------- ASESORES (advisor daily sheet) ----------
-function AsesoresView({ scopeUserId }: { scopeUserId: ScopeUserId }) {
+function AsesoresDaily({ scopeUserId }: { scopeUserId: ScopeUserId }) {
+
   const { toast } = useToast();
   const { user } = useAuth();
   const { data: tenantUsers = [] } = useTenantUsers(true);
