@@ -128,6 +128,8 @@ const Properties = () => {
     [0, 50, 150, 300, 600].forEach(t => setTimeout(reset, t));
   };
 
+  const [returnTo, setReturnTo] = useState<string | null>(null);
+
   const handleDialogOpenChange = (open: boolean) => {
     if (saving) return; // prevent close while saving
     setDialogOpen(open);
@@ -136,6 +138,11 @@ const Properties = () => {
       setForm(emptyProperty);
       setCfValues({});
       cleanupBodyLocks();
+      if (returnTo) {
+        const target = returnTo;
+        setReturnTo(null);
+        setTimeout(() => navigate(target), 0);
+      }
     }
   };
 
