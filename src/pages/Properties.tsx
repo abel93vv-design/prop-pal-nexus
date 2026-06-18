@@ -231,10 +231,10 @@ const Properties = () => {
         await addProperty(form);
         toast({ title: "Propiedad creada" });
       }
+      setSaving(false);
       handleDialogOpenChange(false);
     } catch (e: any) {
       toast({ title: "Error al guardar", description: e?.message || "Inténtalo de nuevo", variant: "destructive" });
-    } finally {
       setSaving(false);
     }
   };
