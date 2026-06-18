@@ -483,11 +483,17 @@ const Clients = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   useEffect(() => {
     const editId = searchParams.get('edit');
+    const from = searchParams.get('from');
     if (editId && clients.length > 0) {
       const c = clients.find(x => x.id === editId);
       if (c) {
-        openEdit(c);
+        if (from && from.startsWith('propiedad:')) {
+          setReturnTo(`/propiedades?edit=${from.slice('propiedad:'.length)}`);
+        }
+        cleanupBodyLocks();
+        setTimeout(() => openEdit(c), 0);
         searchParams.delete('edit');
+        searchParams.delete('from');
         setSearchParams(searchParams, { replace: true });
       }
     }
