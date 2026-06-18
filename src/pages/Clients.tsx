@@ -767,6 +767,7 @@ const Clients = () => {
                 <TopPropertyMatches
                   matches={getTopMatchesForClient(editing.id)}
                   properties={properties}
+                  fromClientId={editing.id}
                 />
                 <ClientDocumentsSection
                   clientId={editing.id}
