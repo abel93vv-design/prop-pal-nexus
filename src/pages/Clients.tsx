@@ -795,8 +795,19 @@ const Clients = () => {
               </>
             )}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
+          <DialogFooter className="gap-2 sm:gap-2">
+            {editing && (
+              <Button
+                variant="outline"
+                onClick={() => markContacted(editing)}
+                className="mr-auto"
+                title="Registrar contacto con este cliente"
+              >
+                <PhoneCall className="w-4 h-4 mr-1 text-success" />
+                Marcar contactado{typeof editing.contactCount === 'number' ? ` (${editing.contactCount})` : ''}
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => handleDialogOpenChange(false)}>Cancelar</Button>
             <Button onClick={handleSave}>{editing ? "Guardar" : "Crear"}</Button>
           </DialogFooter>
         </DialogContent>
