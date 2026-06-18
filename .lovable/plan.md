@@ -1,42 +1,37 @@
-## Objetivo
+# Mejoras en navegación entre Propiedades ↔ Clientes
 
-Que **Control de leads** se comporte como **Propiedades** en el sidebar: al estar dentro de la sección se despliegan dos subitems —**Coordinadoras** y **Asesores**— en vez de las dos pestañas internas actuales en `/control-leads`.
+## 1. Botón "Contactar" dentro de la ficha del cliente
+Hoy el botón `PhoneCall` (marcar contactado) sólo existe en la fila de la tabla. Se añade también dentro del modal de edición de cliente.
 
-## Cambios
+- En `src/pages/Clients.tsx`, en el `DialogFooter` del diálogo de edición, añadir (sólo cuando `editing` existe) un botón **"Marcar contactado"** con icono `PhoneCall` que llama a `markContacted(editing)` y muestra el contador actual (`editing.contactCount`).
+- Se mantiene el botón existente en la fila de la tabla.
 
-### 1. Sidebar (`src/components/AppSidebar.tsx`)
-Añadir `controlLeadsSubItems` y enlazarlo al ítem "Control de leads":
+## 2. La ficha del cliente se abre y se cierra al entrar desde una propiedad
+Causa: al hacer click en un match dentro del diálogo de propiedad, se navega a `/clientes?edit=X` mientras el `Dialog` de Radix de Propiedades aún está montado. La limpieza de pointer-events / focus de Radix entra en conflicto con la apertura inmediata del nuevo `Dialog` en Clientes, que recibe un `onOpenChange(false)` espurio.
 
-```text
-Control de leads  (/control-leads)
- ├─ Coordinadoras  (/control-leads/coordinadoras)
- └─ Asesores       (/control-leads/asesores)
-```
+Cambios:
+- En `src/pages/Clients.tsx` (useEffect de `?edit=`):
+  - Diferir la apertura con `setTimeout(() => openEdit(c), 0)` para que la apertura ocurra después de que se desmonte el diálogo de Propiedades y se restablezca el foco.
+  - Llamar a `cleanupBodyLocks()` (mismo helper que ya usa `Properties.tsx`) antes de `openEdit` para liberar cualquier `pointer-events:none` heredado.
+- Replicar la misma corrección en `src/pages/Properties.tsx` para el caso simétrico (entrar a una propiedad desde un match de cliente).
 
-Iconos: `Users` para Coordinadoras, `UserCog` (o similar) para Asesores. Ambos sub-items usan el mismo `module: "control_leads"` para el gating de permisos.
+## 3. Al cerrar la ficha, volver a la página de origen
+Hoy: si entras a un cliente desde una propiedad y cierras, te quedas en Clientes y tienes que volver a Propiedades manualmente. Se añade un "return path".
 
-### 2. Rutas (`src/App.tsx`)
-Añadir dos rutas nuevas, ambas protegidas con `ProtectedRoute` y apuntando al mismo componente `ControlLeads`:
+Cambios:
+- En `src/components/MatchScoreWidgets.tsx`:
+  - `TopClientMatches` (se usa dentro del diálogo de Propiedad): al navegar al cliente, añadir el parámetro `from=propiedad:<propertyId>`. Necesita recibir el `propertyId` actual como prop nueva (`fromPropertyId`). Pasarlo desde `Properties.tsx`.
+  - `TopPropertyMatches` (se usa dentro del diálogo de Cliente): al navegar a propiedad, añadir `from=cliente:<clientId>`. Recibir `fromClientId` como prop y pasarlo desde `Clients.tsx`.
+- En `src/pages/Clients.tsx`:
+  - Al procesar `?edit=`, leer también `from`. Si vale `propiedad:<id>`, guardar `returnTo = '/propiedades?edit=<id>'` en un `useState`.
+  - En `Dialog onOpenChange`: cuando se cierre y exista `returnTo`, llamar `navigate(returnTo)` y limpiar el estado.
+- En `src/pages/Properties.tsx`: simétrico — leer `from=cliente:<id>`, guardar `returnTo = '/clientes?edit=<id>'` y navegar al cerrar.
 
-- `/control-leads/coordinadoras`
-- `/control-leads/asesores`
+## Detalles técnicos
 
-La ruta existente `/control-leads` se mantiene y redirige a `/control-leads/coordinadoras` (vista por defecto al hacer clic en el ítem padre, igual que Propiedades).
+- No se tocan hooks de datos ni el esquema; sólo `src/pages/Clients.tsx`, `src/pages/Properties.tsx` y `src/components/MatchScoreWidgets.tsx`.
+- El parámetro `from` se elimina junto con `edit` en el mismo `setSearchParams({ replace: true })` para que no quede en la URL.
+- El `returnTo` se aplica únicamente cuando el cierre lo provoca el usuario (no tras guardar), o también tras guardar — confirmar abajo.
 
-### 3. Página (`src/pages/ControlLeads.tsx`)
-- Eliminar las `Tabs` de primer nivel "Coordinadoras / Asesores" que se añadieron antes.
-- En su lugar, decidir qué vista renderizar a partir de la URL (`useLocation`):
-  - `/control-leads/asesores` → renderiza `<AsesoresView>`.
-  - cualquier otra (`/control-leads` o `/control-leads/coordinadoras`) → renderiza el bloque actual con las pestañas internas **Diario / Mensual / Anual / Comparativa**.
-- El selector "Ver datos de" (admin/super admin) y el título de la página se mantienen en la cabecera común para ambas subsecciones.
-
-### 4. Sin cambios en
-- Hooks (`useControlLeads`, `useAdvisorSheet`).
-- Tablas de base de datos.
-- Permisos (`role_permissions`): se sigue usando el módulo `control_leads`.
-
-## Resultado visual
-
-- Click en "Control de leads" en el sidebar → entra a `/control-leads/coordinadoras` y aparecen los subitems desplegados debajo, como en Propiedades.
-- Click en "Asesores" → navega a `/control-leads/asesores` y muestra la ficha de control diario con las 3 tablas (Zona, Marketing, Llamadas).
-- El subitem activo queda resaltado igual que en Propiedades.
+## A confirmar
+1. Al pulsar "Guardar" en el cliente (entrando desde propiedad), ¿también quieres volver automáticamente a la propiedad, o sólo al cerrar/cancelar?

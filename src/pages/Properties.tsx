@@ -128,6 +128,8 @@ const Properties = () => {
     [0, 50, 150, 300, 600].forEach(t => setTimeout(reset, t));
   };
 
+  const [returnTo, setReturnTo] = useState<string | null>(null);
+
   const handleDialogOpenChange = (open: boolean) => {
     if (saving) return; // prevent close while saving
     setDialogOpen(open);
@@ -136,6 +138,11 @@ const Properties = () => {
       setForm(emptyProperty);
       setCfValues({});
       cleanupBodyLocks();
+      if (returnTo) {
+        const target = returnTo;
+        setReturnTo(null);
+        setTimeout(() => navigate(target), 0);
+      }
     }
   };
 
@@ -191,11 +198,17 @@ const Properties = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   useEffect(() => {
     const editId = searchParams.get('edit');
+    const from = searchParams.get('from');
     if (editId && properties.length > 0) {
       const p = properties.find(x => x.id === editId);
       if (p) {
-        openEdit(p);
+        if (from && from.startsWith('cliente:')) {
+          setReturnTo(`/clientes?edit=${from.slice('cliente:'.length)}`);
+        }
+        cleanupBodyLocks();
+        setTimeout(() => openEdit(p), 0);
         searchParams.delete('edit');
+        searchParams.delete('from');
         setSearchParams(searchParams, { replace: true });
       }
     }
@@ -643,6 +656,7 @@ const Properties = () => {
                 matches={getTopMatchesForProperty(editing.id)}
                 clients={clients}
                 users={users}
+                fromPropertyId={editing.id}
               />
             )}
             {editing && (
