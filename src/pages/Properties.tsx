@@ -198,11 +198,17 @@ const Properties = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   useEffect(() => {
     const editId = searchParams.get('edit');
+    const from = searchParams.get('from');
     if (editId && properties.length > 0) {
       const p = properties.find(x => x.id === editId);
       if (p) {
-        openEdit(p);
+        if (from && from.startsWith('cliente:')) {
+          setReturnTo(`/clientes?edit=${from.slice('cliente:'.length)}`);
+        }
+        cleanupBodyLocks();
+        setTimeout(() => openEdit(p), 0);
         searchParams.delete('edit');
+        searchParams.delete('from');
         setSearchParams(searchParams, { replace: true });
       }
     }
