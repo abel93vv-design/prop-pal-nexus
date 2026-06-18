@@ -88,15 +88,22 @@ interface TopClientMatchesProps {
   matches: MatchScore[];
   clients: Client[];
   users: { id: string; name: string }[];
+  fromPropertyId?: string;
 }
 
-export function TopClientMatches({ matches, clients, users }: TopClientMatchesProps) {
+export function TopClientMatches({ matches, clients, users, fromPropertyId }: TopClientMatchesProps) {
   const navigate = useNavigate();
   if (matches.length === 0) return (
     <div className="text-xs text-muted-foreground italic py-2">
       No hay matches calculados. Ve al Match Center para recalcular.
     </div>
   );
+
+  const buildHref = (clientId: string) => {
+    const qs = new URLSearchParams({ edit: clientId });
+    if (fromPropertyId) qs.set('from', `propiedad:${fromPropertyId}`);
+    return `/clientes?${qs.toString()}`;
+  };
 
   return (
     <div className="space-y-1.5">
@@ -111,8 +118,8 @@ export function TopClientMatches({ matches, clients, users }: TopClientMatchesPr
             key={m.id}
             role="button"
             tabIndex={0}
-            onClick={() => navigate(`/clientes?edit=${client.id}`)}
-            onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/clientes?edit=${client.id}`); }}
+            onClick={() => navigate(buildHref(client.id))}
+            onKeyDown={(e) => { if (e.key === 'Enter') navigate(buildHref(client.id)); }}
             className="p-2 rounded-md border border-border bg-muted/20 text-xs space-y-1 cursor-pointer hover:bg-muted/40 transition-colors"
           >
             <div className="flex items-center justify-between">
