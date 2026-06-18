@@ -391,6 +391,31 @@ const Clients = () => {
   const [cfValues, setCfValues] = useState<Record<string, any>>({});
   const { values: loadedCfValues, saveValues: saveCfValues } = useCustomFieldValues(editing?.id ?? null);
   const [csvDialogOpen, setCsvDialogOpen] = useState(false);
+  const [returnTo, setReturnTo] = useState<string | null>(null);
+
+  const cleanupBodyLocks = () => {
+    const reset = () => {
+      const stillOpen = document.querySelector('[data-state="open"][role="dialog"], [data-radix-popper-content-wrapper]');
+      if (stillOpen) return;
+      if (document.body.style.pointerEvents === "none") document.body.style.pointerEvents = "";
+      document.body.style.removeProperty("overflow");
+      document.body.style.removeProperty("padding-right");
+      document.body.removeAttribute("data-scroll-locked");
+    };
+    [0, 50, 150, 300, 600].forEach(t => setTimeout(reset, t));
+  };
+
+  const handleDialogOpenChange = (open: boolean) => {
+    setDialogOpen(open);
+    if (!open) {
+      cleanupBodyLocks();
+      if (returnTo) {
+        const target = returnTo;
+        setReturnTo(null);
+        setTimeout(() => navigate(target), 0);
+      }
+    }
+  };
 
   const CSV_FIELD_MAP = [
     { key: "name", label: "Nombre", required: true },
