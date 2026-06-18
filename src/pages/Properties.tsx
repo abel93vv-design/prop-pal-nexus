@@ -643,6 +643,7 @@ const Properties = () => {
                 matches={getTopMatchesForProperty(editing.id)}
                 clients={clients}
                 users={users}
+                fromPropertyId={editing.id}
               />
             )}
             {editing && (
