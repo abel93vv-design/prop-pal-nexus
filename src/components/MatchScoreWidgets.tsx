@@ -24,6 +24,7 @@ const viabilityLabels: Record<string, string> = {
 interface TopPropertyMatchesProps {
   matches: MatchScore[];
   properties: Property[];
+  fromClientId?: string;
 }
 
 export function TopPropertyMatches({ matches, properties }: TopPropertyMatchesProps) {
