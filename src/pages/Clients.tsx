@@ -516,7 +516,7 @@ const Clients = () => {
       await updateClient({ ...editing, ...form });
       await saveCfValues(editing.id, cfValues);
       toast({ title: "Cliente actualizado" });
-      setDialogOpen(false);
+      handleDialogOpenChange(false);
     } else {
       const created = await addClient(form);
       const newId = created?.id;
@@ -538,7 +538,7 @@ const Clients = () => {
         }
       }
       toast({ title: "Cliente creado" });
-      setDialogOpen(false);
+      handleDialogOpenChange(false);
     }
   };
 
