@@ -78,6 +78,9 @@ const AppRoutes = () => (
     <Route path="/signup" element={<Navigate to="/auth" replace />} />
     <Route path="/reset-password" element={<ResetPassword />} />
     <Route path="/publica" element={<PublicProperties />} />
+    <Route path="/trust" element={<Trust />} />
+    <Route path="/legal/privacidad" element={<Trust />} />
+    <Route path="/legal/seguridad" element={<Trust />} />
     <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
     <Route path="/propiedades" element={<ProtectedRoute><Properties /></ProtectedRoute>} />
     <Route path="/propiedades/:listingType" element={<ProtectedRoute><Properties /></ProtectedRoute>} />
