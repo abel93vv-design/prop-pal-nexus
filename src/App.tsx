@@ -30,6 +30,7 @@ import NotFound from "./pages/NotFound";
 import RolesPermissions from "./pages/RolesPermissions";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import ControlLeads from "./pages/ControlLeads";
+import Trust from "./pages/Trust";
 
 const queryClient = new QueryClient();
 
