@@ -139,6 +139,7 @@ export const MUNICIPIOS_PROVINCIA: Municipio[] = [
   { id: "mun-alora", name: "Álora", group: "Valle del Guadalhorce" },
   { id: "mun-alhaurin-grande", name: "Alhaurín el Grande", group: "Valle del Guadalhorce" },
   { id: "mun-alhaurin-torre", name: "Alhaurín de la Torre", group: "Valle del Guadalhorce" },
+  { id: "mun-pizarra", name: "Pizarra", group: "Valle del Guadalhorce" },
   // Costa del Sol Occidental
   { id: "mun-marbella", name: "Marbella", group: "Costa del Sol Occidental" },
   { id: "mun-estepona", name: "Estepona", group: "Costa del Sol Occidental" },
