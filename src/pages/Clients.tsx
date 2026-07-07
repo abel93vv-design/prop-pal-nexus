@@ -405,6 +405,23 @@ const Clients = () => {
   const { values: loadedCfValues, saveValues: saveCfValues } = useCustomFieldValues(editing?.id ?? null);
   const [csvDialogOpen, setCsvDialogOpen] = useState(false);
   const [returnTo, setReturnTo] = useState<string | null>(null);
+  const [financialsMap, setFinancialsMap] = useState<Record<string, { mortgage_needed: boolean; mortgage_preapproved: boolean }>>({});
+
+  useEffect(() => {
+    if (!tenantId) return;
+    supabase
+      .from('client_financials')
+      .select('client_id, mortgage_needed, mortgage_preapproved')
+      .eq('tenant_id', tenantId)
+      .then(({ data }) => {
+        if (!data) return;
+        const map: Record<string, { mortgage_needed: boolean; mortgage_preapproved: boolean }> = {};
+        data.forEach((r: any) => {
+          map[r.client_id] = { mortgage_needed: !!r.mortgage_needed, mortgage_preapproved: !!r.mortgage_preapproved };
+        });
+        setFinancialsMap(map);
+      });
+  }, [tenantId, clients.length, dialogOpen]);
 
   const cleanupBodyLocks = () => {
     const reset = () => {
