@@ -77,44 +77,52 @@ interface ScoreDetails {
 
 function calculatePropertyScore(
   prefs: ClientPreferences | null,
-  prop: Property
+  prop: Property,
+  isRental: boolean
 ): { score: number; criteria: CriteriaDetail[] } {
   const criteria: CriteriaDetail[] = [];
 
   if (!prefs) {
     return {
-      score: 50,
-      criteria: [{ label: "Sin preferencias", weight: 100, score: 50, met: false, detail: "No hay preferencias configuradas" }],
+      score: 0,
+      criteria: [{ label: "Sin preferencias", weight: 100, score: 0, met: false, detail: "No hay preferencias configuradas para este cliente" }],
     };
   }
 
-  let priceScore = 50;
+  // Precio efectivo según operación (alquiler → renta mensual)
+  const effectivePrice = isRental ? Number(prop.monthly_rent || 0) : Number(prop.price || 0);
+  const priceLabel = isRental ? "€/mes" : "€";
+
+  let priceScore = 0;
   let priceMet = false;
   let priceDetail = "";
   if (prefs.max_price > 0) {
-    if (prop.price >= prefs.min_price && prop.price <= prefs.max_price) {
+    const minP = Math.max(0, Number(prefs.min_price) || 0);
+    if (effectivePrice >= minP && effectivePrice <= prefs.max_price) {
       priceScore = 100; priceMet = true;
-      priceDetail = `Precio ${prop.price.toLocaleString()}€ dentro del rango`;
-    } else if (prop.price > prefs.max_price) {
+      priceDetail = `Precio ${effectivePrice.toLocaleString()}${priceLabel} dentro del rango`;
+    } else if (effectivePrice > prefs.max_price) {
       priceScore = 0;
-      priceDetail = `Precio ${prop.price.toLocaleString()}€ supera presupuesto máximo ${prefs.max_price.toLocaleString()}€`;
-    } else {
-      const diff = (prefs.min_price - prop.price) / prefs.min_price;
+      priceDetail = `Precio ${effectivePrice.toLocaleString()}${priceLabel} supera máximo ${prefs.max_price.toLocaleString()}${priceLabel}`;
+    } else if (minP > 0) {
+      const diff = (minP - effectivePrice) / minP;
       priceScore = Math.max(0, 100 - diff * 200);
-      priceDetail = `Precio ${prop.price.toLocaleString()}€ por debajo del mínimo`;
+      priceDetail = `Precio ${effectivePrice.toLocaleString()}${priceLabel} por debajo del mínimo`;
+    } else {
+      priceScore = 100; priceMet = true;
+      priceDetail = `Precio ${effectivePrice.toLocaleString()}${priceLabel} dentro del rango`;
     }
   } else {
     priceDetail = "Sin rango de precio configurado";
   }
-  criteria.push({ label: "Precio", weight: 20, score: Math.round(priceScore), met: priceMet, detail: priceDetail });
+  criteria.push({ label: "Precio", weight: 30, score: Math.round(priceScore), met: priceMet, detail: priceDetail });
 
-  let locationScore = 50;
+  let locationScore = 0;
   let locationMet = false;
   let locationDetail = "";
 
   const propZoneId = (prop.neighborhood || "").trim();
 
-  // Mapping barrio -> distrito (debe mantenerse sincronizado con src/data/malagaZones.ts)
   const BARRIO_TO_DISTRITO: Record<string, string> = {
     "centro-historico":"centro","la-merced":"centro","la-goleta":"centro","ensanche-centro":"centro","soho":"centro","la-victoria":"centro","la-malagueta":"centro","lagunillas":"centro","la-trinidad":"centro",
     "el-palo":"este","pedregalejo":"este","el-candado":"este","el-morlaco":"este","el-limonar":"este",
@@ -135,6 +143,10 @@ function calculatePropertyScore(
     "mun-rincon-victoria":"costa-oriental","mun-velez-malaga":"costa-oriental","mun-nerja":"costa-oriental",
     "mun-antequera":"interior","mun-ronda":"interior",
   };
+
+  const hasZoneCriteria = (prefs.selected_zones && prefs.selected_zones.length > 0)
+    || (prefs.neighborhood && prefs.neighborhood.length > 0)
+    || (prefs.preferred_locations && prefs.preferred_locations.length > 0);
 
   if (prefs.selected_zones && prefs.selected_zones.length > 0 && propZoneId) {
     const [propType, propId] = propZoneId.split(":");
@@ -157,39 +169,37 @@ function calculatePropertyScore(
 
     if (matched) {
       locationScore = 100; locationMet = true;
-      locationDetail = `Zona "${propZoneId}" coincide (${matchKind}) con zonas del cliente`;
+      locationDetail = `Zona "${propZoneId}" coincide (${matchKind})`;
     } else {
       locationScore = 10;
       locationDetail = `Zona "${propZoneId}" no está en las ${prefs.selected_zones.length} zonas seleccionadas`;
     }
   } else if (prefs.selected_zones && prefs.selected_zones.length > 0 && !propZoneId) {
     locationScore = 0;
-    locationDetail = "Propiedad sin zona asignada, cliente tiene zonas definidas";
-  } else if (!prefs.selected_zones || prefs.selected_zones.length === 0) {
-    if (prefs.neighborhood && prop.neighborhood) {
-      if (prop.neighborhood.toLowerCase() === prefs.neighborhood.toLowerCase()) {
-        locationScore = 100; locationMet = true;
-        locationDetail = `Barrio "${prop.neighborhood}" coincide exactamente`;
-      } else {
-        locationScore = 20;
-        locationDetail = `Barrio "${prop.neighborhood}" no coincide con "${prefs.neighborhood}"`;
-      }
-    } else if (prefs.preferred_locations.length > 0) {
-      const addrLower = (prop.address || "").toLowerCase() + " " + (prop.neighborhood || "").toLowerCase();
-      const matchedLoc = prefs.preferred_locations.find((loc) => addrLower.includes(loc.toLowerCase()));
-      if (matchedLoc) {
-        locationScore = 100; locationMet = true;
-        locationDetail = `Ubicación "${matchedLoc}" encontrada`;
-      } else {
-        locationScore = 20;
-        locationDetail = `No coincide con zonas: ${prefs.preferred_locations.join(", ")}`;
-      }
+    locationDetail = "Propiedad sin zona asignada";
+  } else if (prefs.neighborhood && prop.neighborhood) {
+    if (prop.neighborhood.toLowerCase() === prefs.neighborhood.toLowerCase()) {
+      locationScore = 100; locationMet = true;
+      locationDetail = `Barrio "${prop.neighborhood}" coincide`;
     } else {
-      locationDetail = "Sin ubicaciones preferidas";
+      locationScore = 20;
+      locationDetail = `Barrio "${prop.neighborhood}" no coincide con "${prefs.neighborhood}"`;
     }
+  } else if (prefs.preferred_locations && prefs.preferred_locations.length > 0) {
+    const addrLower = (prop.address || "").toLowerCase() + " " + (prop.neighborhood || "").toLowerCase();
+    const matchedLoc = prefs.preferred_locations.find((loc) => addrLower.includes(loc.toLowerCase()));
+    if (matchedLoc) {
+      locationScore = 100; locationMet = true;
+      locationDetail = `Ubicación "${matchedLoc}" encontrada`;
+    } else {
+      locationScore = 20;
+      locationDetail = `No coincide con zonas: ${prefs.preferred_locations.join(", ")}`;
+    }
+  } else {
+    locationDetail = "Sin ubicaciones preferidas";
   }
 
-  criteria.push({ label: "Ubicación", weight: 30, score: Math.round(locationScore), met: locationMet, detail: locationDetail });
+  criteria.push({ label: "Ubicación", weight: 50, score: Math.round(locationScore), met: locationMet, detail: locationDetail });
 
   let featureHits = 0;
   let featureTotal = 0;
@@ -229,13 +239,14 @@ function calculatePropertyScore(
     }
   }
 
-  const featuresScore = featureTotal > 0 ? (featureHits / featureTotal) * 100 : 50;
+  const featuresScore = featureTotal > 0 ? (featureHits / featureTotal) * 100 : 0;
   criteria.push({
-    label: "Características", weight: 10, score: Math.round(featuresScore),
+    label: "Características", weight: 20, score: Math.round(featuresScore),
     met: featuresScore >= 75, detail: featureDetails.join("; ") || "Sin requisitos",
   });
 
-  const propertyScore = priceScore * (20/60) + locationScore * (30/60) + featuresScore * (10/60);
+  // Pesos normalizados a 100: precio 30, ubicación 50, características 20
+  const propertyScore = priceScore * 0.30 + locationScore * 0.50 + featuresScore * 0.20;
 
   return { score: Math.round(Math.min(100, Math.max(0, propertyScore))), criteria };
 }
