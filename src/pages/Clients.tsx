@@ -511,13 +511,74 @@ const Clients = () => {
 
   const normalizePhone = (p: string) => (p || "").replace(/\D/g, "");
 
+  const categoryOptions = Array.from(new Set(clients.map(c => c.category).filter(Boolean))) as string[];
+
+  const inRange = (n: number, min: string, max: string) => {
+    if (min && n < Number(min)) return false;
+    if (max && n > Number(max)) return false;
+    return true;
+  };
+  const overlaps = (a: string[], b: string[]) => a.some(x => b.includes(x));
+
   const filtered = clients
     .filter(c => {
       const q = search.toLowerCase();
       const matchSearch = !q || c.name.toLowerCase().includes(q) || (c.phone || "").toLowerCase().includes(q);
       const matchType = typeFilter === "all" || c.type === typeFilter;
       const matchAgency = agencyFilter === "all" || c.agencyId === agencyFilter;
-      return matchSearch && matchType && matchAgency;
+      if (!(matchSearch && matchType && matchAgency)) return false;
+
+      // Advanced filters
+      const f = advFilters;
+      if (f.types.length && !f.types.includes(c.type)) return false;
+      if (f.operations.length && !f.operations.includes(c.operationType)) return false;
+      if (f.leadStatuses.length && !f.leadStatuses.includes(c.leadStatus)) return false;
+      if (f.sources.length && !f.sources.includes(c.source || '')) return false;
+      if (f.agencyIds.length && !f.agencyIds.includes(c.agencyId)) return false;
+      if (f.categories.length && !f.categories.includes(c.category)) return false;
+
+      const lastMs = c.lastContactedAt ? new Date(c.lastContactedAt).getTime() : 0;
+      if (f.lastContactFrom && lastMs < new Date(f.lastContactFrom).getTime()) return false;
+      if (f.lastContactTo && (!lastMs || lastMs > new Date(f.lastContactTo).getTime() + 86399999)) return false;
+      if (!inRange(c.contactCount || 0, f.minContacts, f.maxContacts)) return false;
+      if (f.onlyUncontacted && (c.contactCount || 0) > 0) return false;
+
+      const regMs = c.registeredAt ? new Date(c.registeredAt).getTime() : 0;
+      if (f.registeredFrom && regMs < new Date(f.registeredFrom).getTime()) return false;
+      if (f.registeredTo && regMs > new Date(f.registeredTo).getTime() + 86399999) return false;
+
+      const fin = financialsMap[c.id];
+      if (f.financing !== 'any') {
+        if (!fin) return false;
+        if (f.financing === 'contado' && fin.mortgage_needed) return false;
+        if (f.financing === 'necesita' && (!fin.mortgage_needed || fin.mortgage_preapproved)) return false;
+        if (f.financing === 'preaprobada' && !fin.mortgage_preapproved) return false;
+      }
+      if (f.minCash || f.maxCash) {
+        if (!fin) return false;
+        if (!inRange(fin.available_cash, f.minCash, f.maxCash)) return false;
+      }
+      if (f.minIncome || f.maxIncome) {
+        if (!fin) return false;
+        if (!inRange(fin.monthly_income, f.minIncome, f.maxIncome)) return false;
+      }
+
+      const pref = preferencesMap[c.id];
+      const needsPref = f.minPrice || f.maxPrice || f.minSurface || f.maxSurface || f.minBedrooms || f.minBathrooms || f.preferredTypes.length || f.selectedZones.length || f.requiredExtras.length;
+      if (needsPref) {
+        if (!pref) return false;
+        if (f.minPrice && pref.max_price && pref.max_price < Number(f.minPrice)) return false;
+        if (f.maxPrice && pref.min_price && pref.min_price > Number(f.maxPrice)) return false;
+        if (f.minSurface && pref.max_surface && pref.max_surface < Number(f.minSurface)) return false;
+        if (f.maxSurface && pref.min_surface && pref.min_surface > Number(f.maxSurface)) return false;
+        if (f.minBedrooms && pref.min_bedrooms < Number(f.minBedrooms)) return false;
+        if (f.minBathrooms && pref.min_bathrooms < Number(f.minBathrooms)) return false;
+        if (f.preferredTypes.length && !overlaps(f.preferredTypes, pref.preferred_types)) return false;
+        if (f.selectedZones.length && !overlaps(f.selectedZones, pref.selected_zones)) return false;
+        if (f.requiredExtras.length && !f.requiredExtras.every(x => pref.required_extras.includes(x))) return false;
+      }
+
+      return true;
     })
     .sort((a, b) => {
       if (contactSort === "none") return 0;
