@@ -513,12 +513,13 @@ Deno.serve(async (req) => {
       const prefs = prefsMap.get(client.id) || null;
 
       for (const prop of properties as Property[]) {
-        // Aislamiento estricto por inmobiliaria: solo emparejar cuando cliente y propiedad
-        // pertenecen a la MISMA agencia, y ambos tienen agencia asignada.
-        if (!client.agency_id || !prop.agency_id || client.agency_id !== prop.agency_id) {
+        // Aislamiento por inmobiliaria: si ambos tienen agencia deben coincidir;
+        // si alguno no tiene agencia (cuenta single-agency o registro sin asignar)
+        // se permite el match dentro del mismo tenant.
+        if (client.agency_id && prop.agency_id && client.agency_id !== prop.agency_id) {
           continue;
         }
-        const matchAgencyId = client.agency_id;
+        const matchAgencyId = client.agency_id || prop.agency_id || null;
         const clientOp = client.operation_type || 'compra';
         const propOp = prop.operation_type || 'venta';
         const opMatch = clientOp === 'ambos' || propOp === 'ambos' ||
@@ -537,8 +538,9 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        const propResult = calculatePropertyScore(prefs, prop);
-        const finResult = calculateFinancialScore(financials, prop);
+        const isRental = propOp === 'alquiler' || clientOp === 'alquiler';
+        const propResult = calculatePropertyScore(prefs, prop, isRental);
+        const finResult = calculateFinancialScore(financials, prop, isRental);
 
         const totalScore = Math.round(propResult.score * 0.6 + finResult.score * 0.4);
         const category = getCategory(totalScore);
