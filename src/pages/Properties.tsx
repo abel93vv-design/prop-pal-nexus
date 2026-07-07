@@ -92,7 +92,7 @@ const Properties = () => {
     routeListing === 'ne' ? 'ne' : routeListing === 'noticias' ? 'noticia' : 'all';
   const { definitions: customFields } = useCustomFieldDefinitions('property');
   const { interests, addInterest, removeInterest, updateInterestType } = useInterests();
-  const { getTopMatchesForProperty } = useMatchCenter();
+  const { getTopMatchesForProperty, runMatching, calculating } = useMatchCenter();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
