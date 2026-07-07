@@ -406,21 +406,51 @@ const Clients = () => {
   const { values: loadedCfValues, saveValues: saveCfValues } = useCustomFieldValues(editing?.id ?? null);
   const [csvDialogOpen, setCsvDialogOpen] = useState(false);
   const [returnTo, setReturnTo] = useState<string | null>(null);
-  const [financialsMap, setFinancialsMap] = useState<Record<string, { mortgage_needed: boolean; mortgage_preapproved: boolean }>>({});
+  const [financialsMap, setFinancialsMap] = useState<Record<string, { mortgage_needed: boolean; mortgage_preapproved: boolean; available_cash: number; monthly_income: number }>>({});
+  const [preferencesMap, setPreferencesMap] = useState<Record<string, { min_price: number; max_price: number; min_surface: number; max_surface: number; min_bedrooms: number; min_bathrooms: number; preferred_types: string[]; selected_zones: string[]; required_extras: string[] }>>({});
+  const [advOpen, setAdvOpen] = useState(false);
+  const [advFilters, setAdvFilters] = useState<AdvFilters>(emptyAdvFilters);
 
   useEffect(() => {
     if (!tenantId) return;
     supabase
       .from('client_financials')
-      .select('client_id, mortgage_needed, mortgage_preapproved')
+      .select('client_id, mortgage_needed, mortgage_preapproved, available_cash, monthly_income')
       .eq('tenant_id', tenantId)
       .then(({ data }) => {
         if (!data) return;
-        const map: Record<string, { mortgage_needed: boolean; mortgage_preapproved: boolean }> = {};
+        const map: any = {};
         data.forEach((r: any) => {
-          map[r.client_id] = { mortgage_needed: !!r.mortgage_needed, mortgage_preapproved: !!r.mortgage_preapproved };
+          map[r.client_id] = {
+            mortgage_needed: !!r.mortgage_needed,
+            mortgage_preapproved: !!r.mortgage_preapproved,
+            available_cash: Number(r.available_cash) || 0,
+            monthly_income: Number(r.monthly_income) || 0,
+          };
         });
         setFinancialsMap(map);
+      });
+    supabase
+      .from('client_preferences')
+      .select('client_id, min_price, max_price, min_surface, max_surface, min_bedrooms, min_bathrooms, preferred_types, selected_zones, required_extras')
+      .eq('tenant_id', tenantId)
+      .then(({ data }) => {
+        if (!data) return;
+        const map: any = {};
+        data.forEach((r: any) => {
+          map[r.client_id] = {
+            min_price: Number(r.min_price) || 0,
+            max_price: Number(r.max_price) || 0,
+            min_surface: Number(r.min_surface) || 0,
+            max_surface: Number(r.max_surface) || 0,
+            min_bedrooms: Number(r.min_bedrooms) || 0,
+            min_bathrooms: Number(r.min_bathrooms) || 0,
+            preferred_types: r.preferred_types || [],
+            selected_zones: r.selected_zones || [],
+            required_extras: r.required_extras || [],
+          };
+        });
+        setPreferencesMap(map);
       });
   }, [tenantId, clients.length, dialogOpen]);
 
