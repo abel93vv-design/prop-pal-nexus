@@ -973,8 +973,93 @@ const Clients = () => {
         fieldMap={CSV_FIELD_MAP}
         entityName="clientes"
       />
+
+      <ClientsAdvancedFilters
+        open={advOpen}
+        onOpenChange={setAdvOpen}
+        filters={advFilters}
+        onChange={setAdvFilters}
+        onReset={() => setAdvFilters(emptyAdvFilters)}
+        agencies={agencies}
+        categories={categoryOptions}
+      />
     </Layout>
   );
 };
+
+const CHIP_LABELS: Record<string, string> = {
+  comprador: 'Comprador', vendedor: 'Vendedor', arrendador: 'Arrendador', arrendatario: 'Arrendatario',
+  compra: 'Compra', alquiler: 'Alquiler', venta: 'Venta', ambos: 'Ambos',
+  nuevo: 'Nuevo', contactado: 'Contactado', en_negociacion: 'En negociación', cerrado: 'Cerrado', inactivo: 'Inactivo',
+  contado: 'Al contado', necesita: 'Necesita hipoteca', preaprobada: 'Hipoteca pre-aprobada',
+};
+const chipLabel = (v: string) => CHIP_LABELS[v] || v.charAt(0).toUpperCase() + v.slice(1).replace(/_/g, ' ');
+
+function ActiveFilterChips({ filters, onChange }: { filters: AdvFilters; onChange: (f: AdvFilters) => void }) {
+  const chips: { label: string; clear: () => void }[] = [];
+  const arrayKeys: { key: keyof AdvFilters; prefix: string }[] = [
+    { key: 'types', prefix: 'Tipo' },
+    { key: 'operations', prefix: 'Operación' },
+    { key: 'leadStatuses', prefix: 'Estado' },
+    { key: 'sources', prefix: 'Origen' },
+    { key: 'agencyIds', prefix: 'Inmob.' },
+    { key: 'categories', prefix: 'Cat.' },
+    { key: 'preferredTypes', prefix: 'Tipología' },
+    { key: 'selectedZones', prefix: 'Zona' },
+    { key: 'requiredExtras', prefix: 'Extra' },
+  ];
+  arrayKeys.forEach(({ key, prefix }) => {
+    (filters[key] as string[]).forEach(v => {
+      chips.push({
+        label: `${prefix}: ${chipLabel(v)}`,
+        clear: () => onChange({ ...filters, [key]: (filters[key] as string[]).filter(x => x !== v) } as AdvFilters),
+      });
+    });
+  });
+  if (filters.financing !== 'any') {
+    chips.push({ label: `Financiación: ${chipLabel(filters.financing)}`, clear: () => onChange({ ...filters, financing: 'any' }) });
+  }
+  if (filters.onlyUncontacted) {
+    chips.push({ label: 'Sin contactar', clear: () => onChange({ ...filters, onlyUncontacted: false }) });
+  }
+  const rangeKeys: { min: keyof AdvFilters; max: keyof AdvFilters; label: string }[] = [
+    { min: 'lastContactFrom', max: 'lastContactTo', label: 'Últ. contacto' },
+    { min: 'minContacts', max: 'maxContacts', label: 'Nº contactos' },
+    { min: 'minCash', max: 'maxCash', label: 'Ahorros' },
+    { min: 'minIncome', max: 'maxIncome', label: 'Ingresos' },
+    { min: 'minPrice', max: 'maxPrice', label: 'Precio' },
+    { min: 'minSurface', max: 'maxSurface', label: 'Superficie' },
+    { min: 'registeredFrom', max: 'registeredTo', label: 'Registrado' },
+  ];
+  rangeKeys.forEach(({ min, max, label }) => {
+    const vMin = filters[min] as string;
+    const vMax = filters[max] as string;
+    if (vMin || vMax) {
+      chips.push({
+        label: `${label}: ${vMin || '…'} – ${vMax || '…'}`,
+        clear: () => onChange({ ...filters, [min]: '', [max]: '' } as AdvFilters),
+      });
+    }
+  });
+  (['minBedrooms', 'minBathrooms'] as const).forEach(k => {
+    if (filters[k]) chips.push({
+      label: `${k === 'minBedrooms' ? 'Hab. mín.' : 'Baños mín.'}: ${filters[k]}`,
+      clear: () => onChange({ ...filters, [k]: '' }),
+    });
+  });
+
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {chips.map((c, i) => (
+        <Badge key={i} variant="secondary" className="gap-1 pr-1 text-xs">
+          {c.label}
+          <button type="button" onClick={c.clear} className="ml-0.5 hover:bg-background/50 rounded p-0.5">
+            <X className="w-3 h-3" />
+          </button>
+        </Badge>
+      ))}
+    </div>
+  );
+}
 
 export default Clients;
