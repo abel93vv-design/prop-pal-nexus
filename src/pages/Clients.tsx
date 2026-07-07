@@ -74,9 +74,22 @@ function FinancialsFields({ value, onChange }: { value: FinancialsState; onChang
         <div><Label className="text-xs">Deudas mensuales (€)</Label><Input type="number" value={value.monthly_debts || ""} onChange={e => set({ monthly_debts: Number(e.target.value) })} /></div>
         <div><Label className="text-xs">Ratio endeudamiento (%)</Label><Input type="number" value={value.debt_ratio || ""} onChange={e => set({ debt_ratio: Number(e.target.value) })} /></div>
       </div>
-      <div className="flex items-center gap-4">
-        <label className="flex items-center gap-2 text-xs"><Switch checked={value.mortgage_needed} onCheckedChange={v => set({ mortgage_needed: !!v })} />Necesita hipoteca</label>
-        <label className="flex items-center gap-2 text-xs"><Switch checked={value.mortgage_preapproved} onCheckedChange={v => set({ mortgage_preapproved: !!v })} />Pre-aprobada</label>
+      <div>
+        <Label className="text-xs">Financiación</Label>
+        <Select
+          value={value.mortgage_preapproved ? 'preaprobada' : value.mortgage_needed ? 'necesita' : 'contado'}
+          onValueChange={(v) => set({
+            mortgage_needed: v !== 'contado',
+            mortgage_preapproved: v === 'preaprobada',
+          })}
+        >
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="contado">Al contado</SelectItem>
+            <SelectItem value="necesita">Necesita hipoteca</SelectItem>
+            <SelectItem value="preaprobada">Hipoteca pre-aprobada</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
     </div>
   );
@@ -392,6 +405,23 @@ const Clients = () => {
   const { values: loadedCfValues, saveValues: saveCfValues } = useCustomFieldValues(editing?.id ?? null);
   const [csvDialogOpen, setCsvDialogOpen] = useState(false);
   const [returnTo, setReturnTo] = useState<string | null>(null);
+  const [financialsMap, setFinancialsMap] = useState<Record<string, { mortgage_needed: boolean; mortgage_preapproved: boolean }>>({});
+
+  useEffect(() => {
+    if (!tenantId) return;
+    supabase
+      .from('client_financials')
+      .select('client_id, mortgage_needed, mortgage_preapproved')
+      .eq('tenant_id', tenantId)
+      .then(({ data }) => {
+        if (!data) return;
+        const map: Record<string, { mortgage_needed: boolean; mortgage_preapproved: boolean }> = {};
+        data.forEach((r: any) => {
+          map[r.client_id] = { mortgage_needed: !!r.mortgage_needed, mortgage_preapproved: !!r.mortgage_preapproved };
+        });
+        setFinancialsMap(map);
+      });
+  }, [tenantId, clients.length, dialogOpen]);
 
   const cleanupBodyLocks = () => {
     const reset = () => {
@@ -633,7 +663,7 @@ const Clients = () => {
               <TableRow className="bg-muted/30">
                 <TableHead className="font-semibold text-xs">Nombre</TableHead>
                 <TableHead className="font-semibold text-xs">Contacto</TableHead>
-                <TableHead className="font-semibold text-xs">Tipo</TableHead>
+                <TableHead className="font-semibold text-xs">Financiación</TableHead>
                 <TableHead className="font-semibold text-xs">Operación</TableHead>
                 <TableHead className="font-semibold text-xs">Estado</TableHead>
                 <TableHead className="font-semibold text-xs">Últ. contacto</TableHead>
@@ -653,7 +683,15 @@ const Clients = () => {
                       {c.phone && <p className="flex items-center gap-1 text-xs text-muted-foreground"><Phone className="w-3 h-3" />{c.phone}</p>}
                     </div>
                   </TableCell>
-                  <TableCell><Badge variant="outline" className="text-[10px]">{typeLabels[c.type]}</Badge></TableCell>
+                  <TableCell>
+                    {(() => {
+                      const f = financialsMap[c.id];
+                      if (!f) return <span className="text-xs text-muted-foreground italic">—</span>;
+                      if (f.mortgage_preapproved) return <Badge variant="outline" className="text-[10px] bg-success/10 text-success border-success/20">Hipoteca pre-aprobada</Badge>;
+                      if (f.mortgage_needed) return <Badge variant="outline" className="text-[10px] bg-warning/10 text-warning border-warning/20">Necesita hipoteca</Badge>;
+                      return <Badge variant="outline" className="text-[10px] bg-info/10 text-info border-info/20">Al contado</Badge>;
+                    })()}
+                  </TableCell>
                   <TableCell>
                     <Badge variant="outline" className={`text-[10px] ${operationColors[c.operationType] || ''}`}>
                       {operationLabels[c.operationType] || c.operationType}
