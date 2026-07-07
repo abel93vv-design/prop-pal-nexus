@@ -1,37 +1,52 @@
-# Mejoras en navegación entre Propiedades ↔ Clientes
+## Filtros avanzados en la página de Clientes
 
-## 1. Botón "Contactar" dentro de la ficha del cliente
-Hoy el botón `PhoneCall` (marcar contactado) sólo existe en la fila de la tabla. Se añade también dentro del modal de edición de cliente.
+Añadir un botón **"Filtros avanzados"** en la barra superior de `/clientes`, junto a los filtros existentes (búsqueda, tipo, inmobiliaria). Al pulsarlo se abre un panel lateral (Sheet) con todos los filtros disponibles, aplicables en combinación.
 
-- En `src/pages/Clients.tsx`, en el `DialogFooter` del diálogo de edición, añadir (sólo cuando `editing` existe) un botón **"Marcar contactado"** con icono `PhoneCall` que llama a `markContacted(editing)` y muestra el contador actual (`editing.contactCount`).
-- Se mantiene el botón existente en la fila de la tabla.
+### Filtros incluidos en el panel
 
-## 2. La ficha del cliente se abre y se cierra al entrar desde una propiedad
-Causa: al hacer click en un match dentro del diálogo de propiedad, se navega a `/clientes?edit=X` mientras el `Dialog` de Radix de Propiedades aún está montado. La limpieza de pointer-events / focus de Radix entra en conflicto con la apertura inmediata del nuevo `Dialog` en Clientes, que recibe un `onOpenChange(false)` espurio.
+**Datos básicos**
+- Tipo de cliente (comprador / vendedor / arrendador / arrendatario)
+- Operación (compra / alquiler / venta / ambos)
+- Estado del lead (nuevo / contactado / en negociación / cerrado / inactivo)
+- Origen del cliente (Fotocasa, Idealista, Web, Referido, etc.)
+- Inmobiliaria (si hay varias)
+- Categoría
 
-Cambios:
-- En `src/pages/Clients.tsx` (useEffect de `?edit=`):
-  - Diferir la apertura con `setTimeout(() => openEdit(c), 0)` para que la apertura ocurra después de que se desmonte el diálogo de Propiedades y se restablezca el foco.
-  - Llamar a `cleanupBodyLocks()` (mismo helper que ya usa `Properties.tsx`) antes de `openEdit` para liberar cualquier `pointer-events:none` heredado.
-- Replicar la misma corrección en `src/pages/Properties.tsx` para el caso simétrico (entrar a una propiedad desde un match de cliente).
+**Contacto**
+- Rango de "Último contacto" (desde / hasta)
+- Nº de contactos (mín / máx)
+- Sólo sin contactar aún
 
-## 3. Al cerrar la ficha, volver a la página de origen
-Hoy: si entras a un cliente desde una propiedad y cierras, te quedas en Clientes y tienes que volver a Propiedades manualmente. Se añade un "return path".
+**Financiación**
+- Al contado / Necesita hipoteca / Hipoteca pre-aprobada / Cualquiera
+- Rango de ahorros disponibles (mín / máx)
+- Rango de ingresos netos/mes (mín / máx)
 
-Cambios:
-- En `src/components/MatchScoreWidgets.tsx`:
-  - `TopClientMatches` (se usa dentro del diálogo de Propiedad): al navegar al cliente, añadir el parámetro `from=propiedad:<propertyId>`. Necesita recibir el `propertyId` actual como prop nueva (`fromPropertyId`). Pasarlo desde `Properties.tsx`.
-  - `TopPropertyMatches` (se usa dentro del diálogo de Cliente): al navegar a propiedad, añadir `from=cliente:<clientId>`. Recibir `fromClientId` como prop y pasarlo desde `Clients.tsx`.
-- En `src/pages/Clients.tsx`:
-  - Al procesar `?edit=`, leer también `from`. Si vale `propiedad:<id>`, guardar `returnTo = '/propiedades?edit=<id>'` en un `useState`.
-  - En `Dialog onOpenChange`: cuando se cierre y exista `returnTo`, llamar `navigate(returnTo)` y limpiar el estado.
-- En `src/pages/Properties.tsx`: simétrico — leer `from=cliente:<id>`, guardar `returnTo = '/clientes?edit=<id>'` y navegar al cerrar.
+**Preferencias de búsqueda**
+- Rango de precio deseado (mín / máx)
+- Rango de superficie (mín / máx)
+- Habitaciones mínimas
+- Baños mínimos
+- Tipología deseada (piso, casa, local, terreno, parking) — multi
+- Zonas preferidas (usando `ZoneSelector` existente)
+- Extras indispensables (ascensor, terraza, piscina, garaje, aire acondicionado, acepta mascotas) — multi
 
-## Detalles técnicos
+**Otros**
+- Rango de fecha de registro (desde / hasta)
 
-- No se tocan hooks de datos ni el esquema; sólo `src/pages/Clients.tsx`, `src/pages/Properties.tsx` y `src/components/MatchScoreWidgets.tsx`.
-- El parámetro `from` se elimina junto con `edit` en el mismo `setSearchParams({ replace: true })` para que no quede en la URL.
-- El `returnTo` se aplica únicamente cuando el cierre lo provoca el usuario (no tras guardar), o también tras guardar — confirmar abajo.
+### Comportamiento
 
-## A confirmar
-1. Al pulsar "Guardar" en el cliente (entrando desde propiedad), ¿también quieres volver automáticamente a la propiedad, o sólo al cerrar/cancelar?
+- El panel muestra en el botón un contador con el nº de filtros activos (ej. "Filtros avanzados (3)").
+- Botón **"Limpiar filtros"** dentro del panel.
+- Los filtros se aplican en vivo sobre la lista (se combinan con el buscador y los selectores rápidos ya visibles).
+- Debajo de la barra aparecen "chips" con los filtros activos, cada uno con una X para quitarlo individualmente.
+- El conteo del encabezado ("N clientes registrados") pasa a mostrar "Mostrando X de N".
+
+### Detalles técnicos
+
+- Nuevo componente `ClientsAdvancedFilters.tsx` que renderiza el contenido del Sheet (`@/components/ui/sheet` ya usado en el proyecto).
+- Estado consolidado `advancedFilters` en `Clients.tsx` (un solo objeto), inicializado vacío.
+- Para los filtros que dependen de `client_financials` y `client_preferences`, cargar mapas por `tenant_id` una sola vez (siguiendo el patrón ya usado para `financialsMap`) y añadir `preferencesMap`.
+- La función `filtered` en `Clients.tsx` se amplía para aplicar todos los criterios; se mantiene la ordenación actual por último contacto.
+- Los chips de filtros activos se renderizan encima de la tabla con `Badge` + icono `X`.
+- Sin cambios en la base de datos ni en tipos existentes.
