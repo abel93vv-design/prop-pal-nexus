@@ -663,7 +663,7 @@ const Clients = () => {
               <TableRow className="bg-muted/30">
                 <TableHead className="font-semibold text-xs">Nombre</TableHead>
                 <TableHead className="font-semibold text-xs">Contacto</TableHead>
-                <TableHead className="font-semibold text-xs">Tipo</TableHead>
+                <TableHead className="font-semibold text-xs">Financiación</TableHead>
                 <TableHead className="font-semibold text-xs">Operación</TableHead>
                 <TableHead className="font-semibold text-xs">Estado</TableHead>
                 <TableHead className="font-semibold text-xs">Últ. contacto</TableHead>
