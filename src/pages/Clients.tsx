@@ -683,7 +683,15 @@ const Clients = () => {
                       {c.phone && <p className="flex items-center gap-1 text-xs text-muted-foreground"><Phone className="w-3 h-3" />{c.phone}</p>}
                     </div>
                   </TableCell>
-                  <TableCell><Badge variant="outline" className="text-[10px]">{typeLabels[c.type]}</Badge></TableCell>
+                  <TableCell>
+                    {(() => {
+                      const f = financialsMap[c.id];
+                      if (!f) return <span className="text-xs text-muted-foreground italic">—</span>;
+                      if (f.mortgage_preapproved) return <Badge variant="outline" className="text-[10px] bg-success/10 text-success border-success/20">Hipoteca pre-aprobada</Badge>;
+                      if (f.mortgage_needed) return <Badge variant="outline" className="text-[10px] bg-warning/10 text-warning border-warning/20">Necesita hipoteca</Badge>;
+                      return <Badge variant="outline" className="text-[10px] bg-info/10 text-info border-info/20">Al contado</Badge>;
+                    })()}
+                  </TableCell>
                   <TableCell>
                     <Badge variant="outline" className={`text-[10px] ${operationColors[c.operationType] || ''}`}>
                       {operationLabels[c.operationType] || c.operationType}
