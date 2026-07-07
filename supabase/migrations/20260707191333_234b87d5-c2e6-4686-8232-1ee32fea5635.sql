@@ -1,0 +1,2 @@
+REVOKE EXECUTE ON FUNCTION public.cleanup_matches_on_client_soft_delete() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.cleanup_matches_on_property_soft_delete() FROM PUBLIC, anon, authenticated;
