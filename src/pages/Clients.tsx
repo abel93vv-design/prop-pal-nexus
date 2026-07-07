@@ -74,9 +74,22 @@ function FinancialsFields({ value, onChange }: { value: FinancialsState; onChang
         <div><Label className="text-xs">Deudas mensuales (€)</Label><Input type="number" value={value.monthly_debts || ""} onChange={e => set({ monthly_debts: Number(e.target.value) })} /></div>
         <div><Label className="text-xs">Ratio endeudamiento (%)</Label><Input type="number" value={value.debt_ratio || ""} onChange={e => set({ debt_ratio: Number(e.target.value) })} /></div>
       </div>
-      <div className="flex items-center gap-4">
-        <label className="flex items-center gap-2 text-xs"><Switch checked={value.mortgage_needed} onCheckedChange={v => set({ mortgage_needed: !!v })} />Necesita hipoteca</label>
-        <label className="flex items-center gap-2 text-xs"><Switch checked={value.mortgage_preapproved} onCheckedChange={v => set({ mortgage_preapproved: !!v })} />Pre-aprobada</label>
+      <div>
+        <Label className="text-xs">Financiación</Label>
+        <Select
+          value={value.mortgage_preapproved ? 'preaprobada' : value.mortgage_needed ? 'necesita' : 'contado'}
+          onValueChange={(v) => set({
+            mortgage_needed: v !== 'contado',
+            mortgage_preapproved: v === 'preaprobada',
+          })}
+        >
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="contado">Al contado</SelectItem>
+            <SelectItem value="necesita">Necesita hipoteca</SelectItem>
+            <SelectItem value="preaprobada">Hipoteca pre-aprobada</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
     </div>
   );
