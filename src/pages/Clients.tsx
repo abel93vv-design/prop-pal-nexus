@@ -715,7 +715,11 @@ const Clients = () => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Clientes</h1>
-            <p className="text-sm text-muted-foreground mt-1">{clients.length} clientes registrados</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              {countActiveFilters(advFilters) > 0 || search || typeFilter !== 'all' || agencyFilter !== 'all'
+                ? `Mostrando ${filtered.length} de ${clients.length} clientes`
+                : `${clients.length} clientes registrados`}
+            </p>
           </div>
           <div className="flex gap-2 flex-wrap">
             {isAdmin && <Button onClick={exportCSV} variant="outline" size="sm"><Download className="w-4 h-4 mr-1" />Exportar CSV</Button>}
