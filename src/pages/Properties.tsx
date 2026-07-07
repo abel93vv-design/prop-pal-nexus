@@ -92,7 +92,7 @@ const Properties = () => {
     routeListing === 'ne' ? 'ne' : routeListing === 'noticias' ? 'noticia' : 'all';
   const { definitions: customFields } = useCustomFieldDefinitions('property');
   const { interests, addInterest, removeInterest, updateInterestType } = useInterests();
-  const { getTopMatchesForProperty } = useMatchCenter();
+  const { getTopMatchesForProperty, runMatching, calculating } = useMatchCenter();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -648,12 +648,32 @@ const Properties = () => {
               />
             )}
             {editing && (
-              <TopClientMatches
-                matches={getTopMatchesForProperty(editing.id)}
-                clients={clients}
-                users={users}
-                fromPropertyId={editing.id}
-              />
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Matches calculados para esta propiedad</span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={calculating}
+                    onClick={async () => {
+                      const res = await runMatching(undefined, editing.id);
+                      toast({
+                        title: "Recalculado",
+                        description: `${res?.matches ?? 0} matches actualizados para esta propiedad`,
+                      });
+                    }}
+                  >
+                    {calculating ? "Calculando..." : "Recalcular matches"}
+                  </Button>
+                </div>
+                <TopClientMatches
+                  matches={getTopMatchesForProperty(editing.id)}
+                  clients={clients}
+                  users={users}
+                  fromPropertyId={editing.id}
+                />
+              </div>
             )}
             {editing && (
               <PortalPublicationControls property={editing} />

@@ -86,25 +86,19 @@ export function useMatchCenter() {
     if (!tenantId) return;
     setCalculating(true);
     try {
-      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-      const url = `https://${projectId}.supabase.co/functions/v1/calculate-matches`;
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      const res = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke("calculate-matches", {
+        body: {
           tenant_id: tenantId,
           client_id: clientId || undefined,
           property_id: propertyId || undefined,
-        }),
+        },
       });
-      const result = await res.json();
+      if (error) {
+        console.error("runMatching error:", error);
+        return { error: error.message, matches: 0 };
+      }
       await fetchMatches();
-      return result;
+      return data;
     } finally {
       setCalculating(false);
     }

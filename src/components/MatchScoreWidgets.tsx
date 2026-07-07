@@ -134,6 +134,7 @@ export function TopClientMatches({ matches, clients, users, fromPropertyId }: To
                 <div className="text-right">
                   <span className="font-bold text-sm">{m.total_score}</span>
                   <div className="flex gap-1 text-[9px] text-muted-foreground">
+                    <span>P:{m.property_score}</span>
                     <span>F:{m.financial_score}</span>
                   </div>
                 </div>
