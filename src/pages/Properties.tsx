@@ -648,12 +648,32 @@ const Properties = () => {
               />
             )}
             {editing && (
-              <TopClientMatches
-                matches={getTopMatchesForProperty(editing.id)}
-                clients={clients}
-                users={users}
-                fromPropertyId={editing.id}
-              />
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Matches calculados para esta propiedad</span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={calculating}
+                    onClick={async () => {
+                      const res = await runMatching(undefined, editing.id);
+                      toast({
+                        title: "Recalculado",
+                        description: `${res?.matches ?? 0} matches actualizados para esta propiedad`,
+                      });
+                    }}
+                  >
+                    {calculating ? "Calculando..." : "Recalcular matches"}
+                  </Button>
+                </div>
+                <TopClientMatches
+                  matches={getTopMatchesForProperty(editing.id)}
+                  clients={clients}
+                  users={users}
+                  fromPropertyId={editing.id}
+                />
+              </div>
             )}
             {editing && (
               <PortalPublicationControls property={editing} />
