@@ -10,7 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Search, Mail, Phone, Plus, Pencil, Trash2, PhoneCall, ArrowUpDown, Kanban, Download, Upload, FileText, X } from "lucide-react";
+import { Search, Mail, Phone, Plus, Pencil, Trash2, PhoneCall, ArrowUpDown, Kanban, Download, Upload, FileText, X, SlidersHorizontal } from "lucide-react";
+import { ClientsAdvancedFilters, AdvFilters, emptyAdvFilters, countActiveFilters } from "@/components/ClientsAdvancedFilters";
 import { Client, ClientType, LeadStatus, OperationType, DocumentType } from "@/types/crm";
 import { useToast } from "@/hooks/use-toast";
 import { useCustomFieldDefinitions, useCustomFieldValues } from "@/hooks/useCustomFields";
@@ -405,21 +406,51 @@ const Clients = () => {
   const { values: loadedCfValues, saveValues: saveCfValues } = useCustomFieldValues(editing?.id ?? null);
   const [csvDialogOpen, setCsvDialogOpen] = useState(false);
   const [returnTo, setReturnTo] = useState<string | null>(null);
-  const [financialsMap, setFinancialsMap] = useState<Record<string, { mortgage_needed: boolean; mortgage_preapproved: boolean }>>({});
+  const [financialsMap, setFinancialsMap] = useState<Record<string, { mortgage_needed: boolean; mortgage_preapproved: boolean; available_cash: number; monthly_income: number }>>({});
+  const [preferencesMap, setPreferencesMap] = useState<Record<string, { min_price: number; max_price: number; min_surface: number; max_surface: number; min_bedrooms: number; min_bathrooms: number; preferred_types: string[]; selected_zones: string[]; required_extras: string[] }>>({});
+  const [advOpen, setAdvOpen] = useState(false);
+  const [advFilters, setAdvFilters] = useState<AdvFilters>(emptyAdvFilters);
 
   useEffect(() => {
     if (!tenantId) return;
     supabase
       .from('client_financials')
-      .select('client_id, mortgage_needed, mortgage_preapproved')
+      .select('client_id, mortgage_needed, mortgage_preapproved, available_cash, monthly_income')
       .eq('tenant_id', tenantId)
       .then(({ data }) => {
         if (!data) return;
-        const map: Record<string, { mortgage_needed: boolean; mortgage_preapproved: boolean }> = {};
+        const map: any = {};
         data.forEach((r: any) => {
-          map[r.client_id] = { mortgage_needed: !!r.mortgage_needed, mortgage_preapproved: !!r.mortgage_preapproved };
+          map[r.client_id] = {
+            mortgage_needed: !!r.mortgage_needed,
+            mortgage_preapproved: !!r.mortgage_preapproved,
+            available_cash: Number(r.available_cash) || 0,
+            monthly_income: Number(r.monthly_income) || 0,
+          };
         });
         setFinancialsMap(map);
+      });
+    supabase
+      .from('client_preferences')
+      .select('client_id, min_price, max_price, min_surface, max_surface, min_bedrooms, min_bathrooms, preferred_types, selected_zones, required_extras')
+      .eq('tenant_id', tenantId)
+      .then(({ data }) => {
+        if (!data) return;
+        const map: any = {};
+        data.forEach((r: any) => {
+          map[r.client_id] = {
+            min_price: Number(r.min_price) || 0,
+            max_price: Number(r.max_price) || 0,
+            min_surface: Number(r.min_surface) || 0,
+            max_surface: Number(r.max_surface) || 0,
+            min_bedrooms: Number(r.min_bedrooms) || 0,
+            min_bathrooms: Number(r.min_bathrooms) || 0,
+            preferred_types: r.preferred_types || [],
+            selected_zones: r.selected_zones || [],
+            required_extras: r.required_extras || [],
+          };
+        });
+        setPreferencesMap(map);
       });
   }, [tenantId, clients.length, dialogOpen]);
 
@@ -480,13 +511,74 @@ const Clients = () => {
 
   const normalizePhone = (p: string) => (p || "").replace(/\D/g, "");
 
+  const categoryOptions = Array.from(new Set(clients.map(c => c.category).filter(Boolean))) as string[];
+
+  const inRange = (n: number, min: string, max: string) => {
+    if (min && n < Number(min)) return false;
+    if (max && n > Number(max)) return false;
+    return true;
+  };
+  const overlaps = (a: string[], b: string[]) => a.some(x => b.includes(x));
+
   const filtered = clients
     .filter(c => {
       const q = search.toLowerCase();
       const matchSearch = !q || c.name.toLowerCase().includes(q) || (c.phone || "").toLowerCase().includes(q);
       const matchType = typeFilter === "all" || c.type === typeFilter;
       const matchAgency = agencyFilter === "all" || c.agencyId === agencyFilter;
-      return matchSearch && matchType && matchAgency;
+      if (!(matchSearch && matchType && matchAgency)) return false;
+
+      // Advanced filters
+      const f = advFilters;
+      if (f.types.length && !f.types.includes(c.type)) return false;
+      if (f.operations.length && !f.operations.includes(c.operationType)) return false;
+      if (f.leadStatuses.length && !f.leadStatuses.includes(c.leadStatus)) return false;
+      if (f.sources.length && !f.sources.includes(c.source || '')) return false;
+      if (f.agencyIds.length && !f.agencyIds.includes(c.agencyId)) return false;
+      if (f.categories.length && !f.categories.includes(c.category)) return false;
+
+      const lastMs = c.lastContactedAt ? new Date(c.lastContactedAt).getTime() : 0;
+      if (f.lastContactFrom && lastMs < new Date(f.lastContactFrom).getTime()) return false;
+      if (f.lastContactTo && (!lastMs || lastMs > new Date(f.lastContactTo).getTime() + 86399999)) return false;
+      if (!inRange(c.contactCount || 0, f.minContacts, f.maxContacts)) return false;
+      if (f.onlyUncontacted && (c.contactCount || 0) > 0) return false;
+
+      const regMs = c.registeredAt ? new Date(c.registeredAt).getTime() : 0;
+      if (f.registeredFrom && regMs < new Date(f.registeredFrom).getTime()) return false;
+      if (f.registeredTo && regMs > new Date(f.registeredTo).getTime() + 86399999) return false;
+
+      const fin = financialsMap[c.id];
+      if (f.financing !== 'any') {
+        if (!fin) return false;
+        if (f.financing === 'contado' && fin.mortgage_needed) return false;
+        if (f.financing === 'necesita' && (!fin.mortgage_needed || fin.mortgage_preapproved)) return false;
+        if (f.financing === 'preaprobada' && !fin.mortgage_preapproved) return false;
+      }
+      if (f.minCash || f.maxCash) {
+        if (!fin) return false;
+        if (!inRange(fin.available_cash, f.minCash, f.maxCash)) return false;
+      }
+      if (f.minIncome || f.maxIncome) {
+        if (!fin) return false;
+        if (!inRange(fin.monthly_income, f.minIncome, f.maxIncome)) return false;
+      }
+
+      const pref = preferencesMap[c.id];
+      const needsPref = f.minPrice || f.maxPrice || f.minSurface || f.maxSurface || f.minBedrooms || f.minBathrooms || f.preferredTypes.length || f.selectedZones.length || f.requiredExtras.length;
+      if (needsPref) {
+        if (!pref) return false;
+        if (f.minPrice && pref.max_price && pref.max_price < Number(f.minPrice)) return false;
+        if (f.maxPrice && pref.min_price && pref.min_price > Number(f.maxPrice)) return false;
+        if (f.minSurface && pref.max_surface && pref.max_surface < Number(f.minSurface)) return false;
+        if (f.maxSurface && pref.min_surface && pref.min_surface > Number(f.maxSurface)) return false;
+        if (f.minBedrooms && pref.min_bedrooms < Number(f.minBedrooms)) return false;
+        if (f.minBathrooms && pref.min_bathrooms < Number(f.minBathrooms)) return false;
+        if (f.preferredTypes.length && !overlaps(f.preferredTypes, pref.preferred_types)) return false;
+        if (f.selectedZones.length && !overlaps(f.selectedZones, pref.selected_zones)) return false;
+        if (f.requiredExtras.length && !f.requiredExtras.every(x => pref.required_extras.includes(x))) return false;
+      }
+
+      return true;
     })
     .sort((a, b) => {
       if (contactSort === "none") return 0;
@@ -623,7 +715,11 @@ const Clients = () => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Clientes</h1>
-            <p className="text-sm text-muted-foreground mt-1">{clients.length} clientes registrados</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              {countActiveFilters(advFilters) > 0 || search || typeFilter !== 'all' || agencyFilter !== 'all'
+                ? `Mostrando ${filtered.length} de ${clients.length} clientes`
+                : `${clients.length} clientes registrados`}
+            </p>
           </div>
           <div className="flex gap-2 flex-wrap">
             {isAdmin && <Button onClick={exportCSV} variant="outline" size="sm"><Download className="w-4 h-4 mr-1" />Exportar CSV</Button>}
@@ -655,7 +751,15 @@ const Clients = () => {
             <ArrowUpDown className="w-3.5 h-3.5" />
             Últ. contacto {sortLabel}
           </Button>
+          <Button variant={countActiveFilters(advFilters) > 0 ? "secondary" : "outline"} size="sm" onClick={() => setAdvOpen(true)} className="gap-1.5">
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+            Filtros avanzados{countActiveFilters(advFilters) > 0 ? ` (${countActiveFilters(advFilters)})` : ''}
+          </Button>
         </div>
+
+        {countActiveFilters(advFilters) > 0 && (
+          <ActiveFilterChips filters={advFilters} onChange={setAdvFilters} />
+        )}
 
         <div className="rounded-xl border border-border bg-card overflow-hidden">
           <Table>
@@ -869,8 +973,93 @@ const Clients = () => {
         fieldMap={CSV_FIELD_MAP}
         entityName="clientes"
       />
+
+      <ClientsAdvancedFilters
+        open={advOpen}
+        onOpenChange={setAdvOpen}
+        filters={advFilters}
+        onChange={setAdvFilters}
+        onReset={() => setAdvFilters(emptyAdvFilters)}
+        agencies={agencies}
+        categories={categoryOptions}
+      />
     </Layout>
   );
 };
+
+const CHIP_LABELS: Record<string, string> = {
+  comprador: 'Comprador', vendedor: 'Vendedor', arrendador: 'Arrendador', arrendatario: 'Arrendatario',
+  compra: 'Compra', alquiler: 'Alquiler', venta: 'Venta', ambos: 'Ambos',
+  nuevo: 'Nuevo', contactado: 'Contactado', en_negociacion: 'En negociación', cerrado: 'Cerrado', inactivo: 'Inactivo',
+  contado: 'Al contado', necesita: 'Necesita hipoteca', preaprobada: 'Hipoteca pre-aprobada',
+};
+const chipLabel = (v: string) => CHIP_LABELS[v] || v.charAt(0).toUpperCase() + v.slice(1).replace(/_/g, ' ');
+
+function ActiveFilterChips({ filters, onChange }: { filters: AdvFilters; onChange: (f: AdvFilters) => void }) {
+  const chips: { label: string; clear: () => void }[] = [];
+  const arrayKeys: { key: keyof AdvFilters; prefix: string }[] = [
+    { key: 'types', prefix: 'Tipo' },
+    { key: 'operations', prefix: 'Operación' },
+    { key: 'leadStatuses', prefix: 'Estado' },
+    { key: 'sources', prefix: 'Origen' },
+    { key: 'agencyIds', prefix: 'Inmob.' },
+    { key: 'categories', prefix: 'Cat.' },
+    { key: 'preferredTypes', prefix: 'Tipología' },
+    { key: 'selectedZones', prefix: 'Zona' },
+    { key: 'requiredExtras', prefix: 'Extra' },
+  ];
+  arrayKeys.forEach(({ key, prefix }) => {
+    (filters[key] as string[]).forEach(v => {
+      chips.push({
+        label: `${prefix}: ${chipLabel(v)}`,
+        clear: () => onChange({ ...filters, [key]: (filters[key] as string[]).filter(x => x !== v) } as AdvFilters),
+      });
+    });
+  });
+  if (filters.financing !== 'any') {
+    chips.push({ label: `Financiación: ${chipLabel(filters.financing)}`, clear: () => onChange({ ...filters, financing: 'any' }) });
+  }
+  if (filters.onlyUncontacted) {
+    chips.push({ label: 'Sin contactar', clear: () => onChange({ ...filters, onlyUncontacted: false }) });
+  }
+  const rangeKeys: { min: keyof AdvFilters; max: keyof AdvFilters; label: string }[] = [
+    { min: 'lastContactFrom', max: 'lastContactTo', label: 'Últ. contacto' },
+    { min: 'minContacts', max: 'maxContacts', label: 'Nº contactos' },
+    { min: 'minCash', max: 'maxCash', label: 'Ahorros' },
+    { min: 'minIncome', max: 'maxIncome', label: 'Ingresos' },
+    { min: 'minPrice', max: 'maxPrice', label: 'Precio' },
+    { min: 'minSurface', max: 'maxSurface', label: 'Superficie' },
+    { min: 'registeredFrom', max: 'registeredTo', label: 'Registrado' },
+  ];
+  rangeKeys.forEach(({ min, max, label }) => {
+    const vMin = filters[min] as string;
+    const vMax = filters[max] as string;
+    if (vMin || vMax) {
+      chips.push({
+        label: `${label}: ${vMin || '…'} – ${vMax || '…'}`,
+        clear: () => onChange({ ...filters, [min]: '', [max]: '' } as AdvFilters),
+      });
+    }
+  });
+  (['minBedrooms', 'minBathrooms'] as const).forEach(k => {
+    if (filters[k]) chips.push({
+      label: `${k === 'minBedrooms' ? 'Hab. mín.' : 'Baños mín.'}: ${filters[k]}`,
+      clear: () => onChange({ ...filters, [k]: '' }),
+    });
+  });
+
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {chips.map((c, i) => (
+        <Badge key={i} variant="secondary" className="gap-1 pr-1 text-xs">
+          {c.label}
+          <button type="button" onClick={c.clear} className="ml-0.5 hover:bg-background/50 rounded p-0.5">
+            <X className="w-3 h-3" />
+          </button>
+        </Badge>
+      ))}
+    </div>
+  );
+}
 
 export default Clients;
