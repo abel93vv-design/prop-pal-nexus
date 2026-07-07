@@ -253,18 +253,59 @@ function calculatePropertyScore(
 
 function calculateFinancialScore(
   financials: ClientFinancials | null,
-  prop: Property
+  prop: Property,
+  isRental: boolean
 ): { score: number; criteria: CriteriaDetail[] } {
   const criteria: CriteriaDetail[] = [];
   const propPrice = Number(prop.price);
+  const monthlyRent = Number(prop.monthly_rent || 0);
 
   if (!financials) {
     return {
-      score: 50,
-      criteria: [{ label: "Sin datos financieros", weight: 100, score: 50, met: false, detail: "No hay datos financieros configurados" }],
+      score: 0,
+      criteria: [{ label: "Sin datos financieros", weight: 100, score: 0, met: false, detail: "No hay datos financieros configurados" }],
     };
   }
 
+  // ============ ALQUILER ============
+  if (isRental) {
+    let totalScore = 0;
+
+    // Asequibilidad (regla del 35%) - peso 70
+    let affScore = 0, affMet = false, affDetail = "";
+    if (monthlyRent > 0 && financials.monthly_income > 0) {
+      const totalMonthlyLoad = monthlyRent + (financials.monthly_debts || 0);
+      const ratio = (totalMonthlyLoad / financials.monthly_income) * 100;
+      if (ratio <= 30) { affScore = 70; affMet = true; affDetail = `Carga ${Math.round(ratio)}% ≤ 30% (excelente)`; }
+      else if (ratio <= 35) { affScore = 55; affMet = true; affDetail = `Carga ${Math.round(ratio)}% dentro del 35% (aceptable)`; }
+      else if (ratio <= 45) { affScore = 25; affDetail = `Carga ${Math.round(ratio)}% supera el 35% recomendado`; }
+      else { affScore = 0; affDetail = `Carga ${Math.round(ratio)}% inasumible`; }
+    } else if (monthlyRent === 0) {
+      affDetail = "Propiedad sin renta mensual definida";
+    } else {
+      affDetail = "Sin datos de ingresos mensuales";
+    }
+    totalScore += affScore;
+    criteria.push({ label: "Asequibilidad (35%)", weight: 70, score: Math.round((affScore/70)*100), met: affMet, detail: affDetail });
+
+    // Fondo de garantía / ahorro colchón - peso 30 (≥ 2 meses de renta)
+    let bufScore = 0, bufMet = false, bufDetail = "";
+    if (monthlyRent > 0) {
+      const buffer = financials.available_cash / monthlyRent;
+      if (buffer >= 3) { bufScore = 30; bufMet = true; bufDetail = `${buffer.toFixed(1)} meses de fianza cubiertos`; }
+      else if (buffer >= 2) { bufScore = 22; bufMet = true; bufDetail = `${buffer.toFixed(1)} meses de fianza cubiertos`; }
+      else if (buffer >= 1) { bufScore = 10; bufDetail = `Solo ${buffer.toFixed(1)} meses de colchón`; }
+      else { bufScore = 0; bufDetail = `Ahorro insuficiente para fianza`; }
+    } else {
+      bufScore = 15; bufDetail = "Sin renta mensual para evaluar fianza";
+    }
+    totalScore += bufScore;
+    criteria.push({ label: "Fondo/fianza", weight: 30, score: Math.round((bufScore/30)*100), met: bufMet, detail: bufDetail });
+
+    return { score: Math.round(Math.min(100, Math.max(0, totalScore))), criteria };
+  }
+
+  // ============ COMPRA ============
   const entryRequired = propPrice * 0.2;
   const taxesAndFees = propPrice * 0.10;
   const totalCashNeeded = entryRequired + taxesAndFees;
@@ -272,10 +313,10 @@ function calculateFinancialScore(
 
   let totalScore = 0;
 
-  let cashScore = 0;
-  let cashMet = false;
-  let cashDetail = "";
-  if (financials.available_cash >= totalCashNeeded) {
+  let cashScore = 0, cashMet = false, cashDetail = "";
+  if (propPrice <= 0) {
+    cashDetail = "Propiedad sin precio de venta";
+  } else if (financials.available_cash >= totalCashNeeded) {
     cashScore = 30; cashMet = true;
     cashDetail = `${financials.available_cash.toLocaleString()}€ cubre entrada + gastos (${totalCashNeeded.toLocaleString()}€)`;
   } else if (financials.available_cash >= entryRequired) {
@@ -288,44 +329,31 @@ function calculateFinancialScore(
   totalScore += cashScore;
   criteria.push({ label: "Cobertura efectivo", weight: 30, score: Math.round((cashScore/30)*100), met: cashMet, detail: cashDetail });
 
-  let debtScore = 0;
-  let debtMet = false;
-  let debtDetail = "";
-  if (financials.monthly_income > 0) {
+  let debtScore = 0, debtMet = false, debtDetail = "";
+  if (financials.monthly_income > 0 && propPrice > 0) {
     const mortgageAmount = Math.max(0, propPrice - financials.available_cash);
     const estimatedMonthly = mortgageAmount / (25 * 12);
     const totalMonthlyDebt = estimatedMonthly + (financials.monthly_debts || 0);
     const debtRatio = (totalMonthlyDebt / financials.monthly_income) * 100;
 
-    if (debtRatio <= 30) {
-      debtScore = 30; debtMet = true;
-      debtDetail = `Endeudamiento ${Math.round(debtRatio)}% ≤ 30% (excelente)`;
-    } else if (debtRatio <= 35) {
-      debtScore = 20;
-      debtDetail = `Endeudamiento ${Math.round(debtRatio)}% (30-35%, aceptable)`;
-    } else if (debtRatio <= 40) {
-      debtScore = 10;
-      debtDetail = `Endeudamiento ${Math.round(debtRatio)}% (35-40%, riesgo moderado)`;
-    } else {
-      debtScore = 0;
-      debtDetail = `Endeudamiento ${Math.round(debtRatio)}% > 40% (alto riesgo)`;
-    }
+    if (debtRatio <= 30) { debtScore = 30; debtMet = true; debtDetail = `Endeudamiento ${Math.round(debtRatio)}% ≤ 30% (excelente)`; }
+    else if (debtRatio <= 35) { debtScore = 20; debtDetail = `Endeudamiento ${Math.round(debtRatio)}% (aceptable)`; }
+    else if (debtRatio <= 40) { debtScore = 10; debtDetail = `Endeudamiento ${Math.round(debtRatio)}% (riesgo moderado)`; }
+    else { debtScore = 0; debtDetail = `Endeudamiento ${Math.round(debtRatio)}% > 40% (alto riesgo)`; }
   } else {
-    debtDetail = "Sin datos de ingresos";
+    debtDetail = "Sin datos suficientes de ingresos/precio";
   }
   totalScore += debtScore;
   criteria.push({ label: "Capacidad endeudamiento", weight: 30, score: Math.round((debtScore/30)*100), met: debtMet, detail: debtDetail });
 
-  let mortgageScore = 0;
-  let mortgageMet = false;
-  let mortgageDetail = "";
+  let mortgageScore = 0, mortgageMet = false, mortgageDetail = "";
   if (!financials.mortgage_needed) {
     mortgageScore = 25; mortgageMet = true;
-    mortgageDetail = "Compra sin hipoteca";
+    mortgageDetail = "Compra al contado";
   } else if (financials.mortgage_preapproved) {
     mortgageScore = 25; mortgageMet = true;
-    mortgageDetail = "Hipoteca pre-aprobada ✓ (+15% confianza)";
-  } else if (financials.monthly_income > 0) {
+    mortgageDetail = "Hipoteca pre-aprobada";
+  } else if (financials.monthly_income > 0 && propPrice > 0) {
     const needed = Math.max(0, propPrice - financials.available_cash);
     if (needed <= propPrice * 0.8) {
       mortgageScore = 15;
@@ -340,14 +368,12 @@ function calculateFinancialScore(
   totalScore += mortgageScore;
   criteria.push({ label: "Viabilidad hipotecaria", weight: 25, score: Math.round((mortgageScore/25)*100), met: mortgageMet, detail: mortgageDetail });
 
-  let maintScore = 0;
-  let maintMet = false;
-  let maintDetail = "";
+  let maintScore = 0, maintMet = false, maintDetail = "";
   if (annualMaintenance > 0 && financials.monthly_income > 0) {
     const monthlyMaint = annualMaintenance / 12;
     const ratio = monthlyMaint / financials.monthly_income;
-    if (ratio <= 0.05) { maintScore = 15; maintMet = true; maintDetail = `Gastos mantenimiento ${Math.round(monthlyMaint)}€/mes (${Math.round(ratio*100)}% ingresos)`; }
-    else if (ratio <= 0.10) { maintScore = 10; maintDetail = `Gastos mantenimiento ${Math.round(monthlyMaint)}€/mes (${Math.round(ratio*100)}% ingresos)`; }
+    if (ratio <= 0.05) { maintScore = 15; maintMet = true; maintDetail = `Gastos ${Math.round(monthlyMaint)}€/mes (${Math.round(ratio*100)}%)`; }
+    else if (ratio <= 0.10) { maintScore = 10; maintDetail = `Gastos ${Math.round(monthlyMaint)}€/mes (${Math.round(ratio*100)}%)`; }
     else { maintScore = 5; maintDetail = `Gastos mantenimiento altos: ${Math.round(monthlyMaint)}€/mes`; }
   } else {
     maintScore = 10; maintDetail = "Sin datos de gastos de mantenimiento";
