@@ -751,7 +751,15 @@ const Clients = () => {
             <ArrowUpDown className="w-3.5 h-3.5" />
             Últ. contacto {sortLabel}
           </Button>
+          <Button variant={countActiveFilters(advFilters) > 0 ? "secondary" : "outline"} size="sm" onClick={() => setAdvOpen(true)} className="gap-1.5">
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+            Filtros avanzados{countActiveFilters(advFilters) > 0 ? ` (${countActiveFilters(advFilters)})` : ''}
+          </Button>
         </div>
+
+        {countActiveFilters(advFilters) > 0 && (
+          <ActiveFilterChips filters={advFilters} onChange={setAdvFilters} />
+        )}
 
         <div className="rounded-xl border border-border bg-card overflow-hidden">
           <Table>
