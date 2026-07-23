@@ -42,9 +42,10 @@ const operationColors: Record<string, string> = {
   venta: 'bg-success/10 text-success border-success/20',
 };
 
+type FinancingValue = 'none' | 'contado' | 'necesita' | 'preaprobada';
 type FinancialsState = {
   available_cash: number; monthly_income: number; debt_ratio: number;
-  monthly_debts: number; mortgage_needed: boolean; mortgage_preapproved: boolean;
+  monthly_debts: number; financing: FinancingValue;
 };
 type PreferencesState = {
   min_price: number; max_price: number; min_surface: number; max_surface: number;
@@ -54,7 +55,7 @@ type PreferencesState = {
 
 const emptyFinancials: FinancialsState = {
   available_cash: 0, monthly_income: 0, debt_ratio: 0,
-  monthly_debts: 0, mortgage_needed: false, mortgage_preapproved: false,
+  monthly_debts: 0, financing: 'none',
 };
 const emptyPreferences: PreferencesState = {
   min_price: 0, max_price: 0, min_surface: 0, max_surface: 0,
@@ -77,15 +78,10 @@ function FinancialsFields({ value, onChange }: { value: FinancialsState; onChang
       </div>
       <div>
         <Label className="text-xs">Financiación</Label>
-        <Select
-          value={value.mortgage_preapproved ? 'preaprobada' : value.mortgage_needed ? 'necesita' : 'contado'}
-          onValueChange={(v) => set({
-            mortgage_needed: v !== 'contado',
-            mortgage_preapproved: v === 'preaprobada',
-          })}
-        >
-          <SelectTrigger><SelectValue /></SelectTrigger>
+        <Select value={value.financing} onValueChange={(v) => set({ financing: v as FinancingValue })}>
+          <SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
           <SelectContent>
+            <SelectItem value="none">Sin especificar</SelectItem>
             <SelectItem value="contado">Al contado</SelectItem>
             <SelectItem value="necesita">Necesita hipoteca</SelectItem>
             <SelectItem value="preaprobada">Hipoteca pre-aprobada</SelectItem>
@@ -163,15 +159,28 @@ function EditFinancialsForm({ clientId }: { clientId: string }) {
   const [dirty, setDirty] = useState(false);
 
   useEffect(() => {
-    if (financials) setForm({
-      available_cash: financials.available_cash, monthly_income: financials.monthly_income,
-      debt_ratio: financials.debt_ratio, monthly_debts: (financials as any).monthly_debts || 0,
-      mortgage_needed: financials.mortgage_needed, mortgage_preapproved: financials.mortgage_preapproved,
-    });
+    if (financials) {
+      let financing: FinancingValue = 'contado';
+      if (financials.mortgage_preapproved) financing = 'preaprobada';
+      else if (financials.mortgage_needed) financing = 'necesita';
+      setForm({
+        available_cash: financials.available_cash, monthly_income: financials.monthly_income,
+        debt_ratio: financials.debt_ratio, monthly_debts: (financials as any).monthly_debts || 0,
+        financing,
+      });
+    }
   }, [financials]);
 
   if (loading) return null;
-  const handleSave = () => { save(form); setDirty(false); };
+  const handleSave = () => {
+    const { financing, ...rest } = form;
+    save({
+      ...rest,
+      mortgage_needed: financing === 'necesita' || financing === 'preaprobada',
+      mortgage_preapproved: financing === 'preaprobada',
+    });
+    setDirty(false);
+  };
 
   return (
     <>
@@ -644,9 +653,16 @@ const Clients = () => {
       const newId = created?.id;
       if (newId && tenantId) {
         // Persist financials & preferences only if user filled something
-        const hasFin = Object.values(createFinancials).some(v => typeof v === 'number' ? v > 0 : v === true);
+        const hasFin = createFinancials.financing !== 'none' || createFinancials.available_cash > 0 || createFinancials.monthly_income > 0 || createFinancials.debt_ratio > 0 || createFinancials.monthly_debts > 0;
         if (hasFin) {
-          await supabase.from('client_financials').insert({ ...createFinancials, tenant_id: tenantId, client_id: newId });
+          const { financing, ...rest } = createFinancials;
+          await supabase.from('client_financials').insert({
+            ...rest,
+            tenant_id: tenantId,
+            client_id: newId,
+            mortgage_needed: financing === 'necesita' || financing === 'preaprobada',
+            mortgage_preapproved: financing === 'preaprobada',
+          });
         }
         const hasPref =
           createPreferences.max_price > 0 || createPreferences.min_price > 0 ||
