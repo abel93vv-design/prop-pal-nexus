@@ -335,6 +335,7 @@ export type Database = {
           property_ids: string[] | null
           registered_at: string
           source: string | null
+          source_property_id: string | null
           tenant_id: string | null
           type: string
         }
@@ -356,6 +357,7 @@ export type Database = {
           property_ids?: string[] | null
           registered_at?: string
           source?: string | null
+          source_property_id?: string | null
           tenant_id?: string | null
           type?: string
         }
@@ -377,6 +379,7 @@ export type Database = {
           property_ids?: string[] | null
           registered_at?: string
           source?: string | null
+          source_property_id?: string | null
           tenant_id?: string | null
           type?: string
         }
@@ -386,6 +389,13 @@ export type Database = {
             columns: ["agency_id"]
             isOneToOne: false
             referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clients_source_property_id_fkey"
+            columns: ["source_property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
             referencedColumns: ["id"]
           },
           {
@@ -1795,6 +1805,7 @@ export type Database = {
           property_ids: string[] | null
           registered_at: string
           source: string | null
+          source_property_id: string | null
           tenant_id: string | null
           type: string
         }
