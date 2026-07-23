@@ -78,15 +78,10 @@ function FinancialsFields({ value, onChange }: { value: FinancialsState; onChang
       </div>
       <div>
         <Label className="text-xs">Financiación</Label>
-        <Select
-          value={value.mortgage_preapproved ? 'preaprobada' : value.mortgage_needed ? 'necesita' : 'contado'}
-          onValueChange={(v) => set({
-            mortgage_needed: v !== 'contado',
-            mortgage_preapproved: v === 'preaprobada',
-          })}
-        >
-          <SelectTrigger><SelectValue /></SelectTrigger>
+        <Select value={value.financing} onValueChange={(v) => set({ financing: v as FinancingValue })}>
+          <SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
           <SelectContent>
+            <SelectItem value="none">Sin especificar</SelectItem>
             <SelectItem value="contado">Al contado</SelectItem>
             <SelectItem value="necesita">Necesita hipoteca</SelectItem>
             <SelectItem value="preaprobada">Hipoteca pre-aprobada</SelectItem>
