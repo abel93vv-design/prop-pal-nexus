@@ -653,9 +653,16 @@ const Clients = () => {
       const newId = created?.id;
       if (newId && tenantId) {
         // Persist financials & preferences only if user filled something
-        const hasFin = Object.values(createFinancials).some(v => typeof v === 'number' ? v > 0 : v === true);
+        const hasFin = createFinancials.financing !== 'none' || createFinancials.available_cash > 0 || createFinancials.monthly_income > 0 || createFinancials.debt_ratio > 0 || createFinancials.monthly_debts > 0;
         if (hasFin) {
-          await supabase.from('client_financials').insert({ ...createFinancials, tenant_id: tenantId, client_id: newId });
+          const { financing, ...rest } = createFinancials;
+          await supabase.from('client_financials').insert({
+            ...rest,
+            tenant_id: tenantId,
+            client_id: newId,
+            mortgage_needed: financing === 'necesita' || financing === 'preaprobada',
+            mortgage_preapproved: financing === 'preaprobada',
+          });
         }
         const hasPref =
           createPreferences.max_price > 0 || createPreferences.min_price > 0 ||
