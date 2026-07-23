@@ -56,10 +56,11 @@ const TYPE_LABELS: Record<string, string> = { comprador: 'Comprador', vendedor: 
 const OP_LABELS: Record<string, string> = { compra: 'Compra', alquiler: 'Alquiler', venta: 'Venta', ambos: 'Ambos' };
 const LEAD_LABELS: Record<string, string> = { nuevo: 'Nuevo', contactado: 'Contactado', en_negociacion: 'En negociación', cerrado: 'Cerrado', inactivo: 'Inactivo' };
 const SOURCES = [
-  'fotocasa','idealista','milanuncios','habitaclia','oficina','web','redes_sociales',
+  'vivienda','vivienda_vendida','fotocasa','idealista','milanuncios','habitaclia','oficina','web','redes_sociales',
   'whatsapp','telegram','escaparate','wallapop','publicidad_zona','referido','otros'
 ];
 const SOURCE_LABELS: Record<string, string> = {
+  vivienda: 'Por vivienda', vivienda_vendida: 'Vivienda ya vendida',
   fotocasa: 'Fotocasa', idealista: 'Idealista', milanuncios: 'Milanuncios', habitaclia: 'Habitaclia',
   oficina: 'Oficina', web: 'Web', redes_sociales: 'Redes sociales', whatsapp: 'WhatsApp',
   telegram: 'Telegram', escaparate: 'Escaparate', wallapop: 'Wallapop',
