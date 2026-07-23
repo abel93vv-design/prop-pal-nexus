@@ -229,6 +229,8 @@ const statusColors: Record<LeadStatus, string> = {
 };
 
 const SOURCE_OPTIONS: { value: string; label: string }[] = [
+  { value: 'vivienda', label: 'Por una vivienda concreta' },
+  { value: 'vivienda_vendida', label: 'Vivienda ya vendida' },
   { value: 'fotocasa', label: 'Fotocasa' },
   { value: 'idealista', label: 'Idealista' },
   { value: 'milanuncios', label: 'Milanuncios' },
@@ -249,7 +251,7 @@ const emptyClient: Omit<Client, "id"> = {
   name: "", email: "", phone: "", address: "", type: "comprador", leadStatus: "nuevo",
   propertyIds: [], registeredAt: new Date().toISOString().split("T")[0], notes: "",
   agencyId: "", category: "", lastContactedAt: "", contactCount: 0,
-  operationType: "compra", source: "",
+  operationType: "compra", source: "", sourcePropertyId: "",
 };
 
 
