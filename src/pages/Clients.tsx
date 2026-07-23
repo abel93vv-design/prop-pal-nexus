@@ -42,9 +42,10 @@ const operationColors: Record<string, string> = {
   venta: 'bg-success/10 text-success border-success/20',
 };
 
+type FinancingValue = 'none' | 'contado' | 'necesita' | 'preaprobada';
 type FinancialsState = {
   available_cash: number; monthly_income: number; debt_ratio: number;
-  monthly_debts: number; mortgage_needed: boolean; mortgage_preapproved: boolean;
+  monthly_debts: number; financing: FinancingValue;
 };
 type PreferencesState = {
   min_price: number; max_price: number; min_surface: number; max_surface: number;
@@ -54,7 +55,7 @@ type PreferencesState = {
 
 const emptyFinancials: FinancialsState = {
   available_cash: 0, monthly_income: 0, debt_ratio: 0,
-  monthly_debts: 0, mortgage_needed: false, mortgage_preapproved: false,
+  monthly_debts: 0, financing: 'none',
 };
 const emptyPreferences: PreferencesState = {
   min_price: 0, max_price: 0, min_surface: 0, max_surface: 0,
