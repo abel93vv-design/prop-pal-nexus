@@ -49,6 +49,7 @@ export interface Client {
   contactCount: number;
   operationType: OperationType;
   source?: string;
+  sourcePropertyId?: string;
 }
 
 export interface Property {

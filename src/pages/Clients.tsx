@@ -229,6 +229,8 @@ const statusColors: Record<LeadStatus, string> = {
 };
 
 const SOURCE_OPTIONS: { value: string; label: string }[] = [
+  { value: 'vivienda', label: 'Por una vivienda concreta' },
+  { value: 'vivienda_vendida', label: 'Vivienda ya vendida' },
   { value: 'fotocasa', label: 'Fotocasa' },
   { value: 'idealista', label: 'Idealista' },
   { value: 'milanuncios', label: 'Milanuncios' },
@@ -249,7 +251,7 @@ const emptyClient: Omit<Client, "id"> = {
   name: "", email: "", phone: "", address: "", type: "comprador", leadStatus: "nuevo",
   propertyIds: [], registeredAt: new Date().toISOString().split("T")[0], notes: "",
   agencyId: "", category: "", lastContactedAt: "", contactCount: 0,
-  operationType: "compra", source: "",
+  operationType: "compra", source: "", sourcePropertyId: "",
 };
 
 
@@ -606,7 +608,7 @@ const Clients = () => {
   };
   const openEdit = (c: Client) => {
     setEditing(c);
-    setForm({ name: c.name, email: c.email, phone: c.phone, address: c.address, type: c.type, leadStatus: c.leadStatus, propertyIds: c.propertyIds, registeredAt: c.registeredAt, notes: c.notes, agencyId: c.agencyId, category: c.category, lastContactedAt: c.lastContactedAt, contactCount: c.contactCount, operationType: c.operationType || 'compra', source: c.source || '' });
+    setForm({ name: c.name, email: c.email, phone: c.phone, address: c.address, type: c.type, leadStatus: c.leadStatus, propertyIds: c.propertyIds, registeredAt: c.registeredAt, notes: c.notes, agencyId: c.agencyId, category: c.category, lastContactedAt: c.lastContactedAt, contactCount: c.contactCount, operationType: c.operationType || 'compra', source: c.source || '', sourcePropertyId: c.sourcePropertyId || '' });
     setCfValues(loadedCfValues);
     setDialogOpen(true);
   };
@@ -855,13 +857,25 @@ const Clients = () => {
             </div>
             <div>
               <Label className="text-xs">Origen del cliente</Label>
-              <Select value={form.source || "none"} onValueChange={(v) => setForm({ ...form, source: v === "none" ? "" : v })}>
+              <Select value={form.source || "none"} onValueChange={(v) => setForm({ ...form, source: v === "none" ? "" : v, sourcePropertyId: v === "vivienda" ? form.sourcePropertyId : "" })}>
                 <SelectTrigger><SelectValue placeholder="Seleccionar origen" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Sin especificar</SelectItem>
                   {SOURCE_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
                 </SelectContent>
               </Select>
+              {form.source === 'vivienda' && (
+                <div className="mt-2">
+                  <Label className="text-xs">Vivienda de origen</Label>
+                  <Select value={form.sourcePropertyId || "none"} onValueChange={(v) => setForm({ ...form, sourcePropertyId: v === "none" ? "" : v })}>
+                    <SelectTrigger><SelectValue placeholder="Seleccionar vivienda" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Sin seleccionar</SelectItem>
+                      {properties.map(p => <SelectItem key={p.id} value={p.id}>{p.title} — {p.address}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
