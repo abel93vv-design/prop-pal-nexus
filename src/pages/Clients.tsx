@@ -231,6 +231,7 @@ const statusColors: Record<LeadStatus, string> = {
 const SOURCE_OPTIONS: { value: string; label: string }[] = [
   { value: 'vivienda', label: 'Por una vivienda concreta' },
   { value: 'vivienda_vendida', label: 'Vivienda ya vendida' },
+  { value: 'vivienda_eliminada', label: 'Vivienda eliminada del CRM' },
   { value: 'fotocasa', label: 'Fotocasa' },
   { value: 'idealista', label: 'Idealista' },
   { value: 'milanuncios', label: 'Milanuncios' },
