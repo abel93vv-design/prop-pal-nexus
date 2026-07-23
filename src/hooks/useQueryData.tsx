@@ -260,7 +260,8 @@ export const useClientMutations = () => {
         lead_status: c.leadStatus, property_ids: c.propertyIds, notes: c.notes,
         agency_id: c.agencyId || null, category: c.category, last_contacted_at: c.lastContactedAt || null,
         contact_count: c.contactCount, operation_type: c.operationType, source: c.source || '',
-      }).eq('id', c.id);
+        source_property_id: c.sourcePropertyId || null,
+      } as any).eq('id', c.id);
       logActivity(tenantId, user?.id, 'update', 'client', c.id, { name: c.name });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['clients'] }),
