@@ -855,27 +855,35 @@ const Clients = () => {
               <div><Label className="text-xs">Email</Label><Input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} /></div>
               <div><Label className="text-xs">Teléfono</Label><Input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} /></div>
             </div>
-            <div>
-              <Label className="text-xs">Origen del cliente</Label>
-              <Select value={form.source || "none"} onValueChange={(v) => setForm({ ...form, source: v === "none" ? "" : v, sourcePropertyId: v === "vivienda" ? form.sourcePropertyId : "" })}>
-                <SelectTrigger><SelectValue placeholder="Seleccionar origen" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Sin especificar</SelectItem>
-                  {SOURCE_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              {form.source === 'vivienda' && (
-                <div className="mt-2">
-                  <Label className="text-xs">Vivienda de origen</Label>
-                  <Select value={form.sourcePropertyId || "none"} onValueChange={(v) => setForm({ ...form, sourcePropertyId: v === "none" ? "" : v })}>
-                    <SelectTrigger><SelectValue placeholder="Seleccionar vivienda" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Sin seleccionar</SelectItem>
-                      {properties.map(p => <SelectItem key={p.id} value={p.id}>{p.title} — {p.address}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Origen del cliente</Label>
+                <Select value={form.source || "none"} onValueChange={(v) => setForm({ ...form, source: v === "none" ? "" : v })}>
+                  <SelectTrigger><SelectValue placeholder="Seleccionar origen" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sin especificar</SelectItem>
+                    {SOURCE_OPTIONS.filter(o => o.value !== 'vivienda' && o.value !== 'vivienda_vendida').map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs">¿Ha entrado por una vivienda?</Label>
+                <Select
+                  value={form.source === 'vivienda_vendida' ? 'vendida' : (form.sourcePropertyId || 'none')}
+                  onValueChange={(v) => {
+                    if (v === 'none') setForm({ ...form, sourcePropertyId: '', source: form.source === 'vivienda_vendida' ? '' : form.source });
+                    else if (v === 'vendida') setForm({ ...form, sourcePropertyId: '', source: 'vivienda_vendida' });
+                    else setForm({ ...form, sourcePropertyId: v, source: form.source === 'vivienda_vendida' ? '' : form.source });
+                  }}
+                >
+                  <SelectTrigger><SelectValue placeholder="No" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">—</SelectItem>
+                    <SelectItem value="vendida">Vivienda vendida</SelectItem>
+                    {properties.map(p => <SelectItem key={p.id} value={p.id}>{p.title} — {p.address}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
