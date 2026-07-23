@@ -857,13 +857,25 @@ const Clients = () => {
             </div>
             <div>
               <Label className="text-xs">Origen del cliente</Label>
-              <Select value={form.source || "none"} onValueChange={(v) => setForm({ ...form, source: v === "none" ? "" : v })}>
+              <Select value={form.source || "none"} onValueChange={(v) => setForm({ ...form, source: v === "none" ? "" : v, sourcePropertyId: v === "vivienda" ? form.sourcePropertyId : "" })}>
                 <SelectTrigger><SelectValue placeholder="Seleccionar origen" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Sin especificar</SelectItem>
                   {SOURCE_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
                 </SelectContent>
               </Select>
+              {form.source === 'vivienda' && (
+                <div className="mt-2">
+                  <Label className="text-xs">Vivienda de origen</Label>
+                  <Select value={form.sourcePropertyId || "none"} onValueChange={(v) => setForm({ ...form, sourcePropertyId: v === "none" ? "" : v })}>
+                    <SelectTrigger><SelectValue placeholder="Seleccionar vivienda" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Sin seleccionar</SelectItem>
+                      {properties.map(p => <SelectItem key={p.id} value={p.id}>{p.title} — {p.address}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
