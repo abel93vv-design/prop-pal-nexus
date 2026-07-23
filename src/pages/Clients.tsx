@@ -863,24 +863,27 @@ const Clients = () => {
                   <SelectTrigger><SelectValue placeholder="Seleccionar origen" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">Sin especificar</SelectItem>
-                    {SOURCE_OPTIONS.filter(o => o.value !== 'vivienda' && o.value !== 'vivienda_vendida').map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                    {SOURCE_OPTIONS.filter(o => o.value !== 'vivienda' && o.value !== 'vivienda_vendida' && o.value !== 'vivienda_eliminada').map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
               <div>
                 <Label className="text-xs">¿Ha entrado por una vivienda?</Label>
                 <Select
-                  value={form.source === 'vivienda_vendida' ? 'vendida' : (form.sourcePropertyId || 'none')}
+                  value={form.source === 'vivienda_vendida' ? 'vendida' : form.source === 'vivienda_eliminada' ? 'eliminada' : (form.sourcePropertyId || 'none')}
                   onValueChange={(v) => {
-                    if (v === 'none') setForm({ ...form, sourcePropertyId: '', source: form.source === 'vivienda_vendida' ? '' : form.source });
+                    const clearIfSpecial = form.source === 'vivienda_vendida' || form.source === 'vivienda_eliminada' ? '' : form.source;
+                    if (v === 'none') setForm({ ...form, sourcePropertyId: '', source: clearIfSpecial });
                     else if (v === 'vendida') setForm({ ...form, sourcePropertyId: '', source: 'vivienda_vendida' });
-                    else setForm({ ...form, sourcePropertyId: v, source: form.source === 'vivienda_vendida' ? '' : form.source });
+                    else if (v === 'eliminada') setForm({ ...form, sourcePropertyId: '', source: 'vivienda_eliminada' });
+                    else setForm({ ...form, sourcePropertyId: v, source: clearIfSpecial });
                   }}
                 >
                   <SelectTrigger><SelectValue placeholder="No" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">—</SelectItem>
                     <SelectItem value="vendida">Vivienda vendida</SelectItem>
+                    <SelectItem value="eliminada">Vivienda eliminada del CRM</SelectItem>
                     {properties.map(p => <SelectItem key={p.id} value={p.id}>{p.title} — {p.address}</SelectItem>)}
                   </SelectContent>
                 </Select>
