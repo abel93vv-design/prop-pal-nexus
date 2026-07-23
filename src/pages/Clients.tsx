@@ -159,15 +159,28 @@ function EditFinancialsForm({ clientId }: { clientId: string }) {
   const [dirty, setDirty] = useState(false);
 
   useEffect(() => {
-    if (financials) setForm({
-      available_cash: financials.available_cash, monthly_income: financials.monthly_income,
-      debt_ratio: financials.debt_ratio, monthly_debts: (financials as any).monthly_debts || 0,
-      mortgage_needed: financials.mortgage_needed, mortgage_preapproved: financials.mortgage_preapproved,
-    });
+    if (financials) {
+      let financing: FinancingValue = 'contado';
+      if (financials.mortgage_preapproved) financing = 'preaprobada';
+      else if (financials.mortgage_needed) financing = 'necesita';
+      setForm({
+        available_cash: financials.available_cash, monthly_income: financials.monthly_income,
+        debt_ratio: financials.debt_ratio, monthly_debts: (financials as any).monthly_debts || 0,
+        financing,
+      });
+    }
   }, [financials]);
 
   if (loading) return null;
-  const handleSave = () => { save(form); setDirty(false); };
+  const handleSave = () => {
+    const { financing, ...rest } = form;
+    save({
+      ...rest,
+      mortgage_needed: financing === 'necesita' || financing === 'preaprobada',
+      mortgage_preapproved: financing === 'preaprobada',
+    });
+    setDirty(false);
+  };
 
   return (
     <>
