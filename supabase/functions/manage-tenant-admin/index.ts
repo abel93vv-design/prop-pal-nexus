@@ -63,6 +63,9 @@ serve(async (req) => {
 
 
     if (action === "get_admin_users") {
+      const denied = denyCrossTenant(tenant_id);
+      if (denied) return denied;
+
       const { data: profiles, error: profErr } = await adminClient
         .from("profiles")
         .select("user_id, full_name, tenant_id")
