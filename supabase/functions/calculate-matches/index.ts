@@ -438,6 +438,23 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Enforce tenant isolation: the tenant_id in the body must match
+    // the tenant_id of the authenticated caller's profile.
+    const callerId = claimsData.claims.sub;
+    const { data: callerProfile } = await supabase
+      .from("profiles")
+      .select("tenant_id")
+      .eq("user_id", callerId)
+      .maybeSingle();
+
+    if (!callerProfile?.tenant_id || callerProfile.tenant_id !== tenant_id) {
+      return new Response(
+        JSON.stringify({ error: "No autorizado para este tenant" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+
     let clientsQuery = supabase
       .from("clients")
       .select("id, agency_id, operation_type")

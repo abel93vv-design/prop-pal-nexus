@@ -37,9 +37,35 @@ serve(async (req) => {
 
     if (!roleData || roleData.length === 0) throw new Error("Solo los administradores pueden gestionar tenants");
 
+    const isSuperAdmin = roleData.some((r: any) => r.role === "super_admin");
+
+    // Get caller's own tenant_id (for scoping non-super_admin operations)
+    const { data: callerProfile } = await adminClient
+      .from("profiles")
+      .select("tenant_id")
+      .eq("user_id", callerId)
+      .maybeSingle();
+    const callerTenantId = callerProfile?.tenant_id ?? null;
+
     const { action, tenant_id, user_id, new_password } = await req.json();
 
+    // Helper: for tenant-scoped actions, non-super_admin must match own tenant
+    const denyCrossTenant = (targetTenantId: string | null | undefined) => {
+      if (isSuperAdmin) return null;
+      if (!callerTenantId || !targetTenantId || targetTenantId !== callerTenantId) {
+        return new Response(
+          JSON.stringify({ success: false, error: "No autorizado para este tenant" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      return null;
+    };
+
+
     if (action === "get_admin_users") {
+      const denied = denyCrossTenant(tenant_id);
+      if (denied) return denied;
+
       const { data: profiles, error: profErr } = await adminClient
         .from("profiles")
         .select("user_id, full_name, tenant_id")
@@ -86,6 +112,22 @@ serve(async (req) => {
     if (action === "reset_password") {
       if (!user_id || !new_password) throw new Error("user_id y new_password son obligatorios");
 
+      // Non-super_admin can only reset passwords of users in their own tenant
+      if (!isSuperAdmin) {
+        const { data: targetProfile } = await adminClient
+          .from("profiles")
+          .select("tenant_id")
+          .eq("user_id", user_id)
+          .maybeSingle();
+        if (!callerTenantId || !targetProfile?.tenant_id || targetProfile.tenant_id !== callerTenantId) {
+          return new Response(
+            JSON.stringify({ success: false, error: "No autorizado para este usuario" }),
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      }
+
+
       const { error } = await adminClient.auth.admin.updateUserById(user_id, {
         password: new_password,
       });
@@ -100,6 +142,9 @@ serve(async (req) => {
 
     if (action === "signout_all_users") {
       if (!tenant_id) throw new Error("tenant_id es obligatorio");
+      const denied = denyCrossTenant(tenant_id);
+      if (denied) return denied;
+
       const { data: profiles, error: profErr } = await adminClient
         .from("profiles")
         .select("user_id")
@@ -121,6 +166,9 @@ serve(async (req) => {
 
     if (action === "get_activity_logs") {
       if (!tenant_id) throw new Error("tenant_id es obligatorio");
+      const denied = denyCrossTenant(tenant_id);
+      if (denied) return denied;
+
       const { data: logs, error: logErr } = await adminClient
         .from("activity_logs")
         .select("*")

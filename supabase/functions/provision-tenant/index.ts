@@ -45,15 +45,16 @@ serve(async (req) => {
 
     const callerId = claimsData.claims.sub;
 
-    // Check admin role server-side
+    // Only platform super_admins can provision tenants
     const { data: roleData } = await adminClient
       .from("user_roles")
       .select("role")
       .eq("user_id", callerId)
-      .eq("role", "admin")
+      .eq("role", "super_admin")
       .maybeSingle();
 
-    if (!roleData) throw new Error("Solo los administradores pueden provisionar tenants");
+    if (!roleData) throw new Error("Solo un super_admin de plataforma puede provisionar tenants");
+
 
     const { name, slug, plan, is_active, is_demo, admin_email, admin_password, admin_name } = await req.json();
 
