@@ -112,6 +112,22 @@ serve(async (req) => {
     if (action === "reset_password") {
       if (!user_id || !new_password) throw new Error("user_id y new_password son obligatorios");
 
+      // Non-super_admin can only reset passwords of users in their own tenant
+      if (!isSuperAdmin) {
+        const { data: targetProfile } = await adminClient
+          .from("profiles")
+          .select("tenant_id")
+          .eq("user_id", user_id)
+          .maybeSingle();
+        if (!callerTenantId || !targetProfile?.tenant_id || targetProfile.tenant_id !== callerTenantId) {
+          return new Response(
+            JSON.stringify({ success: false, error: "No autorizado para este usuario" }),
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      }
+
+
       const { error } = await adminClient.auth.admin.updateUserById(user_id, {
         password: new_password,
       });
