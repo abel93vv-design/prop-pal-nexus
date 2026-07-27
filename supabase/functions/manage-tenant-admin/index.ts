@@ -166,6 +166,9 @@ serve(async (req) => {
 
     if (action === "get_activity_logs") {
       if (!tenant_id) throw new Error("tenant_id es obligatorio");
+      const denied = denyCrossTenant(tenant_id);
+      if (denied) return denied;
+
       const { data: logs, error: logErr } = await adminClient
         .from("activity_logs")
         .select("*")
