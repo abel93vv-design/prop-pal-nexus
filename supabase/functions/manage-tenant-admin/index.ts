@@ -142,6 +142,9 @@ serve(async (req) => {
 
     if (action === "signout_all_users") {
       if (!tenant_id) throw new Error("tenant_id es obligatorio");
+      const denied = denyCrossTenant(tenant_id);
+      if (denied) return denied;
+
       const { data: profiles, error: profErr } = await adminClient
         .from("profiles")
         .select("user_id")
