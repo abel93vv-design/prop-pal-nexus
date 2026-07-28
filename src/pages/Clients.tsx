@@ -517,6 +517,7 @@ const Clients = () => {
         agencyId: "",
         lastContactedAt: "",
         contactCount: 0,
+        isActive: true,
       });
     }
   };
