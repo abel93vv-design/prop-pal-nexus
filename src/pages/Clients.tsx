@@ -252,7 +252,7 @@ const emptyClient: Omit<Client, "id"> = {
   name: "", email: "", phone: "", address: "", type: "comprador", leadStatus: "nuevo",
   propertyIds: [], registeredAt: new Date().toISOString().split("T")[0], notes: "",
   agencyId: "", category: "", lastContactedAt: "", contactCount: 0,
-  operationType: "compra", source: "", sourcePropertyId: "",
+  operationType: "compra", source: "", sourcePropertyId: "", isActive: true,
 };
 
 

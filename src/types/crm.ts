@@ -50,6 +50,7 @@ export interface Client {
   operationType: OperationType;
   source?: string;
   sourcePropertyId?: string;
+  isActive: boolean;
 }
 
 export interface Property {
