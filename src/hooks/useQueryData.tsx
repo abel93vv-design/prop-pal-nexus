@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 
 // ---- Mappers ----
 const toAgency = (r: any): Agency => ({ id: r.id, name: r.name, address: r.address || '', phone: r.phone || '', email: r.email || '', logo: r.logo || '', color: r.color || '#3B82F6' });
-const toClient = (r: any): Client => ({ id: r.id, name: r.name, email: r.email || '', phone: r.phone || '', address: r.address || '', type: r.type, leadStatus: r.lead_status, propertyIds: r.property_ids || [], registeredAt: r.registered_at, notes: r.notes || '', agencyId: r.agency_id || '', category: r.category || '', lastContactedAt: r.last_contacted_at || '', contactCount: r.contact_count || 0, operationType: r.operation_type || 'compra', source: r.source || '', sourcePropertyId: r.source_property_id || '' });
+const toClient = (r: any): Client => ({ id: r.id, name: r.name, email: r.email || '', phone: r.phone || '', address: r.address || '', type: r.type, leadStatus: r.lead_status, propertyIds: r.property_ids || [], registeredAt: r.registered_at, notes: r.notes || '', agencyId: r.agency_id || '', category: r.category || '', lastContactedAt: r.last_contacted_at || '', contactCount: r.contact_count || 0, operationType: r.operation_type || 'compra', source: r.source || '', sourcePropertyId: r.source_property_id || '', isActive: r.is_active !== false });
 const toProperty = (r: any): Property => ({ id: r.id, title: r.title, address: r.address || '', type: r.type, status: r.status, price: Number(r.price) || 0, surface: Number(r.surface) || 0, bedrooms: r.bedrooms || 0, bathrooms: r.bathrooms || 0, photos: r.photos || [], agentId: r.agent_id || '', interestedClientIds: r.interested_client_ids || [], publishedAt: r.published_at || '', description: r.description || '', agencyId: r.agency_id || '', category: r.category || '', postal_code: r.postal_code || '', latitude: r.latitude != null ? Number(r.latitude) : null, longitude: r.longitude != null ? Number(r.longitude) : null, built_surface: Number(r.built_surface) || 0, plot_surface: Number(r.plot_surface) || 0, energy_cert: r.energy_cert || 'en_tramite', neighborhood: r.neighborhood || '', floor: r.floor != null ? Number(r.floor) : null, community_fees: Number(r.community_fees) || 0, ibi_annual: Number(r.ibi_annual) || 0, has_elevator: r.has_elevator || false, has_terrace: r.has_terrace || false, has_pool: r.has_pool || false, has_garage: r.has_garage || false, has_air_conditioning: r.has_air_conditioning || false, operationType: r.operation_type || 'venta', monthly_rent: Number(r.monthly_rent) || 0, condition: r.condition || '', unavailable_reason: r.unavailable_reason || '', listing_type: (r.listing_type === 'ne' ? 'ne' : 'noticia'), ne_start_date: r.ne_start_date || null, ne_end_date: r.ne_end_date || null, contact_name: r.contact_name || '', contact_phone: r.contact_phone || '', contact_notes: r.contact_notes || '' });
 const toUser = (r: any): User => ({ id: r.id, name: r.name, email: r.email || '', role: r.role as any, phone: r.phone || '', propertyIds: r.property_ids || [], clientIds: r.client_ids || [], avatar: r.avatar || '', agencyId: r.agency_id || '', accessType: r.access_type as any, permissions: r.permissions || [] });
 const toTask = (r: any): Task => ({ id: r.id, title: r.title, type: r.type as any, status: r.status as any, priority: r.priority as any, dueDate: r.due_date || '', agentId: r.agent_id || '', clientId: r.client_id || '', propertyId: r.property_id || '', notes: r.notes || '', agencyId: r.agency_id || '', category: r.category || '' });
@@ -244,6 +244,7 @@ export const useClientMutations = () => {
         agency_id: c.agencyId || null, category: c.category, last_contacted_at: c.lastContactedAt || null,
         contact_count: c.contactCount, tenant_id: tenantId, operation_type: c.operationType, source: c.source || '',
         source_property_id: c.sourcePropertyId || null,
+        is_active: c.isActive !== false,
       } as any).select().single();
       if (error) throw error;
       logActivity(tenantId, user?.id, 'create', 'client', data.id, { name: c.name });
@@ -261,6 +262,7 @@ export const useClientMutations = () => {
         agency_id: c.agencyId || null, category: c.category, last_contacted_at: c.lastContactedAt || null,
         contact_count: c.contactCount, operation_type: c.operationType, source: c.source || '',
         source_property_id: c.sourcePropertyId || null,
+        is_active: c.isActive !== false,
       } as any).eq('id', c.id);
       logActivity(tenantId, user?.id, 'update', 'client', c.id, { name: c.name });
     },

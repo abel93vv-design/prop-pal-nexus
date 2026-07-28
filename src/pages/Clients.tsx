@@ -252,7 +252,7 @@ const emptyClient: Omit<Client, "id"> = {
   name: "", email: "", phone: "", address: "", type: "comprador", leadStatus: "nuevo",
   propertyIds: [], registeredAt: new Date().toISOString().split("T")[0], notes: "",
   agencyId: "", category: "", lastContactedAt: "", contactCount: 0,
-  operationType: "compra", source: "", sourcePropertyId: "",
+  operationType: "compra", source: "", sourcePropertyId: "", isActive: true,
 };
 
 
@@ -517,6 +517,7 @@ const Clients = () => {
         agencyId: "",
         lastContactedAt: "",
         contactCount: 0,
+        isActive: true,
       });
     }
   };
@@ -609,7 +610,7 @@ const Clients = () => {
   };
   const openEdit = (c: Client) => {
     setEditing(c);
-    setForm({ name: c.name, email: c.email, phone: c.phone, address: c.address, type: c.type, leadStatus: c.leadStatus, propertyIds: c.propertyIds, registeredAt: c.registeredAt, notes: c.notes, agencyId: c.agencyId, category: c.category, lastContactedAt: c.lastContactedAt, contactCount: c.contactCount, operationType: c.operationType || 'compra', source: c.source || '', sourcePropertyId: c.sourcePropertyId || '' });
+    setForm({ name: c.name, email: c.email, phone: c.phone, address: c.address, type: c.type, leadStatus: c.leadStatus, propertyIds: c.propertyIds, registeredAt: c.registeredAt, notes: c.notes, agencyId: c.agencyId, category: c.category, lastContactedAt: c.lastContactedAt, contactCount: c.contactCount, operationType: c.operationType || 'compra', source: c.source || '', sourcePropertyId: c.sourcePropertyId || '', isActive: c.isActive !== false });
     setCfValues(loadedCfValues);
     setDialogOpen(true);
   };
@@ -821,7 +822,12 @@ const Clients = () => {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={`text-[10px] ${statusColors[c.leadStatus]}`}>{statusLabels[c.leadStatus]}</Badge>
+                    <div className="flex flex-wrap gap-1">
+                      <Badge variant="outline" className={`text-[10px] ${statusColors[c.leadStatus]}`}>{statusLabels[c.leadStatus]}</Badge>
+                      {c.isActive === false && (
+                        <Badge variant="outline" className="text-[10px] bg-muted text-muted-foreground border-border">Inactivo</Badge>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     {c.lastContactedAt
@@ -927,6 +933,13 @@ const Clients = () => {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+            <div className="flex items-center justify-between rounded-md border border-border p-3">
+              <div>
+                <Label className="text-xs font-medium">Cliente {form.isActive ? 'activo' : 'inactivo'}</Label>
+                <p className="text-[11px] text-muted-foreground">Los clientes inactivos se conservan pero quedan marcados como no activos.</p>
+              </div>
+              <Switch checked={form.isActive} onCheckedChange={(v) => setForm({ ...form, isActive: !!v })} />
             </div>
             <div><Label className="text-xs">Notas</Label><Textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={3} /></div>
             {customFields.length > 0 && (
