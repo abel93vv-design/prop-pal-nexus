@@ -610,7 +610,7 @@ const Clients = () => {
   };
   const openEdit = (c: Client) => {
     setEditing(c);
-    setForm({ name: c.name, email: c.email, phone: c.phone, address: c.address, type: c.type, leadStatus: c.leadStatus, propertyIds: c.propertyIds, registeredAt: c.registeredAt, notes: c.notes, agencyId: c.agencyId, category: c.category, lastContactedAt: c.lastContactedAt, contactCount: c.contactCount, operationType: c.operationType || 'compra', source: c.source || '', sourcePropertyId: c.sourcePropertyId || '' });
+    setForm({ name: c.name, email: c.email, phone: c.phone, address: c.address, type: c.type, leadStatus: c.leadStatus, propertyIds: c.propertyIds, registeredAt: c.registeredAt, notes: c.notes, agencyId: c.agencyId, category: c.category, lastContactedAt: c.lastContactedAt, contactCount: c.contactCount, operationType: c.operationType || 'compra', source: c.source || '', sourcePropertyId: c.sourcePropertyId || '', isActive: c.isActive !== false });
     setCfValues(loadedCfValues);
     setDialogOpen(true);
   };
