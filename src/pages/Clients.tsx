@@ -822,7 +822,12 @@ const Clients = () => {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={`text-[10px] ${statusColors[c.leadStatus]}`}>{statusLabels[c.leadStatus]}</Badge>
+                    <div className="flex flex-wrap gap-1">
+                      <Badge variant="outline" className={`text-[10px] ${statusColors[c.leadStatus]}`}>{statusLabels[c.leadStatus]}</Badge>
+                      {c.isActive === false && (
+                        <Badge variant="outline" className="text-[10px] bg-muted text-muted-foreground border-border">Inactivo</Badge>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     {c.lastContactedAt
@@ -928,6 +933,13 @@ const Clients = () => {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+            <div className="flex items-center justify-between rounded-md border border-border p-3">
+              <div>
+                <Label className="text-xs font-medium">Cliente {form.isActive ? 'activo' : 'inactivo'}</Label>
+                <p className="text-[11px] text-muted-foreground">Los clientes inactivos se conservan pero quedan marcados como no activos.</p>
+              </div>
+              <Switch checked={form.isActive} onCheckedChange={(v) => setForm({ ...form, isActive: !!v })} />
             </div>
             <div><Label className="text-xs">Notas</Label><Textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={3} /></div>
             {customFields.length > 0 && (
