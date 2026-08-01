@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { Loader2, Copy, CheckCircle2, AlertCircle, ShieldCheck, ShieldAlert, Trash2 } from "lucide-react";
 
 interface Props {
@@ -19,6 +20,7 @@ interface DomainState {
   custom_domain: string | null;
   domain_verified: boolean;
   domain_verification_token: string | null;
+  lovable_domain_added: boolean;
 }
 
 const LOVABLE_IP = "185.158.133.1";
@@ -28,8 +30,9 @@ export const TenantDomainDialog = ({ tenantId, tenantName, onClose, onSaved }: P
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [verifying, setVerifying] = useState(false);
-  const [state, setState] = useState<DomainState>({ custom_domain: null, domain_verified: false, domain_verification_token: null });
+  const [state, setState] = useState<DomainState>({ custom_domain: null, domain_verified: false, domain_verification_token: null, lovable_domain_added: false });
   const [domainInput, setDomainInput] = useState("");
+  const [savingLovableFlag, setSavingLovableFlag] = useState(false);
 
   useEffect(() => {
     if (!tenantId) return;
@@ -99,6 +102,22 @@ export const TenantDomainDialog = ({ tenantId, tenantName, onClose, onSaved }: P
   const handleRemove = async () => {
     setDomainInput("");
     await handleSave();
+  };
+
+  const handleToggleLovableAdded = async (checked: boolean) => {
+    if (!tenantId) return;
+    setSavingLovableFlag(true);
+    const { error } = await supabase
+      .from("tenants")
+      .update({ lovable_domain_added: checked })
+      .eq("id", tenantId);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      setState(s => ({ ...s, lovable_domain_added: checked }));
+      onSaved?.();
+    }
+    setSavingLovableFlag(false);
   };
 
   return (
@@ -184,6 +203,19 @@ export const TenantDomainDialog = ({ tenantId, tenantName, onClose, onSaved }: P
                     Para que el SSL y el enrutamiento funcionen, también debes añadir <code className="font-mono">{state.custom_domain}</code> en
                     {" "}<strong>Project Settings → Domains</strong> de Lovable. Esto solo lo puede hacer el super admin del proyecto.
                   </p>
+                  <div className="flex items-center justify-between gap-3 pt-2 border-t border-amber-400/30">
+                    <div className="flex-1">
+                      <Label className="text-xs text-amber-800 dark:text-amber-300">Ya lo añadí en Lovable</Label>
+                      <p className="text-[10px] text-amber-700/80 dark:text-amber-400/80 mt-0.5">
+                        Marca esto para no perder de vista el paso manual al gestionar varios clientes.
+                      </p>
+                    </div>
+                    <Switch
+                      checked={state.lovable_domain_added}
+                      onCheckedChange={handleToggleLovableAdded}
+                      disabled={savingLovableFlag}
+                    />
+                  </div>
                 </div>
 
                 <div className="rounded-lg border border-border p-4 space-y-2">

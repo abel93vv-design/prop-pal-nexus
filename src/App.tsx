@@ -31,6 +31,7 @@ import RolesPermissions from "./pages/RolesPermissions";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import ControlLeads from "./pages/ControlLeads";
 import Trust from "./pages/Trust";
+import FeatureConfigs from "./pages/FeatureConfigs";
 
 const queryClient = new QueryClient();
 
@@ -95,6 +96,7 @@ const AppRoutes = () => (
     <Route path="/control-leads/:subSection" element={<ProtectedRoute><ControlLeads /></ProtectedRoute>} />
 
     <Route path="/tenants" element={<ProtectedRoute><Tenants /></ProtectedRoute>} />
+    <Route path="/configuraciones" element={<ProtectedRoute><FeatureConfigs /></ProtectedRoute>} />
     <Route path="/roles" element={<ProtectedRoute><RolesPermissions /></ProtectedRoute>} />
     <Route path="/admin" element={<ProtectedRoute><SuperAdminDashboard /></ProtectedRoute>} />
     <Route path="*" element={<NotFound />} />

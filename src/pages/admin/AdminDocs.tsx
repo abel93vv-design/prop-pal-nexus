@@ -398,7 +398,7 @@ export default function AdminDocs() {
                             <div className="flex flex-col items-center">
                               <span className="font-semibold">{PLAN_LABELS[p]}</span>
                               <span className="text-xs text-muted-foreground font-normal">
-                                {PLAN_PRICES[p] === 0 ? "Gratis" : `${PLAN_PRICES[p]} €/mes`}
+                                {PLAN_PRICES[p] === null ? "Personalizado" : PLAN_PRICES[p] === 0 ? "Gratis" : `${PLAN_PRICES[p]} €/mes`}
                               </span>
                             </div>
                           </TableHead>

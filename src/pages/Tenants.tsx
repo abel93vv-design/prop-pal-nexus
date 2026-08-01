@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Building2, Plus, Pencil, Trash2, Loader2, Globe, Copy, CheckCircle2, AlertCircle, Eye, EyeOff, Users, KeyRound, ExternalLink, Activity, ShieldCheck, ShieldAlert, LogOut } from "lucide-react";
+import { Building2, Plus, Pencil, Trash2, Loader2, Globe, Copy, CheckCircle2, AlertCircle, Eye, EyeOff, Users, KeyRound, ExternalLink, Activity, ShieldCheck, ShieldAlert, LogOut, Mail, Settings2, Lock } from "lucide-react";
 import { ActivityLogViewer } from "@/components/ActivityLogViewer";
 import { TenantDomainDialog } from "@/components/TenantDomainDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -24,6 +24,12 @@ interface TenantUser {
   created_at: string;
   last_sign_in_at: string | null;
   roles?: string[];
+}
+
+interface FeatureConfigCatalogEntry {
+  key: string;
+  name: string;
+  description: string | null;
 }
 
 
@@ -39,6 +45,7 @@ interface Tenant {
   custom_domain: string | null;
   domain_verified: boolean;
   allow_password_recovery?: boolean;
+  lovable_domain_added?: boolean;
 }
 
 const generatePassword = () => {
@@ -49,7 +56,7 @@ const generatePassword = () => {
 };
 
 const emptyForm = { name: "", slug: "", plan: "free", is_active: true, is_demo: false, allow_password_recovery: true };
-const emptyProvision = { admin_email: "", admin_name: "", admin_password: generatePassword() };
+const emptyProvision = { admin_email: "", admin_name: "", admin_password: generatePassword(), invite_by_email: true };
 
 const Tenants = () => {
   const { isSuperAdmin, loading: roleLoading } = useUserRole();
@@ -63,7 +70,7 @@ const Tenants = () => {
   const [deleteTarget, setDeleteTarget] = useState<Tenant | null>(null);
   const [saving, setSaving] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [provisionResult, setProvisionResult] = useState<{ success: boolean; message: string; credentials?: { email: string; password: string } } | null>(null);
+  const [provisionResult, setProvisionResult] = useState<{ success: boolean; message: string; invited?: boolean; credentials?: { email: string; password: string } } | null>(null);
   const [detailTenant, setDetailTenant] = useState<Tenant | null>(null);
   const [tenantUsers, setTenantUsers] = useState<TenantUser[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
@@ -74,6 +81,10 @@ const Tenants = () => {
   const [signingOutAll, setSigningOutAll] = useState(false);
   const [confirmSignoutAll, setConfirmSignoutAll] = useState(false);
   const [domainTenant, setDomainTenant] = useState<Tenant | null>(null);
+  const [featureCatalog, setFeatureCatalog] = useState<FeatureConfigCatalogEntry[]>([]);
+  const [tenantActivations, setTenantActivations] = useState<Record<string, boolean>>({});
+  const [loadingConfigs, setLoadingConfigs] = useState(false);
+  const [savingFeatureKey, setSavingFeatureKey] = useState<string | null>(null);
 
   
 
@@ -144,6 +155,8 @@ const Tenants = () => {
           admin_email: provision.admin_email,
           admin_password: provision.admin_password,
           admin_name: provision.admin_name || form.name,
+          invite_by_email: provision.invite_by_email,
+          redirect_origin: window.location.origin,
         },
       });
 
@@ -153,7 +166,8 @@ const Tenants = () => {
         setProvisionResult({
           success: true,
           message: data.message,
-          credentials: { email: provision.admin_email, password: provision.admin_password },
+          invited: data.invited,
+          credentials: data.invited ? undefined : { email: provision.admin_email, password: provision.admin_password },
         });
         toast({ title: "¡Tenant provisionado!", description: "Se ha creado el tenant con su usuario administrador" });
       }
@@ -187,11 +201,35 @@ const Tenants = () => {
     setResetUserId(null);
     setNewPassword("");
     setLoadingUsers(true);
-    const { data, error } = await supabase.functions.invoke("manage-tenant-admin", {
-      body: { action: "get_admin_users", tenant_id: t.id },
-    });
-    if (!error && data?.users) setTenantUsers(data.users);
+    setLoadingConfigs(true);
+    const [usersRes, catalogRes, activationsRes] = await Promise.all([
+      supabase.functions.invoke("manage-tenant-admin", { body: { action: "get_admin_users", tenant_id: t.id } }),
+      featureCatalog.length ? Promise.resolve({ data: featureCatalog }) : supabase.from("feature_configs").select("key, name, description").order("name"),
+      supabase.from("tenant_feature_configs").select("feature_key, enabled").eq("tenant_id", t.id),
+    ]);
+    if (!usersRes.error && usersRes.data?.users) setTenantUsers(usersRes.data.users);
     setLoadingUsers(false);
+    if (catalogRes.data) setFeatureCatalog(catalogRes.data as FeatureConfigCatalogEntry[]);
+    const activeMap: Record<string, boolean> = {};
+    (activationsRes.data || []).forEach((row: any) => { activeMap[row.feature_key] = row.enabled; });
+    setTenantActivations(activeMap);
+    setLoadingConfigs(false);
+  };
+
+  const canUseCustomConfigs = (t: Tenant | null) => t?.plan === "pro" || t?.plan === "enterprise";
+
+  const handleToggleFeature = async (featureKey: string, enabled: boolean) => {
+    if (!detailTenant) return;
+    setSavingFeatureKey(featureKey);
+    const { error } = await supabase
+      .from("tenant_feature_configs")
+      .upsert({ tenant_id: detailTenant.id, feature_key: featureKey, enabled }, { onConflict: "tenant_id,feature_key" });
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      setTenantActivations(prev => ({ ...prev, [featureKey]: enabled }));
+    }
+    setSavingFeatureKey(null);
   };
 
   const handleResetPassword = async () => {
@@ -286,6 +324,11 @@ const Tenants = () => {
                         ? <Badge className="bg-success/15 text-success border-success/30 gap-1"><ShieldCheck className="w-3 h-3" />{t.custom_domain}</Badge>
                         : <Badge variant="outline" className="border-amber-400 text-amber-600 gap-1"><ShieldAlert className="w-3 h-3" />{t.custom_domain}</Badge>
                     )}
+                    {t.custom_domain && !t.lovable_domain_added && (
+                      <Badge variant="outline" className="border-destructive/50 text-destructive gap-1" title="Falta añadir el dominio en Lovable → Project Settings → Domains">
+                        <AlertCircle className="w-3 h-3" />Falta en Lovable
+                      </Badge>
+                    )}
                   </div>
 
                   <div className="flex items-center justify-between pt-2 border-t border-border">
@@ -314,6 +357,15 @@ const Tenants = () => {
                 <CheckCircle2 className="w-5 h-5 text-success shrink-0" />
                 <span className="text-foreground font-medium">{provisionResult.message}</span>
               </div>
+
+              {provisionResult.invited && (
+                <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/50 p-4">
+                  <Mail className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                  <p className="text-xs text-muted-foreground">
+                    No hay contraseña que compartir: el administrador recibirá un email para configurar su propia contraseña y acceder directamente.
+                  </p>
+                </div>
+              )}
 
               {provisionResult.credentials && (
                 <div className="rounded-lg border border-border bg-muted/50 p-4 space-y-3">
@@ -410,31 +462,44 @@ const Tenants = () => {
                       <Label className="text-xs">Email del administrador *</Label>
                       <Input type="email" value={provision.admin_email} onChange={e => setProvision({ ...provision, admin_email: e.target.value })} placeholder="admin@valoracasa.com" />
                     </div>
-                    <div>
-                      <Label className="text-xs">Contraseña temporal</Label>
-                      <div className="flex gap-2">
-                        <div className="relative flex-1">
-                          <Input
-                            type={showPassword ? "text" : "password"}
-                            value={provision.admin_password}
-                            onChange={e => setProvision({ ...provision, admin_password: e.target.value })}
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="absolute right-0 top-0 h-full w-9"
-                            onClick={() => setShowPassword(!showPassword)}
-                          >
-                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1">
+                        <Label className="text-xs">Invitar por email</Label>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">
+                          Recomendado: el administrador recibe un email y configura su propia contraseña. Nadie tiene que compartirla a mano.
+                        </p>
+                      </div>
+                      <Switch checked={provision.invite_by_email} onCheckedChange={v => setProvision({ ...provision, invite_by_email: v })} />
+                    </div>
+
+                    {!provision.invite_by_email && (
+                      <div>
+                        <Label className="text-xs">Contraseña temporal</Label>
+                        <div className="flex gap-2">
+                          <div className="relative flex-1">
+                            <Input
+                              type={showPassword ? "text" : "password"}
+                              value={provision.admin_password}
+                              onChange={e => setProvision({ ...provision, admin_password: e.target.value })}
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="absolute right-0 top-0 h-full w-9"
+                              onClick={() => setShowPassword(!showPassword)}
+                            >
+                              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </Button>
+                          </div>
+                          <Button variant="outline" size="sm" onClick={() => setProvision({ ...provision, admin_password: generatePassword() })}>
+                            Generar
                           </Button>
                         </div>
-                        <Button variant="outline" size="sm" onClick={() => setProvision({ ...provision, admin_password: generatePassword() })}>
-                          Generar
-                        </Button>
+                        <p className="text-[10px] text-muted-foreground mt-1">Se le pedirá cambiarla en el primer login</p>
                       </div>
-                      <p className="text-[10px] text-muted-foreground mt-1">Se le pedirá cambiarla en el primer login</p>
-                    </div>
+                    )}
                   </>
                 )}
               </div>
@@ -477,6 +542,7 @@ const Tenants = () => {
               <TabsList className="w-full">
                 <TabsTrigger value="users" className="flex-1"><Users className="w-3 h-3 mr-1" />Usuarios</TabsTrigger>
                 <TabsTrigger value="activity" className="flex-1"><Activity className="w-3 h-3 mr-1" />Actividad</TabsTrigger>
+                <TabsTrigger value="configs" className="flex-1"><Settings2 className="w-3 h-3 mr-1" />Config</TabsTrigger>
               </TabsList>
 
               <TabsContent value="users" className="space-y-4 mt-4">
@@ -574,6 +640,41 @@ const Tenants = () => {
 
               <TabsContent value="activity" className="mt-4">
                 <ActivityLogViewer tenantId={detailTenant.id} />
+              </TabsContent>
+
+              <TabsContent value="configs" className="space-y-3 mt-4">
+                {!canUseCustomConfigs(detailTenant) && (
+                  <div className="flex items-start gap-2 rounded-lg border border-amber-400/40 bg-amber-50/60 dark:bg-amber-950/20 p-3">
+                    <Lock className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                    <p className="text-xs text-amber-800 dark:text-amber-300">
+                      Este tenant está en plan <strong className="capitalize">{detailTenant.plan}</strong>. Las configuraciones personalizadas solo se pueden activar en Pro o Enterprise.
+                    </p>
+                  </div>
+                )}
+
+                {loadingConfigs ? (
+                  <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
+                ) : featureCatalog.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-3">
+                    Todavía no hay ninguna configuración en el catálogo. Créalas en Configuraciones.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {featureCatalog.map(fc => (
+                      <div key={fc.key} className="rounded-lg border border-border p-3 flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">{fc.name}</p>
+                          {fc.description && <p className="text-xs text-muted-foreground truncate">{fc.description}</p>}
+                        </div>
+                        <Switch
+                          checked={!!tenantActivations[fc.key]}
+                          disabled={!canUseCustomConfigs(detailTenant) || savingFeatureKey === fc.key}
+                          onCheckedChange={v => handleToggleFeature(fc.key, v)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </TabsContent>
             </Tabs>
           )}

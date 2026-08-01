@@ -56,10 +56,13 @@ serve(async (req) => {
     if (!roleData) throw new Error("Solo un super_admin de plataforma puede provisionar tenants");
 
 
-    const { name, slug, plan, is_active, is_demo, admin_email, admin_password, admin_name } = await req.json();
+    const { name, slug, plan, is_active, is_demo, admin_email, admin_password, admin_name, invite_by_email, redirect_origin } = await req.json();
 
-    if (!name || !slug || !admin_email || !admin_password) {
-      throw new Error("Faltan campos obligatorios: name, slug, admin_email, admin_password");
+    if (!name || !slug || !admin_email) {
+      throw new Error("Faltan campos obligatorios: name, slug, admin_email");
+    }
+    if (!invite_by_email && !admin_password) {
+      throw new Error("Falta admin_password (o activa la invitación por email)");
     }
 
     // 1. Create tenant
@@ -72,14 +75,23 @@ serve(async (req) => {
 
     const tenantId = tenant.id;
 
-    // 2. Create or find auth user
+    // 2. Create or find auth user.
+    // invite_by_email sends the admin a real Supabase invite email so they set
+    // their own password, instead of a temp password the super_admin has to
+    // copy/paste and relay over an insecure channel.
     let userId: string;
-    const { data: authData, error: authErr } = await adminClient.auth.admin.createUser({
-      email: admin_email,
-      password: admin_password,
-      email_confirm: true,
-      user_metadata: { full_name: admin_name || name },
-    });
+    let invited = false;
+    const { data: authData, error: authErr } = invite_by_email
+      ? await adminClient.auth.admin.inviteUserByEmail(admin_email, {
+          data: { full_name: admin_name || name },
+          redirectTo: `${redirect_origin || ""}/reset-password`,
+        })
+      : await adminClient.auth.admin.createUser({
+          email: admin_email,
+          password: admin_password,
+          email_confirm: true,
+          user_metadata: { full_name: admin_name || name },
+        });
     if (authErr) {
       if (authErr.message.includes("already been registered")) {
         const { data: { users }, error: listErr } = await adminClient.auth.admin.listUsers();
@@ -99,12 +111,14 @@ serve(async (req) => {
       }
     } else {
       userId = authData.user.id;
+      invited = invite_by_email;
     }
 
-    // 3. Update profile with tenant_id and must_change_password
+    // 3. Update profile with tenant_id. Invited admins set their own password
+    // via the invite link, so they don't need the forced-change dialog.
     const { error: profileErr } = await adminClient
       .from("profiles")
-      .update({ tenant_id: tenantId, must_change_password: true })
+      .update({ tenant_id: tenantId, must_change_password: !invited })
       .eq("user_id", userId);
     if (profileErr) {
       console.error("Profile update error:", profileErr.message);
@@ -126,7 +140,10 @@ serve(async (req) => {
         success: true,
         tenant_id: tenantId,
         user_id: userId,
-        message: `Tenant "${name}" provisionado correctamente. El usuario ${admin_email} puede iniciar sesión.`,
+        invited,
+        message: invited
+          ? `Tenant "${name}" provisionado correctamente. Se envió una invitación a ${admin_email} para que configure su contraseña.`
+          : `Tenant "${name}" provisionado correctamente. El usuario ${admin_email} puede iniciar sesión.`,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

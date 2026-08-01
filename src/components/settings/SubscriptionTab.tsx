@@ -80,8 +80,8 @@ function PlanCard({ planName, currentPlan }: { planName: PlanName; currentPlan: 
           {PLAN_LABELS[planName]}
         </CardTitle>
         <div className="text-2xl font-bold text-foreground">
-          {price === 0 ? 'Gratis' : `${price}€`}
-          {price > 0 && <span className="text-sm font-normal text-muted-foreground">/mes</span>}
+          {price === null ? 'Personalizado' : price === 0 ? 'Gratis' : `${price}€`}
+          {!!price && <span className="text-sm font-normal text-muted-foreground">/mes</span>}
         </div>
       </CardHeader>
       <CardContent className="space-y-3">

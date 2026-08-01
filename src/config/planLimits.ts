@@ -18,7 +18,7 @@ const UNLIMITED = 999999;
 
 export const PLAN_LIMITS: Record<PlanName, PlanLimits> = {
   free: {
-    properties: 10,
+    properties: 50,
     clients: 25,
     team_members: 1,
     agencies: 1,
@@ -31,7 +31,7 @@ export const PLAN_LIMITS: Record<PlanName, PlanLimits> = {
     activity_logs_days: 7,
   },
   basic: {
-    properties: 50,
+    properties: 500,
     clients: 100,
     team_members: 3,
     agencies: 1,
@@ -44,7 +44,7 @@ export const PLAN_LIMITS: Record<PlanName, PlanLimits> = {
     activity_logs_days: 30,
   },
   pro: {
-    properties: 250,
+    properties: UNLIMITED,
     clients: 500,
     team_members: 10,
     agencies: 5,
@@ -78,11 +78,12 @@ export const PLAN_LABELS: Record<PlanName, string> = {
   enterprise: 'Enterprise',
 };
 
-export const PLAN_PRICES: Record<PlanName, number> = {
+// null = "Personalizado" (contact sales), matches the marketing site's Enterprise tier.
+export const PLAN_PRICES: Record<PlanName, number | null> = {
   free: 0,
-  basic: 29,
-  pro: 79,
-  enterprise: 199,
+  basic: 49,
+  pro: 129,
+  enterprise: null,
 };
 
 export const PLAN_ORDER: PlanName[] = ['free', 'basic', 'pro', 'enterprise'];

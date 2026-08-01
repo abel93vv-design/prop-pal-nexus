@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,8 +30,20 @@ export const OnboardingWizard = ({ open, onComplete }: OnboardingWizardProps) =>
   const [agencyPhone, setAgencyPhone] = useState("");
   const [agencyEmail, setAgencyEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [hasAgency, setHasAgency] = useState<boolean | null>(null);
 
-  const skipAgencyStep = !!tenantId;
+  useEffect(() => {
+    if (!tenantId) { setHasAgency(false); return; }
+    supabase
+      .from("agencies")
+      .select("id", { count: "exact", head: true })
+      .eq("tenant_id", tenantId)
+      .then(({ count }) => setHasAgency(!!count && count > 0));
+  }, [tenantId]);
+
+  // Only skip once we've confirmed the tenant already has an agency;
+  // a fresh super_admin-provisioned tenant has a tenantId but zero agencies.
+  const skipAgencyStep = hasAgency === true;
 
   const steps = useMemo(
     () => skipAgencyStep ? allSteps.filter(s => s.id !== "agency") : allSteps,
