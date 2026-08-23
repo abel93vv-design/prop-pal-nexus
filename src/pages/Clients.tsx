@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Search, Mail, Phone, Plus, Pencil, Trash2, PhoneCall, ArrowUpDown, Kanban, Download, Upload, FileText, X, SlidersHorizontal } from "lucide-react";
+import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { clientGreetingMessage } from "@/lib/whatsapp";
 import { ClientsAdvancedFilters, AdvFilters, emptyAdvFilters, countActiveFilters } from "@/components/ClientsAdvancedFilters";
 import { Client, ClientType, LeadStatus, OperationType, DocumentType } from "@/types/crm";
 import { useToast } from "@/hooks/use-toast";
@@ -842,6 +844,7 @@ const Clients = () => {
                     <div className="flex justify-end gap-1">
                       <Button variant="ghost" size="icon" className="h-8 w-8" title="Crear oportunidad" onClick={() => navigate(`/pipeline?client=${c.id}`)}><Kanban className="w-3.5 h-3.5 text-primary" /></Button>
                       <Button variant="ghost" size="icon" className="h-8 w-8" title="Marcar contactado" onClick={() => markContacted(c)}><PhoneCall className="w-3.5 h-3.5 text-success" /></Button>
+                      <WhatsAppButton phone={c.phone} message={clientGreetingMessage(c.name)} />
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(c)}><Pencil className="w-3.5 h-3.5" /></Button>
                       <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(c)}><Trash2 className="w-3.5 h-3.5" /></Button>
                     </div>
@@ -994,15 +997,23 @@ const Clients = () => {
           </div>
           <DialogFooter className="gap-2 sm:gap-2">
             {editing && (
-              <Button
-                variant="outline"
-                onClick={() => markContacted(editing)}
-                className="mr-auto"
-                title="Registrar contacto con este cliente"
-              >
-                <PhoneCall className="w-4 h-4 mr-1 text-success" />
-                Marcar contactado{typeof editing.contactCount === 'number' ? ` (${editing.contactCount})` : ''}
-              </Button>
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => markContacted(editing)}
+                  className="mr-auto"
+                  title="Registrar contacto con este cliente"
+                >
+                  <PhoneCall className="w-4 h-4 mr-1 text-success" />
+                  Marcar contactado{typeof editing.contactCount === 'number' ? ` (${editing.contactCount})` : ''}
+                </Button>
+                <WhatsAppButton
+                  variant="labeled"
+                  phone={editing.phone}
+                  message={clientGreetingMessage(editing.name)}
+                  title="Abrir chat de WhatsApp con este cliente"
+                />
+              </>
             )}
             <Button variant="outline" onClick={() => handleDialogOpenChange(false)}>Cancelar</Button>
             <Button onClick={handleSave}>{editing ? "Guardar" : "Crear"}</Button>

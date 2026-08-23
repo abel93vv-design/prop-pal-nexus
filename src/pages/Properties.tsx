@@ -739,6 +739,7 @@ const Properties = () => {
                   clients={clients}
                   users={users}
                   fromPropertyId={editing.id}
+                  property={editing}
                 />
               </div>
             )}
