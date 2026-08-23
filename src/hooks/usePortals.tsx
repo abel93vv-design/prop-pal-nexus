@@ -9,6 +9,7 @@ export interface PortalConnection {
   portal_name: string;
   api_key: string;
   feed_url: string;
+  feed_token: string;
   is_active: boolean;
   max_ads: number;
   accepted_requirements: boolean;
@@ -38,7 +39,11 @@ export interface PortalValidationError {
 export function validatePropertyForPortal(property: any): PortalValidationError[] {
   const errors: PortalValidationError[] = [];
 
-  if (!property.price || property.price <= 0) errors.push({ field: "price", message: "Precio es obligatorio" });
+  const isRent = property.operationType === "alquiler" || property.operationType === "alquiler_opcion_compra";
+  const effectivePrice = isRent ? (property.monthly_rent || property.price) : property.price;
+  if (!effectivePrice || effectivePrice <= 0) {
+    errors.push({ field: "price", message: isRent ? "Renta mensual es obligatoria" : "Precio es obligatorio" });
+  }
   if (!property.address?.trim()) errors.push({ field: "address", message: "Ubicación exacta es obligatoria" });
   if (!property.postal_code?.trim()) errors.push({ field: "postal_code", message: "Código postal es obligatorio" });
   if (!property.surface || property.surface <= 0) errors.push({ field: "surface", message: "Superficie útil es obligatoria" });
@@ -53,6 +58,12 @@ export function validatePropertyForPortal(property: any): PortalValidationError[
   }
 
   return errors;
+}
+
+function generateFeedToken(): string {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes).map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
 export function usePortalConnections() {
@@ -94,7 +105,29 @@ export function usePortalConnections() {
 
   const getConnection = (portal: PortalName) => connections.find(c => c.portal_name === portal);
 
-  return { connections, loading, upsertConnection, getConnection, refetch: fetchConnections };
+  const getFeedUrl = (portal: PortalName): string | null => {
+    const conn = getConnection(portal);
+    if (!tenantId || !conn?.feed_token) return null;
+    const base = import.meta.env.VITE_SUPABASE_URL;
+    return `${base}/functions/v1/portal-feed?tenant_id=${tenantId}&portal=${portal}&token=${conn.feed_token}`;
+  };
+
+  const regenerateFeedToken = async (portal: PortalName) => {
+    const existing = getConnection(portal);
+    if (!existing) return;
+    const { error } = await supabase
+      .from("portal_connections")
+      .update({ feed_token: generateFeedToken(), updated_at: new Date().toISOString() } as any)
+      .eq("id", existing.id);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    await fetchConnections();
+    toast({
+      title: "URL del feed regenerada",
+      description: "La URL anterior ha dejado de funcionar. Actualiza la nueva URL en el portal.",
+    });
+  };
+
+  return { connections, loading, upsertConnection, getConnection, getFeedUrl, regenerateFeedToken, refetch: fetchConnections };
 }
 
 export function usePropertyPortalStatus() {
@@ -146,11 +179,49 @@ export function usePropertyPortalStatus() {
     await fetchStatuses();
   };
 
+  const bulkTogglePublication = async (propertyIds: string[], portalName: PortalName, publish: boolean) => {
+    if (!tenantId || propertyIds.length === 0) return;
+    const now = new Date().toISOString();
+
+    const existing = statuses.filter(s => s.portal_name === portalName && propertyIds.includes(s.property_id));
+    const existingIds = new Set(existing.map(e => e.property_id));
+
+    if (existing.length > 0) {
+      const { error } = await supabase
+        .from("property_portal_status")
+        .update({
+          is_published: publish,
+          published_at: publish ? now : null,
+          updated_at: now,
+        } as any)
+        .in("id", existing.map(e => e.id));
+      if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    }
+
+    const toInsert = propertyIds
+      .filter(id => !existingIds.has(id))
+      .map(id => ({
+        tenant_id: tenantId,
+        property_id: id,
+        portal_name: portalName,
+        is_published: publish,
+        published_at: publish ? now : null,
+      }));
+    if (toInsert.length > 0) {
+      const { error } = await supabase
+        .from("property_portal_status")
+        .insert(toInsert as any);
+      if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    }
+
+    await fetchStatuses();
+  };
+
   const getStatus = (propertyId: string, portalName: PortalName) =>
     statuses.find(s => s.property_id === propertyId && s.portal_name === portalName);
 
   const getPublishedCount = (portalName: PortalName) =>
     statuses.filter(s => s.portal_name === portalName && s.is_published).length;
 
-  return { statuses, loading, togglePublication, getStatus, getPublishedCount, refetch: fetchStatuses };
+  return { statuses, loading, togglePublication, bulkTogglePublication, getStatus, getPublishedCount, refetch: fetchStatuses };
 }
