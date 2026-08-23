@@ -460,6 +460,16 @@ const Properties = () => {
             );
           })}
         </div>
+
+        {selected.size > 0 && (
+          <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 flex flex-wrap items-center gap-2 rounded-xl border border-border bg-card shadow-lg px-4 py-3">
+            <span className="text-sm font-medium text-foreground">{selected.size} seleccionada{selected.size === 1 ? '' : 's'}</span>
+            <Button size="sm" variant="outline" disabled={bulkWorking} onClick={() => handleBulkPublish('fotocasa', true)}>Publicar en Fotocasa</Button>
+            <Button size="sm" variant="outline" disabled={bulkWorking} onClick={() => handleBulkPublish('idealista', true)}>Publicar en Idealista</Button>
+            <Button size="sm" variant="ghost" disabled={bulkWorking} onClick={async () => { await handleBulkPublish('fotocasa', false); await handleBulkPublish('idealista', false); }}>Despublicar</Button>
+            <Button size="sm" variant="ghost" disabled={bulkWorking} onClick={() => setSelected(new Set())}>Limpiar</Button>
+          </div>
+        )}
       </div>
 
       {/* Create / Edit Dialog */}
