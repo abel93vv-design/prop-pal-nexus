@@ -1,6 +1,6 @@
 import { MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { openWhatsApp } from "@/lib/whatsapp";
+import { buildWhatsAppUrl } from "@/lib/whatsapp";
 import { toast } from "@/hooks/use-toast";
 
 interface WhatsAppButtonProps {
@@ -19,39 +19,38 @@ export function WhatsAppButton({
   variant = "icon",
   className = "",
 }: WhatsAppButtonProps) {
-  if (!phone) return null;
+  const url = buildWhatsAppUrl(phone || "", message);
+  if (!url) return null;
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    e.preventDefault();
-    const ok = openWhatsApp(phone, message);
-    if (!ok) {
-      toast({
-        title: "Teléfono no válido",
-        description: "Revisa el número del cliente antes de contactar por WhatsApp.",
-        variant: "destructive",
-      });
-    }
+    // Si por algún motivo el enlace nativo no se abre, mostramos feedback.
+    toast({
+      title: "Abriendo WhatsApp",
+      description: "Si no se abre, revisa que no haya un bloqueador de pop-ups.",
+    });
   };
 
   if (variant === "labeled") {
     return (
-      <Button variant="outline" onClick={handleClick} title={title} className={className}>
-        <MessageCircle className="w-4 h-4 mr-1 text-success" />
-        WhatsApp
-      </Button>
+      <a href={url} target="_blank" rel="noopener noreferrer" onClick={handleClick} title={title} className={className}>
+        <Button variant="outline" type="button" asChild>
+          <span>
+            <MessageCircle className="w-4 h-4 mr-1 text-success" />
+            WhatsApp
+          </span>
+        </Button>
+      </a>
     );
   }
 
   return (
-    <Button
-      variant="ghost"
-      size="icon"
-      className={`h-8 w-8 ${className}`}
-      title={title}
-      onClick={handleClick}
-    >
-      <MessageCircle className="w-3.5 h-3.5 text-success" />
-    </Button>
+    <a href={url} target="_blank" rel="noopener noreferrer" onClick={handleClick} title={title} className={className}>
+      <Button variant="ghost" size="icon" type="button" className="h-8 w-8" asChild>
+        <span>
+          <MessageCircle className="w-3.5 h-3.5 text-success" />
+        </span>
+      </Button>
+    </a>
   );
 }
