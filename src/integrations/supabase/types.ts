@@ -726,6 +726,33 @@ export type Database = {
           },
         ]
       }
+      feature_configs: {
+        Row: {
+          created_at: string
+          default_value: Json
+          description: string | null
+          id: string
+          key: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          default_value?: Json
+          description?: string | null
+          id?: string
+          key: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          default_value?: Json
+          description?: string | null
+          id?: string
+          key?: string
+          name?: string
+        }
+        Relationships: []
+      }
       invoices: {
         Row: {
           amount: number
@@ -1039,6 +1066,7 @@ export type Database = {
           accepted_requirements: boolean
           api_key: string | null
           created_at: string
+          feed_token: string
           feed_url: string | null
           id: string
           is_active: boolean
@@ -1051,6 +1079,7 @@ export type Database = {
           accepted_requirements?: boolean
           api_key?: string | null
           created_at?: string
+          feed_token?: string
           feed_url?: string | null
           id?: string
           is_active?: boolean
@@ -1063,6 +1092,7 @@ export type Database = {
           accepted_requirements?: boolean
           api_key?: string | null
           created_at?: string
+          feed_token?: string
           feed_url?: string | null
           id?: string
           is_active?: boolean
@@ -1620,6 +1650,51 @@ export type Database = {
           },
         ]
       }
+      tenant_feature_configs: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          feature_key: string
+          id: string
+          tenant_id: string
+          updated_at: string
+          value: Json | null
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          feature_key: string
+          id?: string
+          tenant_id: string
+          updated_at?: string
+          value?: Json | null
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          feature_key?: string
+          id?: string
+          tenant_id?: string
+          updated_at?: string
+          value?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_feature_configs_feature_key_fkey"
+            columns: ["feature_key"]
+            isOneToOne: false
+            referencedRelation: "feature_configs"
+            referencedColumns: ["key"]
+          },
+          {
+            foreignKeyName: "tenant_feature_configs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenants: {
         Row: {
           allow_password_recovery: boolean
@@ -1631,6 +1706,7 @@ export type Database = {
           id: string
           is_active: boolean
           is_demo: boolean
+          lovable_domain_added: boolean
           name: string
           plan: string
           slug: string
@@ -1649,6 +1725,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_demo?: boolean
+          lovable_domain_added?: boolean
           name: string
           plan?: string
           slug: string
@@ -1667,6 +1744,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_demo?: boolean
+          lovable_domain_added?: boolean
           name?: string
           plan?: string
           slug?: string
@@ -1713,6 +1791,13 @@ export type Database = {
           plan: string
           slug: string
           subscription_status: string
+        }[]
+      }
+      get_tenant_active_configs: {
+        Args: { _tenant_id: string }
+        Returns: {
+          feature_key: string
+          value: Json
         }[]
       }
       get_tenant_by_domain: {

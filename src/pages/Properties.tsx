@@ -13,6 +13,8 @@ import { Building2, MapPin, Bed, Bath, Ruler, Search, Plus, Pencil, Trash2, File
 import { useQueryClient } from "@tanstack/react-query";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PortalPublicationControls } from "@/components/PortalPublicationControls";
+import { PropertySeoChecklist } from "@/components/PropertySeoChecklist";
+import { usePortalConnections, usePropertyPortalStatus, validatePropertyForPortal } from "@/hooks/usePortals";
 import { PropertyZoneSelector } from "@/components/PropertyZoneSelector";
 import { Property, PropertyType, PropertyStatus, Document, DocumentType, OperationType } from "@/types/crm";
 import { useToast } from "@/hooks/use-toast";
@@ -112,6 +114,54 @@ const Properties = () => {
   const [docForm, setDocForm] = useState<Omit<Document, "id">>(emptyDoc);
   const [cfValues, setCfValues] = useState<Record<string, any>>({});
   const { values: loadedCfValues, saveValues: saveCfValues } = useCustomFieldValues(editing?.id ?? null);
+
+  // Selección múltiple para publicación masiva en portales
+  const { getConnection } = usePortalConnections();
+  const { bulkTogglePublication, getPublishedCount } = usePropertyPortalStatus();
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkWorking, setBulkWorking] = useState(false);
+
+  const toggleSelected = (id: string, checked: boolean) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (checked) next.add(id); else next.delete(id);
+      return next;
+    });
+  };
+
+  const handleBulkPublish = async (portal: 'fotocasa' | 'idealista', publish: boolean) => {
+    const conn = getConnection(portal);
+    const portalLabel = portal === 'fotocasa' ? 'Fotocasa' : 'Idealista';
+    if (!conn?.is_active) {
+      toast({ title: "Portal no configurado", description: `Activa ${portalLabel} en Ajustes > Conexiones`, variant: "destructive" });
+      return;
+    }
+    const targets = properties.filter(p => selected.has(p.id));
+    if (targets.length === 0) return;
+
+    setBulkWorking(true);
+    try {
+      if (publish) {
+        const valid = targets.filter(p => validatePropertyForPortal(p).length === 0 && p.status !== 'vendido_alquilado' && p.status !== 'no_disponible');
+        const skipped = targets.length - valid.length;
+        const room = Math.max((conn.max_ads || 0) - getPublishedCount(portal), 0);
+        const allowed = valid.slice(0, room);
+        if (allowed.length > 0) await bulkTogglePublication(allowed.map(p => p.id), portal, true);
+        toast({
+          title: "Publicación masiva",
+          description: `${allowed.length} publicadas en ${portalLabel}`
+            + (skipped > 0 ? ` · ${skipped} omitidas por datos incompletos o estado no disponible` : "")
+            + (valid.length > allowed.length ? ` · límite de ${conn.max_ads} anuncios alcanzado` : ""),
+        });
+      } else {
+        await bulkTogglePublication(targets.map(p => p.id), portal, false);
+        toast({ title: "Despublicación masiva", description: `${targets.length} despublicadas de ${portalLabel}` });
+      }
+      setSelected(new Set());
+    } finally {
+      setBulkWorking(false);
+    }
+  };
 
   // Cleanup Radix overlay leftover (pointer-events:none / overflow lock) on dialog close.
   // Runs repeatedly to combat Radix re-applying the lock after nested Select dropdowns close.
@@ -392,7 +442,14 @@ const Properties = () => {
                     {docCount > 0 && <span className="flex items-center gap-1"><FileText className="w-3 h-3" />{docCount} doc.</span>}
                   </div>
                   <div className="flex items-center justify-between pt-2 border-t border-border">
-                    <span className="text-lg font-bold text-foreground">{p.price.toLocaleString('es-ES')} €</span>
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        checked={selected.has(p.id)}
+                        onCheckedChange={(v) => toggleSelected(p.id, !!v)}
+                        aria-label={`Seleccionar ${p.title}`}
+                      />
+                      <span className="text-lg font-bold text-foreground">{p.price.toLocaleString('es-ES')} €</span>
+                    </div>
                     <div className="flex items-center gap-2">
                       <PortalPublicationControls property={p} compact />
                       <span className="text-xs text-muted-foreground">{agent?.name}</span>
@@ -403,6 +460,16 @@ const Properties = () => {
             );
           })}
         </div>
+
+        {selected.size > 0 && (
+          <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 flex flex-wrap items-center gap-2 rounded-xl border border-border bg-card shadow-lg px-4 py-3">
+            <span className="text-sm font-medium text-foreground">{selected.size} seleccionada{selected.size === 1 ? '' : 's'}</span>
+            <Button size="sm" variant="outline" disabled={bulkWorking} onClick={() => handleBulkPublish('fotocasa', true)}>Publicar en Fotocasa</Button>
+            <Button size="sm" variant="outline" disabled={bulkWorking} onClick={() => handleBulkPublish('idealista', true)}>Publicar en Idealista</Button>
+            <Button size="sm" variant="ghost" disabled={bulkWorking} onClick={async () => { await handleBulkPublish('fotocasa', false); await handleBulkPublish('idealista', false); }}>Despublicar</Button>
+            <Button size="sm" variant="ghost" disabled={bulkWorking} onClick={() => setSelected(new Set())}>Limpiar</Button>
+          </div>
+        )}
       </div>
 
       {/* Create / Edit Dialog */}
@@ -675,6 +742,7 @@ const Properties = () => {
                 />
               </div>
             )}
+            <PropertySeoChecklist property={form} />
             {editing && (
               <PortalPublicationControls property={editing} />
             )}
