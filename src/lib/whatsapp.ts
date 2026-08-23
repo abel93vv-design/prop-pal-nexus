@@ -22,8 +22,9 @@ export function normalizePhoneForWhatsApp(phone: string, defaultCountryCode = "3
 export function buildWhatsAppUrl(phone: string, message?: string): string | null {
   const normalized = normalizePhoneForWhatsApp(phone);
   if (!normalized) return null;
-  const base = `https://wa.me/${normalized}`;
-  return message ? `${base}?text=${encodeURIComponent(message)}` : base;
+  const params = new URLSearchParams({ phone: normalized });
+  if (message) params.set("text", message);
+  return `https://web.whatsapp.com/send?${params.toString()}`;
 }
 
 /** Abre WhatsApp en una pestaña nueva. Devuelve false si el teléfono no es válido. */
