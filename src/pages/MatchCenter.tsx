@@ -13,6 +13,8 @@ import { Progress } from "@/components/ui/progress";
 import { Search, RefreshCw, Loader2, ArrowUpDown, Target, TrendingUp, AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, Check, X, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useUserRole } from "@/hooks/useUserRole";
+import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { clientGreetingMessage, propertyShareMessage } from "@/lib/whatsapp";
 
 const categoryLabels: Record<string, string> = { high: "Alto", medium: "Medio", low: "Bajo" };
 const categoryColors: Record<string, string> = {
@@ -310,6 +312,13 @@ const MatchCenter = () => {
                               )}
                               {client?.lastContactedAt && (
                                 <span className="text-[9px] text-muted-foreground">Últ: {new Date(client.lastContactedAt).toLocaleDateString("es-ES")}</span>
+                              )}
+                              {client && (
+                                <WhatsAppButton
+                                  phone={client.phone}
+                                  message={property ? propertyShareMessage(client.name, property) : clientGreetingMessage(client.name)}
+                                  title="Enviar esta vivienda por WhatsApp"
+                                />
                               )}
                             </div>
                           </div>

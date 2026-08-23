@@ -3,6 +3,8 @@ import { MatchScore } from "@/hooks/useMatchCenter";
 import { Client, Property } from "@/types/crm";
 import { Target, DollarSign, TrendingUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { clientGreetingMessage, propertyShareMessage } from "@/lib/whatsapp";
 
 const categoryLabels: Record<string, string> = { high: "Alto", medium: "Medio", low: "Bajo" };
 const categoryColors: Record<string, string> = {
@@ -89,9 +91,10 @@ interface TopClientMatchesProps {
   clients: Client[];
   users: { id: string; name: string }[];
   fromPropertyId?: string;
+  property?: Property;
 }
 
-export function TopClientMatches({ matches, clients, users, fromPropertyId }: TopClientMatchesProps) {
+export function TopClientMatches({ matches, clients, users, fromPropertyId, property }: TopClientMatchesProps) {
   const navigate = useNavigate();
   if (matches.length === 0) return (
     <div className="text-xs text-muted-foreground italic py-2">
@@ -156,6 +159,13 @@ export function TopClientMatches({ matches, clients, users, fromPropertyId }: To
               {client.lastContactedAt && (
                 <span>Últ: {new Date(client.lastContactedAt).toLocaleDateString("es-ES")}</span>
               )}
+              <span className="ml-auto">
+                <WhatsAppButton
+                  phone={client.phone}
+                  message={property ? propertyShareMessage(client.name, property) : clientGreetingMessage(client.name)}
+                  title="Enviar esta vivienda por WhatsApp"
+                />
+              </span>
             </div>
           </div>
         );
