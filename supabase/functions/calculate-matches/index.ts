@@ -481,11 +481,30 @@ Deno.serve(async (req) => {
     }
 
     const clientIds = clients.map((c: Client) => c.id);
-    const { data: allFinancials } = await supabase
-      .from("client_financials")
-      .select("*")
-      .eq("tenant_id", tenant_id)
-      .in("client_id", clientIds);
+
+    // Fetch in chunks: a single .in() with hundreds of UUIDs exceeds the
+    // URL length limit and PostgREST returns an error (previously the error
+    // was ignored and every match scored 0 with "Sin preferencias").
+    const IN_CHUNK = 100;
+    const fetchInChunks = async (table: string) => {
+      const rows: any[] = [];
+      for (let i = 0; i < clientIds.length; i += IN_CHUNK) {
+        const chunk = clientIds.slice(i, i + IN_CHUNK);
+        const { data, error } = await supabase
+          .from(table)
+          .select("*")
+          .eq("tenant_id", tenant_id)
+          .in("client_id", chunk);
+        if (error) {
+          console.error(`Error fetching ${table} chunk ${i}:`, error.message);
+          continue;
+        }
+        if (data) rows.push(...data);
+      }
+      return rows;
+    };
+
+    const allFinancials = await fetchInChunks("client_financials");
 
     const financialsMap = new Map<string, ClientFinancials>();
     (allFinancials || []).forEach((f: any) => {
