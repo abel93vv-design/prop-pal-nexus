@@ -58,7 +58,7 @@ const FeatureConfigs = () => {
       toast({ title: "Error", description: "Clave y nombre son obligatorios", variant: "destructive" });
       return;
     }
-    let parsedValue: unknown;
+    let parsedValue: any;
     try {
       parsedValue = JSON.parse(form.default_value || "{}");
     } catch {
