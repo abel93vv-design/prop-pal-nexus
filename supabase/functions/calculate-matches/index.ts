@@ -518,11 +518,7 @@ Deno.serve(async (req) => {
       });
     });
 
-    const { data: allPrefs } = await supabase
-      .from("client_preferences")
-      .select("*")
-      .eq("tenant_id", tenant_id)
-      .in("client_id", clientIds);
+    const allPrefs = await fetchInChunks("client_preferences");
 
     const prefsMap = new Map<string, ClientPreferences>();
     (allPrefs || []).forEach((p: any) => {
