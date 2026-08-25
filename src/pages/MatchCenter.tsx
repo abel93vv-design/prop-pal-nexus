@@ -14,6 +14,8 @@ import { Search, RefreshCw, Loader2, ArrowUpDown, Target, TrendingUp, AlertTrian
 import { useToast } from "@/hooks/use-toast";
 import { useUserRole } from "@/hooks/useUserRole";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { WhatsAppSendButton } from "@/components/WhatsAppSendDialog";
+
 import { clientGreetingMessage, propertyShareMessage } from "@/lib/whatsapp";
 
 const categoryLabels: Record<string, string> = { high: "Alto", medium: "Medio", low: "Bajo" };
@@ -314,12 +316,21 @@ const MatchCenter = () => {
                                 <span className="text-[9px] text-muted-foreground">Últ: {new Date(client.lastContactedAt).toLocaleDateString("es-ES")}</span>
                               )}
                               {client && (
-                                <WhatsAppButton
-                                  phone={client.phone}
-                                  message={property ? propertyShareMessage(client.name, property) : clientGreetingMessage(client.name)}
-                                  title="Enviar esta vivienda por WhatsApp"
-                                />
+                                <>
+                                  <WhatsAppButton
+                                    phone={client.phone}
+                                    message={property ? propertyShareMessage(client.name, property) : clientGreetingMessage(client.name)}
+                                    title="Enviar esta vivienda por WhatsApp"
+                                  />
+                                  <WhatsAppSendButton
+                                    phone={client.phone}
+                                    clientId={client.id}
+                                    clientName={client.name}
+                                    defaultMessage={property ? propertyShareMessage(client.name, property) : clientGreetingMessage(client.name)}
+                                  />
+                                </>
                               )}
+
                             </div>
                           </div>
                         </TableCell>

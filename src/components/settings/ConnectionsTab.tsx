@@ -9,6 +9,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Home, Building, CheckCircle, AlertCircle, Copy, RefreshCw, Info } from "lucide-react";
 import { usePortalConnections, PortalName } from "@/hooks/usePortals";
 import { toast } from "@/hooks/use-toast";
+import { WhatsAppCard } from "@/components/settings/WhatsAppCard";
+
 
 const portalMeta: Record<PortalName, { label: string; icon: typeof Home; color: string }> = {
   fotocasa: { label: "Fotocasa", icon: Home, color: "text-orange-500" },
@@ -155,6 +157,9 @@ export function ConnectionsTab() {
         <PortalCard portal="fotocasa" />
         <PortalCard portal="idealista" />
       </div>
+
+      <WhatsAppCard />
+
     </div>
   );
 }
