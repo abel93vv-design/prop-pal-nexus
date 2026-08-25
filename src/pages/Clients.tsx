@@ -12,6 +12,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Search, Mail, Phone, Plus, Pencil, Trash2, PhoneCall, ArrowUpDown, Kanban, Download, Upload, FileText, X, SlidersHorizontal } from "lucide-react";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { WhatsAppSendButton } from "@/components/WhatsAppSendDialog";
+
 import { clientGreetingMessage } from "@/lib/whatsapp";
 import { ClientsAdvancedFilters, AdvFilters, emptyAdvFilters, countActiveFilters } from "@/components/ClientsAdvancedFilters";
 import { Client, ClientType, LeadStatus, OperationType, DocumentType } from "@/types/crm";
@@ -1013,6 +1015,14 @@ const Clients = () => {
                   message={clientGreetingMessage(editing.name)}
                   title="Abrir chat de WhatsApp con este cliente"
                 />
+                <WhatsAppSendButton
+                  variant="labeled"
+                  phone={editing.phone}
+                  clientId={editing.id}
+                  clientName={editing.name}
+                  defaultMessage={clientGreetingMessage(editing.name)}
+                />
+
               </>
             )}
             <Button variant="outline" onClick={() => handleDialogOpenChange(false)}>Cancelar</Button>
