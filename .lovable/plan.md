@@ -1,36 +1,49 @@
-# Plan: Configuración clara de WhatsApp
+# Integración de WhatsApp con Twilio (envío automático)
 
-## Problema
-La integración de WhatsApp automático fue preparada sin un número de empresa configurado, lo que genera confusión. Se necesita que el usuario pueda ver y configurar el número de WhatsApp Business/Twilio desde el CRM.
+## Objetivo
+Activar el envío automático de WhatsApp desde el CRM usando Twilio como puente, manteniendo el click-to-chat (`wa.me`) que ya funciona gratis.
 
-## Solución
+## Estado actual
+- Click-to-chat ya implementado: abre WhatsApp Web con el teléfono del cliente.
+- Edge Function `send-whatsapp` ya existe y está preparada para Twilio, pero necesita:
+  1. Conector Twilio vinculado (proporciona `TWILIO_API_KEY`).
+  2. Secreto `TWILIO_WHATSAPP_FROM` con el número de remitente verificado.
+- No hay UI para enviar mensajes automatizados masivamente; solo el botón de click-to-chat.
 
-### 1. Configuración de número de empresa
-- Añadir en **Ajustes > Conexiones** una tarjeta de configuración de WhatsApp.
-- Campos:
-  - `whatsapp_business_number`: número de empresa en formato internacional (ej. +34600000000).
-  - Indicador de estado: "Click-to-chat activo" / "Envío automático pendiente de Twilio".
-- Guardar el valor en `tenant_settings` (o crear la tabla si no existe) vinculado al `tenant_id` actual.
+## Pasos del plan
 
-### 2. Uso del número configurado
-- El botón de click-to-chat sigue usando el teléfono del cliente (no cambia).
-- La función Edge `send-whatsapp` leerá `whatsapp_business_number` de la configuración del tenant como remitente por defecto, permitiendo sobrescribirlo con `TWILIO_WHATSAPP_FROM` si existe.
-- Si no hay número configurado ni `TWILIO_WHATSAPP_FROM`, la función devolverá un error claro: "Configura el número de WhatsApp Business en Ajustes > Conexiones".
+### 1. Conectar Twilio
+- Usar el conector estándar `twilio` para vincular la cuenta.
+- Esto inyectará `TWILIO_API_KEY` como variable de entorno del Edge Function.
+- Requisitos previos del usuario:
+  - Cuenta Twilio activa.
+  - Número de WhatsApp Business verificado en Twilio (puede ser el mismo móvil de la inmobiliaria convertido a WhatsApp Business o un número de Twilio).
 
-### 3. UI de estado en Conexiones
-- Mostrar si el envío automático está listo (número configurado + Twilio conectado) o qué falta.
-- No permitir envío automático masivo si falta configuración.
+### 2. Configurar el remitente
+- Añadir el secreto `TWILIO_WHATSAPP_FROM` con el número E.164 del remitente (ej. `+34600123456`).
+- Este valor se usará en el campo `From` de los mensajes de WhatsApp.
 
-### 4. Limpieza
-- Eliminar referencias confusas a "API de WhatsApp" cuando solo hay click-to-chat disponible.
-- Asegurar que el botón de WhatsApp en ficha de cliente y matching siga funcionando sin configuración.
+### 3. Hardering menor de la Edge Function
+- Revisar `supabase/functions/send-whatsapp/index.ts` para:
+  - Incluir validación de tenant (usar `tenant_id` del perfil autenticado).
+  - Registrar en auditoría cada envío (tabla `activity_logs` o similar).
+  - Evitar envíos si el usuario no pertenece al mismo `tenant_id` o no tiene permisos.
 
-## Archivos a modificar
-- `src/components/settings/ConnectionsTab.tsx`
-- `supabase/functions/send-whatsapp/index.ts`
-- `src/lib/whatsapp.ts` (documentación del remitente)
-- Posible migración SQL para guardar `whatsapp_business_number` por tenant.
+### 4. UI de envío automatizado
+Añadir acciones de "Enviar por WhatsApp" con mensaje predefinido en:
+- **Ficha de cliente**: botón junto al actual click-to-chat que permita enviar un mensaje automatizado (saludo o personalizado).
+- **Matching / Match Center**: al compartir una propiedad desde el matching, ofrecer tanto click-to-chat como envío automático si el usuario tiene permisos.
 
-## No se toca
-- Funcionalidad de click-to-chat existente.
-- Conector de Twilio (solo se usa si el usuario lo conecta).
+### 5. Prueba y validación
+- Llamar a `send-whatsapp` desde el chat para confirmar que el mensaje llega.
+- Verificar que los errores de Twilio (falta de saldo, número no verificado, etc.) se muestran al usuario.
+
+## Qué necesito del usuario
+1. Confirmar que quiere usar Twilio (no Inmovilla/Web QR).
+2. Tener a mano para la configuración:
+   - Account SID / Auth Token o API Key de Twilio.
+   - Número de WhatsApp Business verificado en Twilio (formato `+34...`).
+
+## Qué NO incluye este plan
+- No se modifica el click-to-chat existente (sigue gratuito e independiente).
+- No se implementa recepción de mensajes ni bandeja de entrada (solo envío saliente).
