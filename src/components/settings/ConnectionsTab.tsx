@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Home, Building, CheckCircle, AlertCircle, Copy, RefreshCw, Info } from "lucide-react";
+import { Home, Building, Globe, CheckCircle, AlertCircle, Copy, RefreshCw, Trash2, Info } from "lucide-react";
 import { usePortalConnections, PortalName } from "@/hooks/usePortals";
 import { toast } from "@/hooks/use-toast";
 import { WhatsAppCard } from "@/components/settings/WhatsAppCard";
@@ -137,6 +137,117 @@ function PortalCard({ portal }: { portal: PortalName }) {
   );
 }
 
+// Webs Inmocro: cada fila es un WordPress propio que consume el feed JSON de portal-feed.
+function WebsitesCard() {
+  const { websites, getFeedUrl, addWebsite, setWebsiteActive, removeWebsite, regenerateFeedToken } = usePortalConnections();
+  const [slug, setSlug] = useState("");
+  const [label, setLabel] = useState("");
+
+  const handleAdd = async () => {
+    if (!slug.trim()) { toast({ title: "Indica el slug del sitio", variant: "destructive" }); return; }
+    await addWebsite(slug, label);
+    setSlug("");
+    setLabel("");
+  };
+
+  const copy = async (url: string | null) => {
+    if (!url) return;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast({ title: "URL copiada", description: "Pégala en integrations.crm.feed_url de site.json." });
+    } catch {
+      toast({ title: "No se pudo copiar", variant: "destructive" });
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Globe className="w-5 h-5 text-primary" />
+          Webs Inmocro
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <p className="text-xs text-muted-foreground">
+          Conecta cada web inmobiliaria (WordPress). El sitio consultará esta URL cada pocos minutos e
+          importará las viviendas que marques como publicadas en él. El <code>slug</code> debe coincidir con
+          <code> sites/&lt;slug&gt;/site.json</code>.
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2 items-end">
+          <div className="space-y-1">
+            <Label className="text-xs">Slug del sitio</Label>
+            <Input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="costa-del-sol-homes" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Nombre visible</Label>
+            <Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Costa del Sol Homes" />
+          </div>
+          <Button type="button" size="sm" onClick={handleAdd}>Añadir web</Button>
+        </div>
+
+        {websites.length === 0 ? (
+          <p className="text-xs text-muted-foreground">Aún no hay webs conectadas.</p>
+        ) : (
+          <div className="space-y-3">
+            {websites.map((w) => {
+              const url = getFeedUrl(w.portal_name);
+              const name = w.label || w.portal_name.replace("web:", "");
+              return (
+                <div key={w.portal_name} className="rounded-lg border border-border bg-muted/20 p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">{name}</span>
+                      <Badge variant="outline" className="text-[9px] font-mono">{w.portal_name}</Badge>
+                      {w.is_active ? (
+                        <Badge className="bg-success/10 text-success border-success/20 text-[9px]">Activo</Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-muted-foreground text-[9px]">Inactivo</Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Switch checked={w.is_active} onCheckedChange={(v) => setWebsiteActive(w.portal_name, v)} />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeWebsite(w.portal_name)}
+                        title="Desconectar esta web"
+                      >
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Input readOnly value={url ?? ""} className="font-mono text-xs" onFocus={(e) => e.target.select()} />
+                    <Button type="button" variant="outline" size="icon" onClick={() => copy(url)} title="Copiar URL del feed">
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => regenerateFeedToken(w.portal_name)}
+                      title="Regenerar URL (invalida la anterior)"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">
+                    Secreta: contiene el token de acceso. Ponla en <code>integrations.crm.feed_url</code> de
+                    <code> site.json</code> (o en la variable de entorno <code>INMOCRO_CRM_FEED_URL</code>).
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export function ConnectionsTab() {
   return (
     <div className="space-y-6">
@@ -157,6 +268,8 @@ export function ConnectionsTab() {
         <PortalCard portal="fotocasa" />
         <PortalCard portal="idealista" />
       </div>
+
+      <WebsitesCard />
 
       <WhatsAppCard />
 

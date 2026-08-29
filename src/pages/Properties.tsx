@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Building2, MapPin, Bed, Bath, Ruler, Search, Plus, Pencil, Trash2, FileText, Upload, X, Kanban, FileSignature, Newspaper, ArrowRightLeft, RefreshCw } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useTenant } from "@/context/TenantContext";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PortalPublicationControls } from "@/components/PortalPublicationControls";
 import { PropertySeoChecklist } from "@/components/PropertySeoChecklist";
@@ -77,8 +79,24 @@ const Properties = () => {
   const { properties, users, agencies, clients, documents, addProperty, updateProperty, deleteProperty, convertListingType, addDocument, deleteDocument } = useData();
   const { isAdmin } = useUserRole();
   const { toast } = useToast();
+  const { tenantId } = useTenant();
   const qc = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
+  const [photoUploading, setPhotoUploading] = useState(false);
+
+  // Sube la foto a Storage (bucket público property-photos) y devuelve su URL.
+  // Sustituye al antiguo base64 en la fila: los portales y la web necesitan URLs absolutas.
+  const uploadPhoto = async (file: File): Promise<string | null> => {
+    if (!tenantId) { toast({ title: "Sin tenant activo", variant: "destructive" }); return null; }
+    const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+    const path = `${tenantId}/${editing?.id ?? "draft"}/${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase.storage.from("property-photos").upload(path, file, {
+      upsert: false,
+      contentType: file.type || undefined,
+    });
+    if (error) { toast({ title: "Error subiendo la foto", description: error.message, variant: "destructive" }); return null; }
+    return supabase.storage.from("property-photos").getPublicUrl(path).data.publicUrl;
+  };
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
@@ -674,24 +692,27 @@ const Properties = () => {
                 </div>
                 <label className="flex items-center gap-2 cursor-pointer text-xs text-primary hover:underline">
                   <Upload className="w-3.5 h-3.5" />
-                  <span>Añadir imagen</span>
+                  <span>{photoUploading ? "Subiendo…" : "Añadir imagen"}</span>
                   <input
                     type="file"
                     accept="image/*"
                     multiple
                     className="hidden"
-                    onChange={(e) => {
+                    disabled={photoUploading}
+                    onChange={async (e) => {
                       const files = e.target.files;
                       if (!files) return;
-                      Array.from(files).forEach(file => {
-                        const reader = new FileReader();
-                        reader.onload = (ev) => {
-                          const result = ev.target?.result as string;
-                          setForm(prev => ({ ...prev, photos: [...prev.photos, result] }));
-                        };
-                        reader.readAsDataURL(file);
-                      });
+                      const list = Array.from(files);
                       e.target.value = "";
+                      setPhotoUploading(true);
+                      try {
+                        for (const file of list) {
+                          const url = await uploadPhoto(file);
+                          if (url) setForm(prev => ({ ...prev, photos: [...prev.photos, url] }));
+                        }
+                      } finally {
+                        setPhotoUploading(false);
+                      }
                     }}
                   />
                 </label>

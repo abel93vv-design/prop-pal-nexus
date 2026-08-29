@@ -8,6 +8,9 @@ const corsHeaders = {
 const VALID_PORTALS = ["fotocasa", "idealista"];
 const EXCLUDED_STATUSES = ["vendido_alquilado", "no_disponible"];
 
+// Las webs Inmocro (WordPress) consumen un feed JSON con portal_name = "web:<slug>".
+const isWebPortal = (portal: string) => portal.startsWith("web:");
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -16,13 +19,14 @@ Deno.serve(async (req) => {
   try {
     const url = new URL(req.url);
     const tenantId = url.searchParams.get("tenant_id");
-    const portal = url.searchParams.get("portal"); // 'fotocasa' | 'idealista'
+    const portal = url.searchParams.get("portal"); // 'fotocasa' | 'idealista' | 'web:<slug>'
     const token = url.searchParams.get("token");
 
     if (!tenantId || !portal || !token) {
       return new Response("Missing tenant_id, portal or token parameter", { status: 400, headers: corsHeaders });
     }
-    if (!VALID_PORTALS.includes(portal)) {
+    const web = isWebPortal(portal);
+    if (!web && !VALID_PORTALS.includes(portal)) {
       return new Response("Invalid portal", { status: 400, headers: corsHeaders });
     }
 
@@ -54,9 +58,9 @@ Deno.serve(async (req) => {
 
     if (statusError) throw statusError;
     if (!publishedStatuses || publishedStatuses.length === 0) {
-      return new Response(generateEmptyXml(portal), {
-        headers: xmlHeaders(),
-      });
+      return web
+        ? new Response(JSON.stringify(emptyWebFeed(portal)), { headers: jsonHeaders() })
+        : new Response(generateEmptyXml(portal), { headers: xmlHeaders() });
     }
 
     const propertyIds = publishedStatuses.map((s: any) => s.property_id);
@@ -78,6 +82,11 @@ Deno.serve(async (req) => {
       .is("deleted_at", null)
       .limit(1)
       .maybeSingle();
+
+    if (web) {
+      const slug = portal.slice("web:".length);
+      return new Response(JSON.stringify(generateWebFeed(slug, properties || [], agency)), { headers: jsonHeaders() });
+    }
 
     const xml = portal === "fotocasa"
       ? generateFotocasaXml(properties || [], agency)
@@ -104,6 +113,80 @@ function xmlHeaders() {
 
 function generateEmptyXml(portal: string): string {
   return `<?xml version="1.0" encoding="UTF-8"?>\n<feed portal="${portal}" count="0" />`;
+}
+
+// ---- Feed JSON para webs Inmocro (WordPress) --------------------------------
+// WordPress hace su propio mapeo a CPT/taxonomías, así que aquí se emiten los
+// valores en crudo del CRM (operation_type, type, status en español).
+
+function jsonHeaders() {
+  return {
+    ...corsHeaders,
+    "Content-Type": "application/json; charset=utf-8",
+    "Cache-Control": "public, max-age=120",
+  };
+}
+
+function webFeatures(p: any): string[] {
+  const f: string[] = [];
+  if (p.has_pool) f.push("pool");
+  if (p.has_terrace) f.push("terrace");
+  if (p.has_garage) f.push("garage");
+  if (p.has_elevator) f.push("elevator");
+  if (p.has_air_conditioning) f.push("air_conditioning");
+  return f;
+}
+
+function webProperty(p: any) {
+  return {
+    id: p.id,
+    ref: p.ref ?? null,
+    title: p.title || "",
+    description: p.description || "",
+    operation_type: p.operation_type || "venta",
+    type: p.type || "",
+    status: p.status || "disponible",
+    price: p.price ?? null,
+    monthly_rent: p.monthly_rent ?? null,
+    currency: "EUR",
+    bedrooms: p.bedrooms ?? null,
+    bathrooms: p.bathrooms ?? null,
+    surface: p.surface ?? null,
+    built_surface: p.built_surface ?? null,
+    plot_surface: p.plot_surface ?? null,
+    floor: p.floor ?? null,
+    year: null,
+    energy_cert: p.energy_cert || null,
+    address: p.address || "",
+    postal_code: p.postal_code || "",
+    neighborhood: p.neighborhood || "",
+    latitude: p.latitude ?? null,
+    longitude: p.longitude ?? null,
+    features: webFeatures(p),
+    // Solo URLs absolutas; los data: URI antiguos se descartan (igual que en los portales).
+    photos: feedPhotos(p),
+    created_at: p.created_at || null,
+  };
+}
+
+function generateWebFeed(slug: string, properties: any[], agency: any) {
+  return {
+    site: slug,
+    generated_at: new Date().toISOString(),
+    count: properties.length,
+    agency: {
+      name: agency?.name || "",
+      email: agency?.email || "",
+      phone: agency?.phone || "",
+      address: agency?.address || "",
+      logo: agency?.logo || "",
+    },
+    properties: properties.map(webProperty),
+  };
+}
+
+function emptyWebFeed(portal: string) {
+  return { site: portal.slice("web:".length), generated_at: new Date().toISOString(), count: 0, agency: {}, properties: [] };
 }
 
 function mapPropertyType(type: string): string {

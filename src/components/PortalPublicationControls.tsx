@@ -2,8 +2,14 @@ import { useState } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Home, Building, AlertTriangle } from "lucide-react";
-import { usePortalConnections, usePropertyPortalStatus, validatePropertyForPortal, PortalName } from "@/hooks/usePortals";
+import { Home, Building, Globe, AlertTriangle } from "lucide-react";
+import {
+  usePortalConnections,
+  usePropertyPortalStatus,
+  validatePropertyForPortal,
+  validatePropertyForWeb,
+  PortalName,
+} from "@/hooks/usePortals";
 import { toast } from "@/hooks/use-toast";
 
 interface PortalPublicationControlsProps {
@@ -17,7 +23,7 @@ const portalConfig: Record<PortalName, { label: string; icon: typeof Home; color
 };
 
 export function PortalPublicationControls({ property, compact = false }: PortalPublicationControlsProps) {
-  const { getConnection } = usePortalConnections();
+  const { getConnection, websites } = usePortalConnections();
   const { togglePublication, getStatus, getPublishedCount } = usePropertyPortalStatus();
   const [toggling, setToggling] = useState<string | null>(null);
 
@@ -58,6 +64,24 @@ export function PortalPublicationControls({ property, compact = false }: PortalP
     toast({ title: newValue ? "Publicado" : "Despublicado", description: `${property.title} en ${portalConfig[portal].label}` });
   };
 
+  // Webs Inmocro: mismo mecanismo (property_portal_status con portal_name = "web:<slug>"),
+  // validación más laxa y sin límite de anuncios.
+  const handleToggleWeb = async (portalName: string, label: string, newValue: boolean) => {
+    if (newValue) {
+      const errors = validatePropertyForWeb(property);
+      if (errors.length > 0) {
+        toast({ title: "No se puede publicar", description: errors.map(e => e.message).join(", "), variant: "destructive" });
+        return;
+      }
+    }
+    setToggling(portalName);
+    await togglePublication(property.id, portalName, newValue);
+    setToggling(null);
+    toast({ title: newValue ? "Publicado" : "Despublicado", description: `${property.title} en ${label}` });
+  };
+
+  const activeWebsites = websites.filter(w => w.is_active);
+
   if (compact) {
     return (
       <TooltipProvider>
@@ -90,6 +114,30 @@ export function PortalPublicationControls({ property, compact = false }: PortalP
                   <p className="text-xs">
                     {!isConnected ? `${cfg.label}: No configurado` : isPublished ? `${cfg.label}: Publicado` : `${cfg.label}: Click para publicar`}
                   </p>
+                </TooltipContent>
+              </Tooltip>
+            );
+          })}
+          {activeWebsites.map((w) => {
+            const status = getStatus(property.id, w.portal_name);
+            const isPublished = status?.is_published || false;
+            const label = w.label || w.portal_name.replace("web:", "");
+            return (
+              <Tooltip key={w.portal_name}>
+                <TooltipTrigger asChild>
+                  <button
+                    className={`p-1 rounded transition-colors ${isPublished ? "bg-success/10" : "bg-muted hover:bg-muted/80"}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleToggleWeb(w.portal_name, label, !isPublished);
+                    }}
+                    disabled={!!toggling}
+                  >
+                    <Globe className={`w-3.5 h-3.5 ${isPublished ? "text-primary" : "text-muted-foreground"}`} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-xs">{isPublished ? `${label}: Publicado` : `${label}: Click para publicar`}</p>
                 </TooltipContent>
               </Tooltip>
             );
@@ -141,6 +189,33 @@ export function PortalPublicationControls({ property, compact = false }: PortalP
           </div>
         );
       })}
+
+      {activeWebsites.length > 0 && (
+        <>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide pt-1">Webs Inmocro</p>
+          {activeWebsites.map((w) => {
+            const status = getStatus(property.id, w.portal_name);
+            const isPublished = status?.is_published || false;
+            const label = w.label || w.portal_name.replace("web:", "");
+            return (
+              <div key={w.portal_name} className="flex items-center justify-between p-3 rounded-lg border border-border bg-muted/20">
+                <div className="flex items-center gap-2">
+                  <Globe className="w-4 h-4 text-primary" />
+                  <p className="text-sm font-medium">{label}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {isPublished && <Badge className="bg-success/10 text-success border-success/20 text-[9px]">Activo</Badge>}
+                  <Switch
+                    checked={isPublished}
+                    onCheckedChange={(v) => handleToggleWeb(w.portal_name, label, v)}
+                    disabled={!!toggling}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </>
+      )}
     </div>
   );
 }
@@ -150,7 +225,7 @@ export function PortalAdCounter({ portal }: { portal: PortalName }) {
   const { getPublishedCount } = usePropertyPortalStatus();
   const connection = getConnection(portal);
   if (!connection?.is_active) return null;
-  
+
   const count = getPublishedCount(portal);
   const max = connection.max_ads;
   const isNearLimit = count >= max * 0.8;

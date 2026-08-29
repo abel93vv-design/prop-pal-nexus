@@ -1070,6 +1070,7 @@ export type Database = {
           feed_url: string | null
           id: string
           is_active: boolean
+          label: string | null
           max_ads: number
           portal_name: string
           tenant_id: string
@@ -1083,6 +1084,7 @@ export type Database = {
           feed_url?: string | null
           id?: string
           is_active?: boolean
+          label?: string | null
           max_ads?: number
           portal_name: string
           tenant_id: string
@@ -1096,6 +1098,7 @@ export type Database = {
           feed_url?: string | null
           id?: string
           is_active?: boolean
+          label?: string | null
           max_ads?: number
           portal_name?: string
           tenant_id?: string
@@ -1171,6 +1174,7 @@ export type Database = {
           deleted_at: string | null
           description: string | null
           energy_cert: string | null
+          external_refs: Json
           floor: number | null
           has_air_conditioning: boolean | null
           has_elevator: boolean | null
@@ -1218,6 +1222,7 @@ export type Database = {
           deleted_at?: string | null
           description?: string | null
           energy_cert?: string | null
+          external_refs?: Json
           floor?: number | null
           has_air_conditioning?: boolean | null
           has_elevator?: boolean | null
@@ -1265,6 +1270,7 @@ export type Database = {
           deleted_at?: string | null
           description?: string | null
           energy_cert?: string | null
+          external_refs?: Json
           floor?: number | null
           has_air_conditioning?: boolean | null
           has_elevator?: boolean | null
@@ -1945,6 +1951,7 @@ export type Database = {
           deleted_at: string | null
           description: string | null
           energy_cert: string | null
+          external_refs: Json
           floor: number | null
           has_air_conditioning: boolean | null
           has_elevator: boolean | null
