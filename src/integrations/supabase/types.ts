@@ -1066,12 +1066,14 @@ export type Database = {
           accepted_requirements: boolean
           api_key: string | null
           created_at: string
+          display_name: string | null
           feed_token: string
           feed_url: string | null
           id: string
           is_active: boolean
           max_ads: number
           portal_name: string
+          slug: string | null
           tenant_id: string
           updated_at: string
         }
@@ -1079,12 +1081,14 @@ export type Database = {
           accepted_requirements?: boolean
           api_key?: string | null
           created_at?: string
+          display_name?: string | null
           feed_token?: string
           feed_url?: string | null
           id?: string
           is_active?: boolean
           max_ads?: number
           portal_name: string
+          slug?: string | null
           tenant_id: string
           updated_at?: string
         }
@@ -1092,12 +1096,14 @@ export type Database = {
           accepted_requirements?: boolean
           api_key?: string | null
           created_at?: string
+          display_name?: string | null
           feed_token?: string
           feed_url?: string | null
           id?: string
           is_active?: boolean
           max_ads?: number
           portal_name?: string
+          slug?: string | null
           tenant_id?: string
           updated_at?: string
         }
@@ -1193,12 +1199,14 @@ export type Database = {
           postal_code: string | null
           price: number | null
           published_at: string | null
+          reference: string | null
           status: string
           surface: number | null
           tenant_id: string | null
           title: string
           type: string
           unavailable_reason: string | null
+          year_built: number | null
         }
         Insert: {
           accepts_pets?: boolean
@@ -1240,12 +1248,14 @@ export type Database = {
           postal_code?: string | null
           price?: number | null
           published_at?: string | null
+          reference?: string | null
           status?: string
           surface?: number | null
           tenant_id?: string | null
           title: string
           type?: string
           unavailable_reason?: string | null
+          year_built?: number | null
         }
         Update: {
           accepts_pets?: boolean
@@ -1287,12 +1297,14 @@ export type Database = {
           postal_code?: string | null
           price?: number | null
           published_at?: string | null
+          reference?: string | null
           status?: string
           surface?: number | null
           tenant_id?: string | null
           title?: string
           type?: string
           unavailable_reason?: string | null
+          year_built?: number | null
         }
         Relationships: [
           {
@@ -1967,12 +1979,14 @@ export type Database = {
           postal_code: string | null
           price: number | null
           published_at: string | null
+          reference: string | null
           status: string
           surface: number | null
           tenant_id: string | null
           title: string
           type: string
           unavailable_reason: string | null
+          year_built: number | null
         }
         SetofOptions: {
           from: "*"
