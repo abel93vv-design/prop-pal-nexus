@@ -67,9 +67,11 @@ export function validatePropertyForPortal(property: any): PortalValidationError[
 }
 
 function generateFeedToken(): string {
-  const bytes = new Uint8Array(16);
+  // 32 bytes -> 64 hex chars
+  const bytes = new Uint8Array(32);
   crypto.getRandomValues(bytes);
   return Array.from(bytes).map(b => b.toString(16).padStart(2, "0")).join("");
+
 }
 
 export function usePortalConnections() {
