@@ -7,6 +7,8 @@ export interface PortalConnection {
   id: string;
   tenant_id: string;
   portal_name: string;
+  display_name: string | null;
+  slug: string | null;
   api_key: string;
   feed_url: string;
   feed_token: string;
@@ -29,12 +31,16 @@ export interface PropertyPortalStatus {
   updated_at: string;
 }
 
-export type PortalName = "fotocasa" | "idealista";
+/** Portal identifier: "fotocasa" | "idealista" | "web:<slug>" */
+export type PortalName = string;
+
+export const isWebPortal = (portal: PortalName) => portal.startsWith("web:");
 
 export interface PortalValidationError {
   field: string;
   message: string;
 }
+
 
 export function validatePropertyForPortal(property: any): PortalValidationError[] {
   const errors: PortalValidationError[] = [];
