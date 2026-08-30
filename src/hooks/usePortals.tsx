@@ -7,6 +7,8 @@ export interface PortalConnection {
   id: string;
   tenant_id: string;
   portal_name: string;
+  display_name: string | null;
+  slug: string | null;
   api_key: string;
   feed_url: string;
   feed_token: string;
@@ -29,12 +31,16 @@ export interface PropertyPortalStatus {
   updated_at: string;
 }
 
-export type PortalName = "fotocasa" | "idealista";
+/** Portal identifier: "fotocasa" | "idealista" | "web:<slug>" */
+export type PortalName = string;
+
+export const isWebPortal = (portal: PortalName) => portal.startsWith("web:");
 
 export interface PortalValidationError {
   field: string;
   message: string;
 }
+
 
 export function validatePropertyForPortal(property: any): PortalValidationError[] {
   const errors: PortalValidationError[] = [];
@@ -61,9 +67,11 @@ export function validatePropertyForPortal(property: any): PortalValidationError[
 }
 
 function generateFeedToken(): string {
-  const bytes = new Uint8Array(16);
+  // 32 bytes -> 64 hex chars
+  const bytes = new Uint8Array(32);
   crypto.getRandomValues(bytes);
   return Array.from(bytes).map(b => b.toString(16).padStart(2, "0")).join("");
+
 }
 
 export function usePortalConnections() {
@@ -109,7 +117,7 @@ export function usePortalConnections() {
     const conn = getConnection(portal);
     if (!tenantId || !conn?.feed_token) return null;
     const base = import.meta.env.VITE_SUPABASE_URL;
-    return `${base}/functions/v1/portal-feed?tenant_id=${tenantId}&portal=${portal}&token=${conn.feed_token}`;
+    return `${base}/functions/v1/portal-feed?tenant_id=${tenantId}&portal=${encodeURIComponent(portal)}&token=${conn.feed_token}`;
   };
 
   const regenerateFeedToken = async (portal: PortalName) => {
@@ -127,8 +135,71 @@ export function usePortalConnections() {
     });
   };
 
-  return { connections, loading, upsertConnection, getConnection, getFeedUrl, regenerateFeedToken, refetch: fetchConnections };
+  /** Webs propias (WordPress) conectadas a este CRM */
+  const webConnections = connections.filter(c => isWebPortal(c.portal_name));
+
+  const createWebConnection = async (displayName: string, slug: string) => {
+    if (!tenantId) return false;
+    const cleanSlug = slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+    if (!cleanSlug || !displayName.trim()) {
+      toast({ title: "Datos incompletos", description: "Indica nombre y slug de la web.", variant: "destructive" });
+      return false;
+    }
+    if (connections.some(c => c.portal_name === `web:${cleanSlug}`)) {
+      toast({ title: "Ya existe", description: `Ya tienes una web con el slug "${cleanSlug}".`, variant: "destructive" });
+      return false;
+    }
+    const { error } = await supabase.from("portal_connections").insert({
+      tenant_id: tenantId,
+      portal_name: `web:${cleanSlug}`,
+      display_name: displayName.trim(),
+      slug: cleanSlug,
+      feed_token: generateFeedToken(),
+      is_active: true,
+      accepted_requirements: true,
+      max_ads: 999999,
+    } as any);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return false; }
+    await fetchConnections();
+    toast({ title: "Web añadida", description: "Copia la URL del feed y pégala en la web." });
+    return true;
+  };
+
+  const setConnectionActive = async (portal: PortalName, active: boolean) => {
+    const existing = getConnection(portal);
+    if (!existing) return;
+    const { error } = await supabase
+      .from("portal_connections")
+      .update({ is_active: active, updated_at: new Date().toISOString() } as any)
+      .eq("id", existing.id);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    await fetchConnections();
+  };
+
+  const deleteConnection = async (portal: PortalName) => {
+    const existing = getConnection(portal);
+    if (!existing) return;
+    const { error } = await supabase.from("portal_connections").delete().eq("id", existing.id);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    await fetchConnections();
+    toast({ title: "Web eliminada" });
+  };
+
+  return {
+    connections,
+    webConnections,
+    loading,
+    upsertConnection,
+    getConnection,
+    getFeedUrl,
+    regenerateFeedToken,
+    createWebConnection,
+    setConnectionActive,
+    deleteConnection,
+    refetch: fetchConnections,
+  };
 }
+
 
 export function usePropertyPortalStatus() {
   const { tenantId } = useTenant();

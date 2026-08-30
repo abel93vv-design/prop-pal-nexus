@@ -8,6 +8,10 @@ const corsHeaders = {
 const VALID_PORTALS = ["fotocasa", "idealista"];
 const EXCLUDED_STATUSES = ["vendido_alquilado", "no_disponible"];
 
+// Own websites (WordPress) use the "web:<slug>" convention and receive a JSON snapshot.
+const isWebPortal = (portal: string) => portal.startsWith("web:");
+
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -16,13 +20,22 @@ Deno.serve(async (req) => {
   try {
     const url = new URL(req.url);
     const tenantId = url.searchParams.get("tenant_id");
-    const portal = url.searchParams.get("portal"); // 'fotocasa' | 'idealista'
+    const portal = url.searchParams.get("portal"); // 'fotocasa' | 'idealista' | 'web:<slug>'
     const token = url.searchParams.get("token");
 
+    const isWeb = !!portal && isWebPortal(portal);
+    const jsonError = (message: string, status: number) =>
+      new Response(JSON.stringify({ error: message }), {
+        status,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+
     if (!tenantId || !portal || !token) {
-      return new Response("Missing tenant_id, portal or token parameter", { status: 400, headers: corsHeaders });
+      return isWeb
+        ? jsonError("Missing tenant_id, portal or token parameter", 400)
+        : new Response("Missing tenant_id, portal or token parameter", { status: 400, headers: corsHeaders });
     }
-    if (!VALID_PORTALS.includes(portal)) {
+    if (!isWeb && !VALID_PORTALS.includes(portal)) {
       return new Response("Invalid portal", { status: 400, headers: corsHeaders });
     }
 
@@ -41,7 +54,9 @@ Deno.serve(async (req) => {
 
     if (connError) throw connError;
     if (!connection || !connection.is_active || connection.feed_token !== token) {
-      return new Response("Unauthorized", { status: 401, headers: corsHeaders });
+      return isWeb
+        ? jsonError("Unauthorized", 401)
+        : new Response("Unauthorized", { status: 401, headers: corsHeaders });
     }
 
     // Get published property IDs for this portal
@@ -54,22 +69,35 @@ Deno.serve(async (req) => {
 
     if (statusError) throw statusError;
     if (!publishedStatuses || publishedStatuses.length === 0) {
-      return new Response(generateEmptyXml(portal), {
-        headers: xmlHeaders(),
-      });
+      return isWeb
+        ? new Response(JSON.stringify({ properties: [] }), { headers: jsonHeaders() })
+        : new Response(generateEmptyXml(portal), { headers: xmlHeaders() });
     }
 
     const propertyIds = publishedStatuses.map((s: any) => s.property_id);
 
-    // Exclude soft-deleted and unavailable properties (sold/rented, not available)
-    const { data: properties, error: propError } = await supabase
+    // Own websites get a full snapshot including reserved/sold properties (with their real status).
+    // External portals exclude soft-deleted and unavailable properties.
+    let query = supabase
       .from("properties")
       .select("*")
       .in("id", propertyIds)
-      .is("deleted_at", null)
-      .not("status", "in", `(${EXCLUDED_STATUSES.join(",")})`);
+      .is("deleted_at", null);
+
+    if (!isWeb) {
+      query = query.not("status", "in", `(${EXCLUDED_STATUSES.join(",")})`);
+    }
+
+    const { data: properties, error: propError } = await query;
 
     if (propError) throw propError;
+
+    if (isWeb) {
+      return new Response(
+        JSON.stringify({ properties: (properties || []).map(toWebProperty) }),
+        { headers: jsonHeaders() },
+      );
+    }
 
     const { data: agency } = await supabase
       .from("agencies")
@@ -84,6 +112,7 @@ Deno.serve(async (req) => {
       : generateIdealistaXml(properties || [], agency);
 
     return new Response(xml, { headers: xmlHeaders() });
+
   } catch (error) {
     console.error("Portal feed error:", error);
     return new Response(JSON.stringify({ error: error.message }), {
@@ -231,4 +260,86 @@ function generateIdealistaXml(properties: any[], agency: any): string {
   <properties>${items}
   </properties>
 </idealista>`;
+}
+
+// ---------------------------------------------------------------------------
+// JSON feed for own websites (WordPress). Full snapshot on every call.
+// ---------------------------------------------------------------------------
+
+function jsonHeaders() {
+  return {
+    ...corsHeaders,
+    "Content-Type": "application/json; charset=utf-8",
+    "Cache-Control": "no-store",
+  };
+}
+
+function num(value: any): number | undefined {
+  if (value === null || value === undefined || value === "") return undefined;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : undefined;
+}
+
+function str(value: any): string | undefined {
+  if (value === null || value === undefined) return undefined;
+  const s = String(value).trim();
+  return s.length > 0 ? s : undefined;
+}
+
+const VALID_TYPES = ["piso", "casa", "local", "terreno", "parking"];
+const VALID_STATUSES = ["disponible", "reservado", "vendido_alquilado", "no_disponible"];
+const VALID_OPERATIONS = ["venta", "compra", "alquiler", "alquiler_opcion_compra", "ambos"];
+
+function webFeatures(p: any): string[] {
+  const features: string[] = [];
+  if (p.has_pool) features.push("pool");
+  if (p.has_terrace) features.push("terrace");
+  if (p.has_garage) features.push("garage");
+  if (p.has_elevator) features.push("elevator");
+  if (p.has_air_conditioning) features.push("air_conditioning");
+  return features;
+}
+
+function toWebProperty(p: any): Record<string, unknown> {
+  const item: Record<string, unknown> = {
+    id: p.id,
+    title: str(p.title) ?? "",
+    status: VALID_STATUSES.includes(p.status) ? p.status : "disponible",
+    type: VALID_TYPES.includes(p.type) ? p.type : "piso",
+    operation_type: VALID_OPERATIONS.includes(p.operation_type) ? p.operation_type : "venta",
+    features: webFeatures(p),
+    // Only absolute https URLs; base64 or relative values are dropped
+    photos: (p.photos || []).filter((photo: string) => /^https:\/\//.test(photo || "")),
+  };
+
+  const optionalStrings: Record<string, any> = {
+    ref: p.reference,
+    description: p.description,
+    address: p.address,
+    neighborhood: p.neighborhood,
+    postal_code: p.postal_code,
+    energy_cert: p.energy_cert,
+  };
+  for (const [key, value] of Object.entries(optionalStrings)) {
+    const v = str(value);
+    if (v !== undefined) item[key] = v;
+  }
+
+  const optionalNumbers: Record<string, any> = {
+    price: p.price,
+    monthly_rent: p.monthly_rent,
+    bedrooms: p.bedrooms,
+    bathrooms: p.bathrooms,
+    built_surface: p.built_surface || p.surface,
+    plot_surface: p.plot_surface,
+    latitude: p.latitude,
+    longitude: p.longitude,
+    year: p.year_built,
+  };
+  for (const [key, value] of Object.entries(optionalNumbers)) {
+    const v = num(value);
+    if (v !== undefined) item[key] = v;
+  }
+
+  return item;
 }

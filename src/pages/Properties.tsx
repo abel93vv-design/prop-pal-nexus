@@ -25,6 +25,8 @@ import { InterestedClients } from "@/components/InterestManager";
 import { useMatchCenter } from "@/hooks/useMatchCenter";
 import { TopClientMatches } from "@/components/MatchScoreWidgets";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useTenant } from "@/context/TenantContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const typeLabels: Record<PropertyType, string> = { piso: 'Piso', casa: 'Casa', local: 'Local', terreno: 'Terreno', parking: 'Parking' };
 const statusLabels: Record<PropertyStatus, string> = { disponible: 'Disponible', reservado: 'Reservado', vendido_alquilado: 'Vendido/Alquilado', no_disponible: 'No Disponible' };
@@ -50,7 +52,7 @@ const conditionLabels: Record<string, string> = {
   rustico: 'Rústico',
 };
 
-const defaultExtras = { postal_code: '', latitude: null as number | null, longitude: null as number | null, built_surface: 0, plot_surface: 0, energy_cert: 'en_tramite', neighborhood: '', floor: null as number | null, community_fees: 0, ibi_annual: 0, has_elevator: false, has_terrace: false, has_pool: false, has_garage: false, has_air_conditioning: false };
+const defaultExtras = { reference: '', year_built: null as number | null, postal_code: '', latitude: null as number | null, longitude: null as number | null, built_surface: 0, plot_surface: 0, energy_cert: 'en_tramite', neighborhood: '', floor: null as number | null, community_fees: 0, ibi_annual: 0, has_elevator: false, has_terrace: false, has_pool: false, has_garage: false, has_air_conditioning: false };
 
 const emptyProperty: Omit<Property, "id"> = {
   title: "", address: "", type: "piso", status: "disponible", price: 0, surface: 0,
@@ -212,6 +214,35 @@ const Properties = () => {
     return da - db;
   });
 
+  // Photos are uploaded to Storage and referenced by a public URL: the web feeds
+  // (WordPress, portals) cannot import base64 images.
+  const { tenantId } = useTenant();
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
+
+  const uploadPhotos = async (files: File[]) => {
+    if (!tenantId) {
+      toast({ title: "Error", description: "No se pudo identificar la inmobiliaria.", variant: "destructive" });
+      return;
+    }
+    setUploadingPhotos(true);
+    const base = import.meta.env.VITE_SUPABASE_URL;
+    for (const file of files) {
+      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+      const path = `${tenantId}/${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage
+        .from("property-photos")
+        .upload(path, file, { contentType: file.type || "image/jpeg", upsert: false });
+      if (error) {
+        toast({ title: "Error al subir la foto", description: error.message, variant: "destructive" });
+        continue;
+      }
+      const url = `${base}/functions/v1/property-photo/${path}`;
+      setForm(prev => ({ ...prev, photos: [...prev.photos, url] }));
+    }
+    setUploadingPhotos(false);
+  };
+
+
   const openCreate = () => {
     setEditing(null);
     setForm({ ...emptyProperty, listing_type: activeListing === 'all' ? 'noticia' : activeListing });
@@ -225,6 +256,7 @@ const Properties = () => {
       bedrooms: p.bedrooms, bathrooms: p.bathrooms, photos: p.photos, agentId: p.agentId,
       interestedClientIds: p.interestedClientIds, publishedAt: p.publishedAt, description: p.description,
       agencyId: p.agencyId, category: p.category,
+      reference: (p as any).reference || "", year_built: (p as any).year_built ?? null,
       postal_code: p.postal_code || "", latitude: p.latitude, longitude: p.longitude,
       built_surface: p.built_surface || 0, plot_surface: p.plot_surface || 0,
       energy_cert: p.energy_cert || "en_tramite", neighborhood: p.neighborhood || "",
@@ -618,8 +650,10 @@ const Properties = () => {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <div><Label className="text-xs">Código Postal</Label><Input value={form.postal_code || ""} onChange={e => setForm({ ...form, postal_code: e.target.value })} /></div>
+              <div><Label className="text-xs">Referencia</Label><Input value={form.reference || ""} placeholder="INM-1042" onChange={e => setForm({ ...form, reference: e.target.value })} /></div>
+              <div><Label className="text-xs">Año construcción</Label><Input type="number" value={form.year_built ?? ""} onChange={e => setForm({ ...form, year_built: e.target.value ? Number(e.target.value) : null })} /></div>
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div>
@@ -674,23 +708,17 @@ const Properties = () => {
                 </div>
                 <label className="flex items-center gap-2 cursor-pointer text-xs text-primary hover:underline">
                   <Upload className="w-3.5 h-3.5" />
-                  <span>Añadir imagen</span>
+                  <span>{uploadingPhotos ? "Subiendo..." : "Añadir imagen"}</span>
                   <input
                     type="file"
                     accept="image/*"
                     multiple
                     className="hidden"
+                    disabled={uploadingPhotos}
                     onChange={(e) => {
                       const files = e.target.files;
                       if (!files) return;
-                      Array.from(files).forEach(file => {
-                        const reader = new FileReader();
-                        reader.onload = (ev) => {
-                          const result = ev.target?.result as string;
-                          setForm(prev => ({ ...prev, photos: [...prev.photos, result] }));
-                        };
-                        reader.readAsDataURL(file);
-                      });
+                      void uploadPhotos(Array.from(files));
                       e.target.value = "";
                     }}
                   />

@@ -2,8 +2,8 @@ import { useState } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Home, Building, AlertTriangle } from "lucide-react";
-import { usePortalConnections, usePropertyPortalStatus, validatePropertyForPortal, PortalName } from "@/hooks/usePortals";
+import { Home, Building, AlertTriangle, Globe } from "lucide-react";
+import { usePortalConnections, usePropertyPortalStatus, validatePropertyForPortal, isWebPortal, PortalName } from "@/hooks/usePortals";
 import { toast } from "@/hooks/use-toast";
 
 interface PortalPublicationControlsProps {
@@ -11,25 +11,29 @@ interface PortalPublicationControlsProps {
   compact?: boolean;
 }
 
-const portalConfig: Record<PortalName, { label: string; icon: typeof Home; color: string }> = {
+const portalConfig: Record<string, { label: string; icon: typeof Home; color: string }> = {
   fotocasa: { label: "Fotocasa", icon: Home, color: "text-orange-500" },
   idealista: { label: "Idealista", icon: Building, color: "text-green-600" },
 };
 
+function configFor(portal: PortalName, displayName?: string) {
+  return portalConfig[portal] ?? { label: displayName || portal.replace("web:", ""), icon: Globe, color: "text-primary" };
+}
+
 export function PortalPublicationControls({ property, compact = false }: PortalPublicationControlsProps) {
-  const { getConnection } = usePortalConnections();
+  const { getConnection, connections } = usePortalConnections();
   const { togglePublication, getStatus, getPublishedCount } = usePropertyPortalStatus();
   const [toggling, setToggling] = useState<string | null>(null);
 
   const handleToggle = async (portal: PortalName, newValue: boolean) => {
     const connection = getConnection(portal);
     if (!connection?.is_active) {
-      toast({ title: "Portal no configurado", description: `Configura ${portalConfig[portal].label} en Ajustes > Conexiones`, variant: "destructive" });
+      toast({ title: "Portal no configurado", description: `Configura ${configFor(portal, connection?.display_name).label} en Ajustes > Conexiones`, variant: "destructive" });
       return;
     }
 
-    if (newValue) {
-      // Validate
+    if (newValue && !isWebPortal(portal)) {
+      // Validate (external portals only; our own websites accept any listing)
       const errors = validatePropertyForPortal(property);
       if (errors.length > 0) {
         toast({
@@ -45,7 +49,7 @@ export function PortalPublicationControls({ property, compact = false }: PortalP
       if (publishedCount >= connection.max_ads) {
         toast({
           title: "Límite alcanzado",
-          description: `Has alcanzado el límite de ${connection.max_ads} anuncios en ${portalConfig[portal].label}`,
+          description: `Has alcanzado el límite de ${connection.max_ads} anuncios en ${configFor(portal, connection.display_name).label}`,
           variant: "destructive",
         });
         return;
@@ -55,17 +59,23 @@ export function PortalPublicationControls({ property, compact = false }: PortalP
     setToggling(portal);
     await togglePublication(property.id, portal, newValue);
     setToggling(null);
-    toast({ title: newValue ? "Publicado" : "Despublicado", description: `${property.title} en ${portalConfig[portal].label}` });
+    toast({ title: newValue ? "Publicado" : "Despublicado", description: `${property.title} en ${configFor(portal, getConnection(portal)?.display_name).label}` });
   };
+
+  const portals: PortalName[] = [
+    "fotocasa",
+    "idealista",
+    ...connections.filter((c) => isWebPortal(c.portal_name)).map((c) => c.portal_name),
+  ];
 
   if (compact) {
     return (
       <TooltipProvider>
         <div className="flex items-center gap-1">
-          {(["fotocasa", "idealista"] as PortalName[]).map((portal) => {
+          {portals.map((portal) => {
             const status = getStatus(property.id, portal);
             const connection = getConnection(portal);
-            const cfg = portalConfig[portal];
+            const cfg = configFor(portal, connection?.display_name);
             const Icon = cfg.icon;
             const isPublished = status?.is_published || false;
             const isConnected = connection?.is_active || false;
@@ -102,10 +112,10 @@ export function PortalPublicationControls({ property, compact = false }: PortalP
   return (
     <div className="space-y-3">
       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Publicación en Portales</p>
-      {(["fotocasa", "idealista"] as PortalName[]).map((portal) => {
+      {portals.map((portal) => {
         const status = getStatus(property.id, portal);
         const connection = getConnection(portal);
-        const cfg = portalConfig[portal];
+        const cfg = configFor(portal, connection?.display_name);
         const Icon = cfg.icon;
         const isPublished = status?.is_published || false;
         const isConnected = connection?.is_active || false;
@@ -117,7 +127,7 @@ export function PortalPublicationControls({ property, compact = false }: PortalP
               <Icon className={`w-4 h-4 ${cfg.color}`} />
               <div>
                 <p className="text-sm font-medium">{cfg.label}</p>
-                {isConnected && (
+                {isConnected && !isWebPortal(portal) && (
                   <p className="text-[10px] text-muted-foreground">
                     {publishedCount} de {connection?.max_ads || 0} anuncios
                   </p>
