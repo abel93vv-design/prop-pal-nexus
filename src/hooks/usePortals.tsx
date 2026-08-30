@@ -117,7 +117,7 @@ export function usePortalConnections() {
     const conn = getConnection(portal);
     if (!tenantId || !conn?.feed_token) return null;
     const base = import.meta.env.VITE_SUPABASE_URL;
-    return `${base}/functions/v1/portal-feed?tenant_id=${tenantId}&portal=${portal}&token=${conn.feed_token}`;
+    return `${base}/functions/v1/portal-feed?tenant_id=${tenantId}&portal=${encodeURIComponent(portal)}&token=${conn.feed_token}`;
   };
 
   const regenerateFeedToken = async (portal: PortalName) => {
@@ -135,8 +135,71 @@ export function usePortalConnections() {
     });
   };
 
-  return { connections, loading, upsertConnection, getConnection, getFeedUrl, regenerateFeedToken, refetch: fetchConnections };
+  /** Webs propias (WordPress) conectadas a este CRM */
+  const webConnections = connections.filter(c => isWebPortal(c.portal_name));
+
+  const createWebConnection = async (displayName: string, slug: string) => {
+    if (!tenantId) return false;
+    const cleanSlug = slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+    if (!cleanSlug || !displayName.trim()) {
+      toast({ title: "Datos incompletos", description: "Indica nombre y slug de la web.", variant: "destructive" });
+      return false;
+    }
+    if (connections.some(c => c.portal_name === `web:${cleanSlug}`)) {
+      toast({ title: "Ya existe", description: `Ya tienes una web con el slug "${cleanSlug}".`, variant: "destructive" });
+      return false;
+    }
+    const { error } = await supabase.from("portal_connections").insert({
+      tenant_id: tenantId,
+      portal_name: `web:${cleanSlug}`,
+      display_name: displayName.trim(),
+      slug: cleanSlug,
+      feed_token: generateFeedToken(),
+      is_active: true,
+      accepted_requirements: true,
+      max_ads: 999999,
+    } as any);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return false; }
+    await fetchConnections();
+    toast({ title: "Web añadida", description: "Copia la URL del feed y pégala en la web." });
+    return true;
+  };
+
+  const setConnectionActive = async (portal: PortalName, active: boolean) => {
+    const existing = getConnection(portal);
+    if (!existing) return;
+    const { error } = await supabase
+      .from("portal_connections")
+      .update({ is_active: active, updated_at: new Date().toISOString() } as any)
+      .eq("id", existing.id);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    await fetchConnections();
+  };
+
+  const deleteConnection = async (portal: PortalName) => {
+    const existing = getConnection(portal);
+    if (!existing) return;
+    const { error } = await supabase.from("portal_connections").delete().eq("id", existing.id);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    await fetchConnections();
+    toast({ title: "Web eliminada" });
+  };
+
+  return {
+    connections,
+    webConnections,
+    loading,
+    upsertConnection,
+    getConnection,
+    getFeedUrl,
+    regenerateFeedToken,
+    createWebConnection,
+    setConnectionActive,
+    deleteConnection,
+    refetch: fetchConnections,
+  };
 }
+
 
 export function usePropertyPortalStatus() {
   const { tenantId } = useTenant();
