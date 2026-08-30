@@ -261,3 +261,85 @@ function generateIdealistaXml(properties: any[], agency: any): string {
   </properties>
 </idealista>`;
 }
+
+// ---------------------------------------------------------------------------
+// JSON feed for own websites (WordPress). Full snapshot on every call.
+// ---------------------------------------------------------------------------
+
+function jsonHeaders() {
+  return {
+    ...corsHeaders,
+    "Content-Type": "application/json; charset=utf-8",
+    "Cache-Control": "no-store",
+  };
+}
+
+function num(value: any): number | undefined {
+  if (value === null || value === undefined || value === "") return undefined;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : undefined;
+}
+
+function str(value: any): string | undefined {
+  if (value === null || value === undefined) return undefined;
+  const s = String(value).trim();
+  return s.length > 0 ? s : undefined;
+}
+
+const VALID_TYPES = ["piso", "casa", "local", "terreno", "parking"];
+const VALID_STATUSES = ["disponible", "reservado", "vendido_alquilado", "no_disponible"];
+const VALID_OPERATIONS = ["venta", "compra", "alquiler", "alquiler_opcion_compra", "ambos"];
+
+function webFeatures(p: any): string[] {
+  const features: string[] = [];
+  if (p.has_pool) features.push("pool");
+  if (p.has_terrace) features.push("terrace");
+  if (p.has_garage) features.push("garage");
+  if (p.has_elevator) features.push("elevator");
+  if (p.has_air_conditioning) features.push("air_conditioning");
+  return features;
+}
+
+function toWebProperty(p: any): Record<string, unknown> {
+  const item: Record<string, unknown> = {
+    id: p.id,
+    title: str(p.title) ?? "",
+    status: VALID_STATUSES.includes(p.status) ? p.status : "disponible",
+    type: VALID_TYPES.includes(p.type) ? p.type : "piso",
+    operation_type: VALID_OPERATIONS.includes(p.operation_type) ? p.operation_type : "venta",
+    features: webFeatures(p),
+    // Only absolute https URLs; base64 or relative values are dropped
+    photos: (p.photos || []).filter((photo: string) => /^https:\/\//.test(photo || "")),
+  };
+
+  const optionalStrings: Record<string, any> = {
+    ref: p.reference,
+    description: p.description,
+    address: p.address,
+    neighborhood: p.neighborhood,
+    postal_code: p.postal_code,
+    energy_cert: p.energy_cert,
+  };
+  for (const [key, value] of Object.entries(optionalStrings)) {
+    const v = str(value);
+    if (v !== undefined) item[key] = v;
+  }
+
+  const optionalNumbers: Record<string, any> = {
+    price: p.price,
+    monthly_rent: p.monthly_rent,
+    bedrooms: p.bedrooms,
+    bathrooms: p.bathrooms,
+    built_surface: p.built_surface || p.surface,
+    plot_surface: p.plot_surface,
+    latitude: p.latitude,
+    longitude: p.longitude,
+    year: p.year_built,
+  };
+  for (const [key, value] of Object.entries(optionalNumbers)) {
+    const v = num(value);
+    if (v !== undefined) item[key] = v;
+  }
+
+  return item;
+}
