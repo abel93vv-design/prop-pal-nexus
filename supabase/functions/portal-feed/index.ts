@@ -20,13 +20,22 @@ Deno.serve(async (req) => {
   try {
     const url = new URL(req.url);
     const tenantId = url.searchParams.get("tenant_id");
-    const portal = url.searchParams.get("portal"); // 'fotocasa' | 'idealista'
+    const portal = url.searchParams.get("portal"); // 'fotocasa' | 'idealista' | 'web:<slug>'
     const token = url.searchParams.get("token");
 
+    const isWeb = !!portal && isWebPortal(portal);
+    const jsonError = (message: string, status: number) =>
+      new Response(JSON.stringify({ error: message }), {
+        status,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+
     if (!tenantId || !portal || !token) {
-      return new Response("Missing tenant_id, portal or token parameter", { status: 400, headers: corsHeaders });
+      return isWeb
+        ? jsonError("Missing tenant_id, portal or token parameter", 400)
+        : new Response("Missing tenant_id, portal or token parameter", { status: 400, headers: corsHeaders });
     }
-    if (!VALID_PORTALS.includes(portal)) {
+    if (!isWeb && !VALID_PORTALS.includes(portal)) {
       return new Response("Invalid portal", { status: 400, headers: corsHeaders });
     }
 
@@ -45,7 +54,9 @@ Deno.serve(async (req) => {
 
     if (connError) throw connError;
     if (!connection || !connection.is_active || connection.feed_token !== token) {
-      return new Response("Unauthorized", { status: 401, headers: corsHeaders });
+      return isWeb
+        ? jsonError("Unauthorized", 401)
+        : new Response("Unauthorized", { status: 401, headers: corsHeaders });
     }
 
     // Get published property IDs for this portal
@@ -58,22 +69,35 @@ Deno.serve(async (req) => {
 
     if (statusError) throw statusError;
     if (!publishedStatuses || publishedStatuses.length === 0) {
-      return new Response(generateEmptyXml(portal), {
-        headers: xmlHeaders(),
-      });
+      return isWeb
+        ? new Response(JSON.stringify({ properties: [] }), { headers: jsonHeaders() })
+        : new Response(generateEmptyXml(portal), { headers: xmlHeaders() });
     }
 
     const propertyIds = publishedStatuses.map((s: any) => s.property_id);
 
-    // Exclude soft-deleted and unavailable properties (sold/rented, not available)
-    const { data: properties, error: propError } = await supabase
+    // Own websites get a full snapshot including reserved/sold properties (with their real status).
+    // External portals exclude soft-deleted and unavailable properties.
+    let query = supabase
       .from("properties")
       .select("*")
       .in("id", propertyIds)
-      .is("deleted_at", null)
-      .not("status", "in", `(${EXCLUDED_STATUSES.join(",")})`);
+      .is("deleted_at", null);
+
+    if (!isWeb) {
+      query = query.not("status", "in", `(${EXCLUDED_STATUSES.join(",")})`);
+    }
+
+    const { data: properties, error: propError } = await query;
 
     if (propError) throw propError;
+
+    if (isWeb) {
+      return new Response(
+        JSON.stringify({ properties: (properties || []).map(toWebProperty) }),
+        { headers: jsonHeaders() },
+      );
+    }
 
     const { data: agency } = await supabase
       .from("agencies")
@@ -88,6 +112,7 @@ Deno.serve(async (req) => {
       : generateIdealistaXml(properties || [], agency);
 
     return new Response(xml, { headers: xmlHeaders() });
+
   } catch (error) {
     console.error("Portal feed error:", error);
     return new Response(JSON.stringify({ error: error.message }), {
