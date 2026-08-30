@@ -8,6 +8,10 @@ const corsHeaders = {
 const VALID_PORTALS = ["fotocasa", "idealista"];
 const EXCLUDED_STATUSES = ["vendido_alquilado", "no_disponible"];
 
+// Own websites (WordPress) use the "web:<slug>" convention and receive a JSON snapshot.
+const isWebPortal = (portal: string) => portal.startsWith("web:");
+
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
