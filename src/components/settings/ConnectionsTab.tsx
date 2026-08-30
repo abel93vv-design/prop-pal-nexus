@@ -10,6 +10,7 @@ import { Home, Building, CheckCircle, AlertCircle, Copy, RefreshCw, Info } from 
 import { usePortalConnections, PortalName } from "@/hooks/usePortals";
 import { toast } from "@/hooks/use-toast";
 import { WhatsAppCard } from "@/components/settings/WhatsAppCard";
+import { WebsInmocroCard } from "@/components/settings/WebsInmocroCard";
 
 
 const portalMeta: Record<PortalName, { label: string; icon: typeof Home; color: string }> = {
@@ -157,6 +158,8 @@ export function ConnectionsTab() {
         <PortalCard portal="fotocasa" />
         <PortalCard portal="idealista" />
       </div>
+
+      <WebsInmocroCard />
 
       <WhatsAppCard />
 
