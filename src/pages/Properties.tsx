@@ -214,6 +214,35 @@ const Properties = () => {
     return da - db;
   });
 
+  // Photos are uploaded to Storage and referenced by a public URL: the web feeds
+  // (WordPress, portals) cannot import base64 images.
+  const { tenantId } = useTenant();
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
+
+  const uploadPhotos = async (files: File[]) => {
+    if (!tenantId) {
+      toast({ title: "Error", description: "No se pudo identificar la inmobiliaria.", variant: "destructive" });
+      return;
+    }
+    setUploadingPhotos(true);
+    const base = import.meta.env.VITE_SUPABASE_URL;
+    for (const file of files) {
+      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+      const path = `${tenantId}/${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage
+        .from("property-photos")
+        .upload(path, file, { contentType: file.type || "image/jpeg", upsert: false });
+      if (error) {
+        toast({ title: "Error al subir la foto", description: error.message, variant: "destructive" });
+        continue;
+      }
+      const url = `${base}/functions/v1/property-photo/${path}`;
+      setForm(prev => ({ ...prev, photos: [...prev.photos, url] }));
+    }
+    setUploadingPhotos(false);
+  };
+
+
   const openCreate = () => {
     setEditing(null);
     setForm({ ...emptyProperty, listing_type: activeListing === 'all' ? 'noticia' : activeListing });
