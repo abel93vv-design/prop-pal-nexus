@@ -96,7 +96,10 @@ export interface Property {
   contact_name?: string;
   contact_phone?: string;
   contact_notes?: string;
+  reference?: string;
+  year_built?: number | null;
 }
+
 
 export interface User {
   id: string;
