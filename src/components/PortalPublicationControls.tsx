@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Home, Building, AlertTriangle, Globe } from "lucide-react";
 import { usePortalConnections, usePropertyPortalStatus, validatePropertyForPortal, isWebPortal, PortalName } from "@/hooks/usePortals";
 import { toast } from "@/hooks/use-toast";
