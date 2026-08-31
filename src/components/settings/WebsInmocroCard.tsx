@@ -51,14 +51,15 @@ export function WebsInmocroCard() {
             Webs Inmocro
           </CardTitle>
           <Button size="sm" onClick={() => setOpen(true)}>
-            <Plus className="w-4 h-4 mr-1" /> Añadir web
+            <Plus className="w-4 h-4 mr-1" /> Conectar web
           </Button>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-xs text-muted-foreground">
-          Cada web conectada lee automáticamente su feed cada 10 minutos. Solo aparecen las viviendas
-          con el interruptor de esa web activado en su ficha.
+          Aquí solo se conecta una web ya existente: el plugin de WordPress lee este feed cada 10
+          minutos. El CRM no crea ni aloja ninguna web. Solo se envían las viviendas con esa web
+          marcada en su ficha.
         </p>
 
         {webConnections.length === 0 && (
@@ -116,7 +117,7 @@ export function WebsInmocroCard() {
                   <Button
                     variant="outline"
                     size="icon"
-                    title="Eliminar web"
+                    title="Desconectar web"
                     onClick={() => setDeleteTarget(conn.portal_name)}
                   >
                     <Trash2 className="w-4 h-4 text-destructive" />
@@ -131,9 +132,10 @@ export function WebsInmocroCard() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Añadir web</DialogTitle>
+            <DialogTitle>Conectar web existente</DialogTitle>
             <DialogDescription>
-              El slug debe coincidir con el que usa la web en WordPress.
+              No se crea ninguna web: se genera la URL del feed para que el plugin de tu web ya
+              existente lea las propiedades. El slug debe coincidir con el configurado en el plugin.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -148,7 +150,7 @@ export function WebsInmocroCard() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-            <Button onClick={handleCreate} disabled={saving}>Crear web</Button>
+            <Button onClick={handleCreate} disabled={saving}>Conectar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -156,9 +158,10 @@ export function WebsInmocroCard() {
       <Dialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Eliminar web</DialogTitle>
+            <DialogTitle>Desconectar web</DialogTitle>
             <DialogDescription>
-              La URL del feed dejará de funcionar y la web pasará sus anuncios a borrador.
+              La URL del feed dejará de funcionar y el plugin pasará sus anuncios a borrador. La web
+              en sí no se elimina.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
