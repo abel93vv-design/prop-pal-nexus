@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Home, Building, AlertTriangle, Globe } from "lucide-react";
@@ -70,42 +71,33 @@ export function PortalPublicationControls({ property, compact = false }: PortalP
 
   if (compact) {
     return (
-      <TooltipProvider>
-        <div className="flex items-center gap-1">
-          {portals.map((portal) => {
-            const status = getStatus(property.id, portal);
-            const connection = getConnection(portal);
-            const cfg = configFor(portal, connection?.display_name);
-            const Icon = cfg.icon;
-            const isPublished = status?.is_published || false;
-            const isConnected = connection?.is_active || false;
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1" onClick={(e) => e.stopPropagation()}>
+        {portals.map((portal) => {
+          const status = getStatus(property.id, portal);
+          const connection = getConnection(portal);
+          const cfg = configFor(portal, connection?.display_name);
+          const isPublished = status?.is_published || false;
+          const isConnected = connection?.is_active || false;
+          const id = `pub-${property.id}-${portal}`;
 
-            return (
-              <Tooltip key={portal}>
-                <TooltipTrigger asChild>
-                  <button
-                    className={`p-1 rounded transition-colors ${
-                      isPublished ? "bg-success/10" : isConnected ? "bg-muted hover:bg-muted/80" : "opacity-30"
-                    }`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (isConnected) handleToggle(portal, !isPublished);
-                    }}
-                    disabled={!!toggling || !isConnected}
-                  >
-                    <Icon className={`w-3.5 h-3.5 ${isPublished ? cfg.color : "text-muted-foreground"}`} />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="text-xs">
-                    {!isConnected ? `${cfg.label}: No configurado` : isPublished ? `${cfg.label}: Publicado` : `${cfg.label}: Click para publicar`}
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            );
-          })}
-        </div>
-      </TooltipProvider>
+          return (
+            <div key={portal} className="flex items-center gap-1.5">
+              <Checkbox
+                id={id}
+                checked={isPublished}
+                disabled={!!toggling || !isConnected}
+                onCheckedChange={(v) => handleToggle(portal, !!v)}
+              />
+              <label
+                htmlFor={id}
+                className={`text-xs cursor-pointer ${isConnected ? "text-muted-foreground" : "text-muted-foreground/50"}`}
+              >
+                {cfg.label}
+              </label>
+            </div>
+          );
+        })}
+      </div>
     );
   }
 
