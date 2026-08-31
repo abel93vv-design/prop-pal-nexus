@@ -473,20 +473,14 @@ const Properties = () => {
                     <span className="flex items-center gap-1"><Ruler className="w-3 h-3" />{p.surface}m²</span>
                     {docCount > 0 && <span className="flex items-center gap-1"><FileText className="w-3 h-3" />{docCount} doc.</span>}
                   </div>
-                  <div className="flex items-center justify-between pt-2 border-t border-border">
-                    <div className="flex items-center gap-2">
-                      <Checkbox
-                        checked={selected.has(p.id)}
-                        onCheckedChange={(v) => toggleSelected(p.id, !!v)}
-                        aria-label={`Seleccionar ${p.title}`}
-                      />
+                  <div className="pt-2 border-t border-border space-y-2">
+                    <div className="flex items-center justify-between">
                       <span className="text-lg font-bold text-foreground">{p.price.toLocaleString('es-ES')} €</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <PortalPublicationControls property={p} compact />
                       <span className="text-xs text-muted-foreground">{agent?.name}</span>
                     </div>
+                    <PortalPublicationControls property={p} compact />
                   </div>
+
                 </div>
               </div>
             );
