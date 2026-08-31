@@ -62,11 +62,10 @@ export function PortalPublicationControls({ property, compact = false }: PortalP
     toast({ title: newValue ? "Publicado" : "Despublicado", description: `${property.title} en ${configFor(portal, getConnection(portal)?.display_name).label}` });
   };
 
-  const portals: PortalName[] = [
-    "fotocasa",
-    "idealista",
-    ...connections.filter((c) => isWebPortal(c.portal_name)).map((c) => c.portal_name),
-  ];
+  // Solo se muestran los portales con conexión activa
+  const portals: PortalName[] = connections
+    .filter((c) => c.is_active)
+    .map((c) => c.portal_name as PortalName);
 
   if (compact) {
     return (
