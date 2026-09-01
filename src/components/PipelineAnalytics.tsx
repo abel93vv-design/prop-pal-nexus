@@ -22,10 +22,18 @@ export function PipelineAnalytics({ open, onOpenChange }: Props) {
   const { tenantId } = useTenant();
   const [history, setHistory] = useState<any[]>([]);
 
+  const [historyError, setHistoryError] = useState<string | null>(null);
+
   useEffect(() => {
     if (!open || !tenantId) return;
+    setHistoryError(null);
     supabase.from('stage_history').select('*').eq('tenant_id', tenantId)
-      .then(({ data }) => { if (data) setHistory(data); });
+      .order('created_at', { ascending: false })
+      .limit(2000)
+      .then(({ data, error }) => {
+        if (error) { setHistoryError(error.message); setHistory([]); return; }
+        setHistory(data || []);
+      });
   }, [open, tenantId]);
 
   const activeStages = stages.filter(s => s.is_active).sort((a, b) => a.position - b.position);
