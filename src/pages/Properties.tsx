@@ -422,19 +422,23 @@ const Properties = () => {
             return (
               <div key={p.id} className="rounded-xl border border-border bg-card overflow-hidden hover:shadow-md transition-shadow relative group">
                 <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    className="h-7 w-7"
-                    title={p.listing_type === 'ne' ? 'Convertir a Noticia' : 'Convertir a NE (firmada)'}
-                    onClick={() => setConvertTarget(p)}
-                  >
-                    <ArrowRightLeft className="w-3 h-3" />
-                  </Button>
+                  {canEditNe && canEditNoticias && (
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className="h-7 w-7"
+                      title={p.listing_type === 'ne' ? 'Convertir a Noticia' : 'Convertir a NE (firmada)'}
+                      onClick={() => setConvertTarget(p)}
+                    >
+                      <ArrowRightLeft className="w-3 h-3" />
+                    </Button>
+                  )}
                   <Button variant="secondary" size="icon" className="h-7 w-7" title="Crear oportunidad" onClick={() => navigate(`/pipeline?property=${p.id}`)}><Kanban className="w-3 h-3" /></Button>
                   <Button variant="secondary" size="icon" className="h-7 w-7" title="Documentos" onClick={() => openDocs(p)}><FileText className="w-3 h-3" /></Button>
-                  <Button variant="secondary" size="icon" className="h-7 w-7" onClick={() => openEdit(p)}><Pencil className="w-3 h-3" /></Button>
-                  <Button variant="secondary" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(p)}><Trash2 className="w-3 h-3" /></Button>
+                  <Button variant="secondary" size="icon" className="h-7 w-7" title={canEditListing(p.listing_type) ? 'Editar' : 'Ver ficha'} onClick={() => openEdit(p)}><Pencil className="w-3 h-3" /></Button>
+                  {canDeleteListing(p.listing_type) && (
+                    <Button variant="secondary" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(p)}><Trash2 className="w-3 h-3" /></Button>
+                  )}
                 </div>
                 <div className="h-40 bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center overflow-hidden relative">
                   {p.photos.length > 0 ? (
