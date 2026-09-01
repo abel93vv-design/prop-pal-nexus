@@ -70,9 +70,11 @@ export function usePipeline() {
     if (!tenantId) return;
     setLoading(true);
     const [stagesRes, oppsRes] = await Promise.all([
-      supabase.from('pipeline_stages').select('*').eq('tenant_id', tenantId).order('position'),
-      supabase.from('opportunities').select('*').eq('tenant_id', tenantId).order('created_at', { ascending: false }),
+      supabase.from('pipeline_stages').select('*').eq('tenant_id', tenantId).order('position').limit(100),
+      supabase.from('opportunities').select('*').eq('tenant_id', tenantId).order('created_at', { ascending: false }).limit(1000),
     ]);
+    if (stagesRes.error) console.error('pipeline stages error:', stagesRes.error);
+    if (oppsRes.error) console.error('opportunities error:', oppsRes.error);
     if (stagesRes.data) setStages(stagesRes.data.map(mapStage));
     if (oppsRes.data) setOpportunities(oppsRes.data.map(mapOpp));
     setLoading(false);

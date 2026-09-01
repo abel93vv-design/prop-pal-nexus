@@ -64,17 +64,26 @@ export function useMatchCenter() {
   const { tenantId } = useTenant();
   const [matches, setMatches] = useState<MatchScore[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [calculating, setCalculating] = useState(false);
 
   const fetchMatches = useCallback(async () => {
     if (!tenantId) return;
     setLoading(true);
-    const { data } = await supabase
+    setError(null);
+    const { data, error: fetchError } = await supabase
       .from("match_scores")
       .select("*")
       .eq("tenant_id", tenantId)
-      .order("total_score", { ascending: false });
-    if (data) setMatches(data.map(mapMatch));
+      .order("total_score", { ascending: false })
+      .limit(2000);
+    if (fetchError) {
+      console.error("fetchMatches error:", fetchError);
+      setError(fetchError.message);
+      setMatches([]);
+    } else {
+      setMatches((data || []).map(mapMatch));
+    }
     setLoading(false);
   }, [tenantId]);
 
@@ -121,6 +130,7 @@ export function useMatchCenter() {
   return {
     matches,
     loading,
+    error,
     calculating,
     runMatching,
     getTopMatchesForClient,

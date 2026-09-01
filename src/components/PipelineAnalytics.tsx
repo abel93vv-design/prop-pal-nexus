@@ -22,10 +22,18 @@ export function PipelineAnalytics({ open, onOpenChange }: Props) {
   const { tenantId } = useTenant();
   const [history, setHistory] = useState<any[]>([]);
 
+  const [historyError, setHistoryError] = useState<string | null>(null);
+
   useEffect(() => {
     if (!open || !tenantId) return;
+    setHistoryError(null);
     supabase.from('stage_history').select('*').eq('tenant_id', tenantId)
-      .then(({ data }) => { if (data) setHistory(data); });
+      .order('created_at', { ascending: false })
+      .limit(2000)
+      .then(({ data, error }) => {
+        if (error) { setHistoryError(error.message); setHistory([]); return; }
+        setHistory(data || []);
+      });
   }, [open, tenantId]);
 
   const activeStages = stages.filter(s => s.is_active).sort((a, b) => a.position - b.position);
@@ -87,6 +95,11 @@ export function PipelineAnalytics({ open, onOpenChange }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader><DialogTitle className="flex items-center gap-2"><BarChart3 className="w-5 h-5 text-primary" />Métricas del Pipeline</DialogTitle></DialogHeader>
+        {historyError && (
+          <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+            No se pudo cargar el histórico de etapas: {historyError}
+          </div>
+        )}
 
         {/* KPI Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
