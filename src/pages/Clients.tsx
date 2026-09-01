@@ -403,7 +403,9 @@ const Clients = () => {
   const { clients, agencies, properties, addClient, updateClient, deleteClient, documents, addDocument, deleteDocument } = useData();
   const { tenantId } = useTenant();
   const { toast } = useToast();
-  const { isAdmin } = useUserRole();
+  const { isAdmin, can } = useUserRole();
+  const canEditClients = can("clientes", "edit");
+  const canDeleteClients = can("clientes", "delete");
   const navigate = useNavigate();
   const { definitions: customFields } = useCustomFieldDefinitions('client');
   const { interests, addInterest, removeInterest, updateInterestType } = useInterests();
@@ -747,8 +749,8 @@ const Clients = () => {
           </div>
           <div className="flex gap-2 flex-wrap">
             {isAdmin && <Button onClick={exportCSV} variant="outline" size="sm"><Download className="w-4 h-4 mr-1" />Exportar CSV</Button>}
-            <Button onClick={() => setCsvDialogOpen(true)} variant="outline" size="sm"><Upload className="w-4 h-4 mr-1" />Importar CSV</Button>
-            <Button onClick={openCreate} size="sm"><Plus className="w-4 h-4 mr-1" />Nuevo Cliente</Button>
+            {canEditClients && <Button onClick={() => setCsvDialogOpen(true)} variant="outline" size="sm"><Upload className="w-4 h-4 mr-1" />Importar CSV</Button>}
+            {canEditClients && <Button onClick={openCreate} size="sm"><Plus className="w-4 h-4 mr-1" />Nuevo Cliente</Button>}
           </div>
         </div>
 
@@ -847,8 +849,8 @@ const Clients = () => {
                       <Button variant="ghost" size="icon" className="h-8 w-8" title="Crear oportunidad" onClick={() => navigate(`/pipeline?client=${c.id}`)}><Kanban className="w-3.5 h-3.5 text-primary" /></Button>
                       <Button variant="ghost" size="icon" className="h-8 w-8" title="Marcar contactado" onClick={() => markContacted(c)}><PhoneCall className="w-3.5 h-3.5 text-success" /></Button>
                       <WhatsAppButton phone={c.phone} message={clientGreetingMessage(c.name)} />
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(c)}><Pencil className="w-3.5 h-3.5" /></Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(c)}><Trash2 className="w-3.5 h-3.5" /></Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" title={canEditClients ? "Editar" : "Ver ficha"} onClick={() => openEdit(c)}><Pencil className="w-3.5 h-3.5" /></Button>
+                      {canDeleteClients && <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(c)}><Trash2 className="w-3.5 h-3.5" /></Button>}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -1025,8 +1027,8 @@ const Clients = () => {
 
               </>
             )}
-            <Button variant="outline" onClick={() => handleDialogOpenChange(false)}>Cancelar</Button>
-            <Button onClick={handleSave}>{editing ? "Guardar" : "Crear"}</Button>
+            <Button variant="outline" onClick={() => handleDialogOpenChange(false)}>{canEditClients ? "Cancelar" : "Cerrar"}</Button>
+            {canEditClients && <Button onClick={handleSave}>{editing ? "Guardar" : "Crear"}</Button>}
           </DialogFooter>
         </DialogContent>
       </Dialog>

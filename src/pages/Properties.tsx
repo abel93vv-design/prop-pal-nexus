@@ -77,7 +77,13 @@ const emptyDoc: Omit<Document, "id"> = {
 
 const Properties = () => {
   const { properties, users, agencies, clients, documents, addProperty, updateProperty, deleteProperty, convertListingType, addDocument, deleteDocument } = useData();
-  const { isAdmin } = useUserRole();
+  const { isAdmin, can } = useUserRole();
+  const canEditNe = can("ne", "edit");
+  const canEditNoticias = can("noticias", "edit");
+  const canDeleteNe = can("ne", "delete");
+  const canDeleteNoticias = can("noticias", "delete");
+  const canEditListing = (lt?: string | null) => ((lt || "noticia") === "ne" ? canEditNe : canEditNoticias);
+  const canDeleteListing = (lt?: string | null) => ((lt || "noticia") === "ne" ? canDeleteNe : canDeleteNoticias);
   const { toast } = useToast();
   const qc = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
@@ -364,7 +370,9 @@ const Properties = () => {
             <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}>
               <RefreshCw className={`w-4 h-4 mr-1 ${refreshing ? 'animate-spin' : ''}`} />Refrescar
             </Button>
-            <Button onClick={openCreate} size="sm"><Plus className="w-4 h-4 mr-1" />Nueva {activeListing === 'ne' ? 'NE' : activeListing === 'noticia' ? 'Noticia' : 'Propiedad'}</Button>
+            {(activeListing === 'ne' ? canEditNe : canEditNoticias) && (
+              <Button onClick={openCreate} size="sm"><Plus className="w-4 h-4 mr-1" />Nueva {activeListing === 'ne' ? 'NE' : activeListing === 'noticia' ? 'Noticia' : 'Propiedad'}</Button>
+            )}
           </div>
         </div>
 
@@ -414,19 +422,23 @@ const Properties = () => {
             return (
               <div key={p.id} className="rounded-xl border border-border bg-card overflow-hidden hover:shadow-md transition-shadow relative group">
                 <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    className="h-7 w-7"
-                    title={p.listing_type === 'ne' ? 'Convertir a Noticia' : 'Convertir a NE (firmada)'}
-                    onClick={() => setConvertTarget(p)}
-                  >
-                    <ArrowRightLeft className="w-3 h-3" />
-                  </Button>
+                  {canEditNe && canEditNoticias && (
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className="h-7 w-7"
+                      title={p.listing_type === 'ne' ? 'Convertir a Noticia' : 'Convertir a NE (firmada)'}
+                      onClick={() => setConvertTarget(p)}
+                    >
+                      <ArrowRightLeft className="w-3 h-3" />
+                    </Button>
+                  )}
                   <Button variant="secondary" size="icon" className="h-7 w-7" title="Crear oportunidad" onClick={() => navigate(`/pipeline?property=${p.id}`)}><Kanban className="w-3 h-3" /></Button>
                   <Button variant="secondary" size="icon" className="h-7 w-7" title="Documentos" onClick={() => openDocs(p)}><FileText className="w-3 h-3" /></Button>
-                  <Button variant="secondary" size="icon" className="h-7 w-7" onClick={() => openEdit(p)}><Pencil className="w-3 h-3" /></Button>
-                  <Button variant="secondary" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(p)}><Trash2 className="w-3 h-3" /></Button>
+                  <Button variant="secondary" size="icon" className="h-7 w-7" title={canEditListing(p.listing_type) ? 'Editar' : 'Ver ficha'} onClick={() => openEdit(p)}><Pencil className="w-3 h-3" /></Button>
+                  {canDeleteListing(p.listing_type) && (
+                    <Button variant="secondary" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(p)}><Trash2 className="w-3 h-3" /></Button>
+                  )}
                 </div>
                 <div className="h-40 bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center overflow-hidden relative">
                   {p.photos.length > 0 ? (
@@ -514,7 +526,9 @@ const Properties = () => {
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="noticia">Noticia (sin firmar)</SelectItem>
-                  <SelectItem value="ne">NE (Nota de Encargo firmada)</SelectItem>
+                  {(canEditNe || (form.listing_type || 'noticia') === 'ne') && (
+                    <SelectItem value="ne">NE (Nota de Encargo firmada)</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -771,10 +785,14 @@ const Properties = () => {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => handleDialogOpenChange(false)} disabled={saving}>Cancelar</Button>
-            <Button onClick={handleSave} disabled={saving}>
-              {saving ? "Guardando..." : (editing ? "Guardar" : "Crear")}
+            <Button variant="outline" onClick={() => handleDialogOpenChange(false)} disabled={saving}>
+              {canEditListing(form.listing_type) ? "Cancelar" : "Cerrar"}
             </Button>
+            {canEditListing(form.listing_type) && (
+              <Button onClick={handleSave} disabled={saving}>
+                {saving ? "Guardando..." : (editing ? "Guardar" : "Crear")}
+              </Button>
+            )}
           </DialogFooter>
 
         </DialogContent>
