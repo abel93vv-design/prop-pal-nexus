@@ -46,11 +46,22 @@ const settingsItems = [
 ];
 
 export function AppSidebar() {
-  const { isAdmin, isSuperAdmin, can, loading } = useUserRole();
-  const visibleMain = loading
+  const { isAdmin, isSuperAdmin, can, loading, role } = useUserRole();
+  const isAsesor = role === "asesor" && !isAdmin && !isSuperAdmin;
+  const baseMain = loading
     ? mainItems.filter((i) => !i.module)
     : mainItems.filter((i) => !i.module || can(i.module, "view") || isAdmin);
+  const visibleMain = baseMain.map((item) =>
+    isAsesor && item.url === "/control-leads"
+      ? {
+          ...item,
+          url: "/control-leads/asesores",
+          subItems: item.subItems?.filter((s) => s.url === "/control-leads/asesores"),
+        }
+      : item
+  );
   const { pathname } = useLocation();
+
 
   return (
     <Sidebar className="sidebar-gradient border-r-0">

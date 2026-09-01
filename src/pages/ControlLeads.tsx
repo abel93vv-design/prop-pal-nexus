@@ -1393,8 +1393,9 @@ function AsesoresView({ scopeUserId }: { scopeUserId: ScopeUserId }) {
 
 export default function ControlLeads() {
   const { user } = useAuth();
-  const { isAdmin, isSuperAdmin } = useUserRole();
+  const { isAdmin, isSuperAdmin, role } = useUserRole();
   const canSeeAll = isAdmin || isSuperAdmin;
+  const isAsesor = role === "asesor" && !canSeeAll;
   const [scopeUserId, setScopeUserId] = useState<ScopeUserId>(undefined);
   const { data: tenantUsers = [] } = useTenantUsers(canSeeAll);
   const { subSection } = useParams<{ subSection?: string }>();
@@ -1404,10 +1405,16 @@ export default function ControlLeads() {
   const effectiveScope: ScopeUserId = canSeeAll ? scopeUserId : undefined;
   const selectValue = scopeUserId ?? "self";
 
+  // Asesores only have access to their own section
+  if (isAsesor && subSection !== "asesores") {
+    return <Navigate to="/control-leads/asesores" replace />;
+  }
+
   // Redirect bare /control-leads to coordinadoras subsection
   if (!subSection) {
     return <Navigate to="/control-leads/coordinadoras" replace />;
   }
+
 
   return (
     <Layout>
