@@ -785,10 +785,14 @@ const Properties = () => {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => handleDialogOpenChange(false)} disabled={saving}>Cancelar</Button>
-            <Button onClick={handleSave} disabled={saving}>
-              {saving ? "Guardando..." : (editing ? "Guardar" : "Crear")}
+            <Button variant="outline" onClick={() => handleDialogOpenChange(false)} disabled={saving}>
+              {canEditListing(form.listing_type) ? "Cancelar" : "Cerrar"}
             </Button>
+            {canEditListing(form.listing_type) && (
+              <Button onClick={handleSave} disabled={saving}>
+                {saving ? "Guardando..." : (editing ? "Guardar" : "Crear")}
+              </Button>
+            )}
           </DialogFooter>
 
         </DialogContent>
