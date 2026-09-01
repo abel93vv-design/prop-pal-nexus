@@ -526,7 +526,9 @@ const Properties = () => {
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="noticia">Noticia (sin firmar)</SelectItem>
-                  <SelectItem value="ne">NE (Nota de Encargo firmada)</SelectItem>
+                  {(canEditNe || (form.listing_type || 'noticia') === 'ne') && (
+                    <SelectItem value="ne">NE (Nota de Encargo firmada)</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             </div>
