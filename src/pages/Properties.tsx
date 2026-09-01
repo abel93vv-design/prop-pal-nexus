@@ -77,7 +77,13 @@ const emptyDoc: Omit<Document, "id"> = {
 
 const Properties = () => {
   const { properties, users, agencies, clients, documents, addProperty, updateProperty, deleteProperty, convertListingType, addDocument, deleteDocument } = useData();
-  const { isAdmin } = useUserRole();
+  const { isAdmin, can } = useUserRole();
+  const canEditNe = can("ne", "edit");
+  const canEditNoticias = can("noticias", "edit");
+  const canDeleteNe = can("ne", "delete");
+  const canDeleteNoticias = can("noticias", "delete");
+  const canEditListing = (lt?: string | null) => ((lt || "noticia") === "ne" ? canEditNe : canEditNoticias);
+  const canDeleteListing = (lt?: string | null) => ((lt || "noticia") === "ne" ? canDeleteNe : canDeleteNoticias);
   const { toast } = useToast();
   const qc = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
