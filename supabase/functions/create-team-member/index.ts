@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
 
     const callerId = userData.user.id;
 
-    const { data: callerProfile } = await adminClient.from("profiles").select("tenant_id").eq("user_id", callerId).single();
+    const { data: callerProfile } = await adminClient.from("profiles").select("tenant_id").eq("user_id", callerId).maybeSingle();
     const tenantId = callerProfile?.tenant_id;
     if (!tenantId) {
       return new Response(JSON.stringify({ error: "No se pudo identificar tu inmobiliaria" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
