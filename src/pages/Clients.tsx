@@ -1027,8 +1027,8 @@ const Clients = () => {
 
               </>
             )}
-            <Button variant="outline" onClick={() => handleDialogOpenChange(false)}>Cancelar</Button>
-            <Button onClick={handleSave}>{editing ? "Guardar" : "Crear"}</Button>
+            <Button variant="outline" onClick={() => handleDialogOpenChange(false)}>{canEditClients ? "Cancelar" : "Cerrar"}</Button>
+            {canEditClients && <Button onClick={handleSave}>{editing ? "Guardar" : "Crear"}</Button>}
           </DialogFooter>
         </DialogContent>
       </Dialog>
