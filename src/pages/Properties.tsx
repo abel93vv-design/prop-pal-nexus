@@ -370,7 +370,9 @@ const Properties = () => {
             <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}>
               <RefreshCw className={`w-4 h-4 mr-1 ${refreshing ? 'animate-spin' : ''}`} />Refrescar
             </Button>
-            <Button onClick={openCreate} size="sm"><Plus className="w-4 h-4 mr-1" />Nueva {activeListing === 'ne' ? 'NE' : activeListing === 'noticia' ? 'Noticia' : 'Propiedad'}</Button>
+            {(activeListing === 'ne' ? canEditNe : canEditNoticias) && (
+              <Button onClick={openCreate} size="sm"><Plus className="w-4 h-4 mr-1" />Nueva {activeListing === 'ne' ? 'NE' : activeListing === 'noticia' ? 'Noticia' : 'Propiedad'}</Button>
+            )}
           </div>
         </div>
 
