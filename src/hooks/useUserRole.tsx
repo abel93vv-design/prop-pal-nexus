@@ -82,6 +82,8 @@ export const useUserRole = () => {
 
   const can = useCallback(
     (module: string, action: ModuleAction = "view"): boolean => {
+      // While role/permissions are loading, do not grant write actions
+      if (loading) return action === "view";
       if (isSuperAdmin || role === "admin") return true;
       // Legacy users without a role: allow (matches DB fallback)
       if (!role) return true;
@@ -91,8 +93,9 @@ export const useUserRole = () => {
       if (action === "edit") return p.can_edit;
       return p.can_delete;
     },
-    [role, permissions, isSuperAdmin]
+    [role, permissions, isSuperAdmin, loading]
   );
+
 
   return { role, tenantId, isAdmin, isSuperAdmin, permissions, can, loading };
 };
