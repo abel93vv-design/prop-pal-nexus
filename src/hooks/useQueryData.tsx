@@ -54,7 +54,7 @@ export const useProperties = () => {
   return useQuery({
     queryKey: ['properties', session?.user?.id, tenantId],
     queryFn: async () => {
-      const { data, error } = await supabase.from('properties').select('*').eq('tenant_id', tenantId);
+      const { data, error } = await supabase.from('properties').select('*').eq('tenant_id', tenantId).limit(5000);
       if (error) throw error;
       return (data || []).map(toProperty);
     },
@@ -68,7 +68,7 @@ export const useClients = () => {
   return useQuery({
     queryKey: ['clients', session?.user?.id, tenantId],
     queryFn: async () => {
-      const { data, error } = await supabase.from('clients').select('*').eq('tenant_id', tenantId);
+      const { data, error } = await supabase.from('clients').select('*').eq('tenant_id', tenantId).limit(5000);
       if (error) throw error;
       return (data || []).map(toClient);
     },
@@ -82,7 +82,7 @@ export const useAgencies = () => {
   return useQuery({
     queryKey: ['agencies', session?.user?.id, tenantId],
     queryFn: async () => {
-      const { data, error } = await supabase.from('agencies').select('*').eq('tenant_id', tenantId);
+      const { data, error } = await supabase.from('agencies').select('*').eq('tenant_id', tenantId).limit(500);
       if (error) throw error;
       return (data || []).map(toAgency);
     },
@@ -96,7 +96,7 @@ export const useTeamMembers = () => {
   return useQuery({
     queryKey: ['team_members', session?.user?.id, tenantId],
     queryFn: async () => {
-      const { data, error } = await supabase.from('team_members').select('*').eq('tenant_id', tenantId);
+      const { data, error } = await supabase.from('team_members').select('*').eq('tenant_id', tenantId).limit(500);
       if (error) throw error;
       return (data || []).map(toUser);
     },
@@ -110,7 +110,7 @@ export const useTasks = () => {
   return useQuery({
     queryKey: ['tasks', session?.user?.id, tenantId],
     queryFn: async () => {
-      const { data, error } = await supabase.from('tasks').select('*').eq('tenant_id', tenantId);
+      const { data, error } = await supabase.from('tasks').select('*').eq('tenant_id', tenantId).limit(2000);
       if (error) throw error;
       return (data || []).map(toTask);
     },
@@ -124,7 +124,7 @@ export const useDocuments = () => {
   return useQuery({
     queryKey: ['documents', session?.user?.id, tenantId],
     queryFn: async () => {
-      const { data, error } = await supabase.from('documents').select('*').eq('tenant_id', tenantId);
+      const { data, error } = await supabase.from('documents').select('*').eq('tenant_id', tenantId).limit(2000);
       if (error) throw error;
       return (data || []).map(toDocument);
     },
