@@ -749,8 +749,8 @@ const Clients = () => {
           </div>
           <div className="flex gap-2 flex-wrap">
             {isAdmin && <Button onClick={exportCSV} variant="outline" size="sm"><Download className="w-4 h-4 mr-1" />Exportar CSV</Button>}
-            <Button onClick={() => setCsvDialogOpen(true)} variant="outline" size="sm"><Upload className="w-4 h-4 mr-1" />Importar CSV</Button>
-            <Button onClick={openCreate} size="sm"><Plus className="w-4 h-4 mr-1" />Nuevo Cliente</Button>
+            {canEditClients && <Button onClick={() => setCsvDialogOpen(true)} variant="outline" size="sm"><Upload className="w-4 h-4 mr-1" />Importar CSV</Button>}
+            {canEditClients && <Button onClick={openCreate} size="sm"><Plus className="w-4 h-4 mr-1" />Nuevo Cliente</Button>}
           </div>
         </div>
 
