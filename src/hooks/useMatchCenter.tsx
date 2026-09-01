@@ -130,6 +130,7 @@ export function useMatchCenter() {
   return {
     matches,
     loading,
+    error,
     calculating,
     runMatching,
     getTopMatchesForClient,
