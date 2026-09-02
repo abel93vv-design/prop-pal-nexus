@@ -137,6 +137,7 @@ serve(async (req) => {
       locked: newAttempts >= MAX_ATTEMPTS,
       attempts: newAttempts,
       remaining: Math.max(0, MAX_ATTEMPTS - newAttempts),
+      minutes_left: locked_until ? LOCKOUT_MINUTES : 0,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
