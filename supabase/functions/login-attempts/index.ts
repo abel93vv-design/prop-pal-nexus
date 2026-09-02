@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 const MAX_ATTEMPTS = 5;
-const LOCKOUT_HOURS = 2;
+const LOCKOUT_MINUTES = 5;
 
 // In-memory rate limiter (per isolate)
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
@@ -116,7 +116,7 @@ serve(async (req) => {
 
     const newAttempts = (existing?.attempts || 0) + 1;
     const locked_until = newAttempts >= MAX_ATTEMPTS
-      ? new Date(Date.now() + LOCKOUT_HOURS * 60 * 60 * 1000).toISOString()
+      ? new Date(Date.now() + LOCKOUT_MINUTES * 60 * 1000).toISOString()
       : null;
 
     if (existing) {
@@ -137,6 +137,7 @@ serve(async (req) => {
       locked: newAttempts >= MAX_ATTEMPTS,
       attempts: newAttempts,
       remaining: Math.max(0, MAX_ATTEMPTS - newAttempts),
+      minutes_left: locked_until ? LOCKOUT_MINUTES : 0,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
