@@ -63,7 +63,7 @@ const Auth = () => {
       });
       if (data?.locked) {
         setLocked(true);
-        setMinutesLeft(120);
+        setMinutesLeft(data?.minutes_left ?? 5);
       } else {
         setAttemptsRemaining(data?.remaining ?? 0);
       }
