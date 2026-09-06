@@ -37,7 +37,11 @@ export const LEAD_COLUMNS = [
   { key: "pedidos_llamados", label: "Llamados" },
   { key: "pedidos_llamados_contactados", label: "Contactados" },
   { key: "pedidos_sin_contactar", label: "Sin contactar" },
+  { key: "aa", label: "AA" },
   { key: "cv", label: "CV" },
+  { key: "ca", label: "CA" },
+  { key: "ne", label: "NE" },
+  { key: "propuesta", label: "Propuesta" },
   { key: "av", label: "AV" },
   { key: "asesoramientos", label: "Asesoramientos" },
 ] as const;
@@ -67,7 +71,11 @@ export interface DailyLeadRow {
   pedidos_llamados: number;
   pedidos_llamados_contactados: number;
   pedidos_sin_contactar: number;
+  aa: number;
   cv: number;
+  ca: number;
+  ne: number;
+  propuesta: number;
   av: number;
   asesoramientos: number;
 }
@@ -99,7 +107,11 @@ const emptyLeadRow = (source: LeadSource): DailyLeadRow => ({
   pedidos_llamados: 0,
   pedidos_llamados_contactados: 0,
   pedidos_sin_contactar: 0,
+  aa: 0,
   cv: 0,
+  ca: 0,
+  ne: 0,
+  propuesta: 0,
   av: 0,
   asesoramientos: 0,
 });
