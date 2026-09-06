@@ -36,7 +36,7 @@ export function WhatsAppSendButton({
   const [message, setMessage] = useState(defaultMessage);
 
   const normalized = normalizePhoneForWhatsApp(phone || "");
-  if (!status?.configured || !normalized) return null;
+  if (settingsLoading || !getBool("whatsapp") || !status?.configured || !normalized) return null;
 
   const handleOpen = (e: React.MouseEvent) => {
     e.stopPropagation();
