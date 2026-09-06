@@ -20,8 +20,9 @@ export function WhatsAppButton({
   variant = "icon",
   className = "",
 }: WhatsAppButtonProps) {
+  const { getBool, loading } = useTenantSettings();
   const url = buildWhatsAppUrl(phone || "", message);
-  if (!url) return null;
+  if (!url || loading || !getBool("whatsapp")) return null;
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
