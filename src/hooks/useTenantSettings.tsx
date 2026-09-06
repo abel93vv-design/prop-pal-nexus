@@ -13,9 +13,22 @@ export interface TenantSetting {
 }
 
 export const TENANT_SETTING_PRESETS = [
-  { key: "whatsapp", label: "WhatsApp" },
-  { key: "portal_idealista", label: "Idealista" },
-  { key: "portal_fotocasa", label: "Fotocasa" },
+  {
+    key: "whatsapp",
+    label: "WhatsApp",
+    description:
+      "Muestra los botones de \u201cContactar por WhatsApp\u201d en las fichas de cliente y en el matching, y la tarjeta de conexi\u00f3n de WhatsApp en Ajustes.",
+  },
+  {
+    key: "portal_idealista",
+    label: "Idealista",
+    description: "Muestra la conexi\u00f3n con Idealista en Ajustes y permite marcar viviendas para publicarse en ese portal.",
+  },
+  {
+    key: "portal_fotocasa",
+    label: "Fotocasa",
+    description: "Muestra la conexi\u00f3n con Fotocasa en Ajustes y permite marcar viviendas para publicarse en ese portal.",
+  },
 ];
 
 const isTrue = (v?: string | null) =>

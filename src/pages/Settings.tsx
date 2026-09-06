@@ -240,8 +240,8 @@ function NotificationsTab() {
 // SecurityTab is now imported from @/components/settings/SecurityTab
 
 export default function Settings() {
-  const { isAdmin, isSuperAdmin } = useUserRole();
-  const showAdvanced = isAdmin || isSuperAdmin;
+  const { isSuperAdmin } = useUserRole();
+  const showAdvanced = isSuperAdmin;
   return (
     <Layout>
       <div className="max-w-4xl mx-auto">

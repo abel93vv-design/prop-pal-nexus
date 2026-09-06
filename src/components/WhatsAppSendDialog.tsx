@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useSendWhatsApp, useWhatsAppStatus } from "@/hooks/useWhatsAppSend";
 import { normalizePhoneForWhatsApp } from "@/lib/whatsapp";
+import { useTenantSettings } from "@/hooks/useTenantSettings";
 
 interface WhatsAppSendButtonProps {
   phone?: string | null;
@@ -28,13 +29,14 @@ export function WhatsAppSendButton({
   variant = "icon",
   className = "",
 }: WhatsAppSendButtonProps) {
+  const { getBool, loading: settingsLoading } = useTenantSettings();
   const { data: status } = useWhatsAppStatus();
   const send = useSendWhatsApp();
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState(defaultMessage);
 
   const normalized = normalizePhoneForWhatsApp(phone || "");
-  if (!status?.configured || !normalized) return null;
+  if (settingsLoading || !getBool("whatsapp") || !status?.configured || !normalized) return null;
 
   const handleOpen = (e: React.MouseEvent) => {
     e.stopPropagation();

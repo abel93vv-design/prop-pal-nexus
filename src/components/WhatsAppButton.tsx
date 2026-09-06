@@ -2,6 +2,7 @@ import { MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
 import { toast } from "@/hooks/use-toast";
+import { useTenantSettings } from "@/hooks/useTenantSettings";
 
 interface WhatsAppButtonProps {
   phone?: string | null;
@@ -19,8 +20,9 @@ export function WhatsAppButton({
   variant = "icon",
   className = "",
 }: WhatsAppButtonProps) {
+  const { getBool, loading } = useTenantSettings();
   const url = buildWhatsAppUrl(phone || "", message);
-  if (!url) return null;
+  if (!url || loading || !getBool("whatsapp")) return null;
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();

@@ -54,6 +54,7 @@ export function AdvancedSettingsTab() {
   };
 
   const missingPresets = TENANT_SETTING_PRESETS.filter((p) => !settings.some((s) => s.key === p.key));
+  const activeKeys = new Set(settings.filter((s) => ["true", "1", "si", "s\u00ed", "yes", "on"].includes(s.value.trim().toLowerCase())).map((s) => s.key));
 
   return (
     <Card>
@@ -122,6 +123,27 @@ export function AdvancedSettingsTab() {
             </TableBody>
           </Table>
         )}
+
+        <div className="pt-4 border-t space-y-3">
+          <div>
+            <h3 className="text-sm font-semibold">Configuraciones disponibles</h3>
+            <p className="text-xs text-muted-foreground">Qu\u00e9 activa cada una cuando su valor es <span className="font-mono">true</span>.</p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {TENANT_SETTING_PRESETS.map((p) => (
+              <div key={p.key} className="rounded-lg border p-3 space-y-1">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-medium">{p.label}</span>
+                  <Badge variant={activeKeys.has(p.key) ? "default" : "outline"} className="text-[10px]">
+                    {activeKeys.has(p.key) ? "Activa" : "Desactivada"}
+                  </Badge>
+                </div>
+                <div className="text-[11px] font-mono text-muted-foreground">{p.key}</div>
+                <p className="text-xs text-muted-foreground">{p.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
       </CardContent>
 
       <Dialog open={open} onOpenChange={setOpen}>
