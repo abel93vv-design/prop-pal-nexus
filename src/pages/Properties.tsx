@@ -302,6 +302,56 @@ const Properties = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [properties, searchParams]);
+  const canCreateClients = can("clientes", "edit");
+
+  const normalizePhone = (p?: string) => {
+    const digits = (p || "").replace(/\D/g, "");
+    return digits.length >= 9 ? digits.slice(-9) : digits;
+  };
+
+  // Creates (or links) a client record from the property's contact block.
+  const syncContactAsClient = async (created: Property): Promise<"created" | "linked" | null> => {
+    const name = (form.contact_name || "").trim();
+    const phone = (form.contact_phone || "").trim();
+    if (!name && !phone) return null;
+    if (!canCreateClients) return null;
+
+    const key = normalizePhone(phone);
+    const existing = key
+      ? clients.find(c => c.isActive !== false && normalizePhone(c.phone) === key)
+      : undefined;
+
+    const isRental = form.operationType === "alquiler" || form.operationType === "alquiler_opcion_compra";
+
+    if (existing) {
+      if (!existing.propertyIds.includes(created.id)) {
+        await updateClient({ ...existing, propertyIds: [...existing.propertyIds, created.id] });
+      }
+      return "linked";
+    }
+
+    await addClient({
+      name: name || "Contacto sin nombre",
+      email: "",
+      phone,
+      address: form.address || "",
+      type: isRental ? "arrendador" : "vendedor",
+      leadStatus: "nuevo",
+      propertyIds: [created.id],
+      registeredAt: new Date().toISOString(),
+      notes: (form.contact_notes || "").trim(),
+      agencyId: form.agencyId || "",
+      category: "",
+      lastContactedAt: "",
+      contactCount: 0,
+      operationType: isRental ? "alquiler" : "venta",
+      source: "propiedad",
+      sourcePropertyId: created.id,
+      isActive: true,
+    });
+    return "created";
+  };
+
   const handleSave = async () => {
     if (saving) return;
     if (!form.title.trim() || !form.address.trim()) { toast({ title: "Error", description: "Título y dirección son obligatorios", variant: "destructive" }); return; }
