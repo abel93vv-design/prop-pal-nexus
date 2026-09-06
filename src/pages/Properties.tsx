@@ -52,7 +52,7 @@ const conditionLabels: Record<string, string> = {
   rustico: 'Rústico',
 };
 
-const defaultExtras = { reference: '', year_built: null as number | null, postal_code: '', latitude: null as number | null, longitude: null as number | null, built_surface: 0, plot_surface: 0, energy_cert: 'en_tramite', neighborhood: '', floor: null as number | null, community_fees: 0, ibi_annual: 0, has_elevator: false, has_terrace: false, has_pool: false, has_garage: false, has_air_conditioning: false };
+const defaultExtras = { reference: '', year_built: null as number | null, postal_code: '', latitude: null as number | null, longitude: null as number | null, built_surface: 0, plot_surface: 0, energy_cert: 'en_tramite', neighborhood: '', floor: null as number | null, community_fees: 0, ibi_annual: 0, has_elevator: false, has_service_elevator: false, has_terrace: false, has_pool: false, has_garage: false, has_air_conditioning: false };
 
 const emptyProperty: Omit<Property, "id"> = {
   title: "", address: "", type: "piso", status: "disponible", price: 0, surface: 0,
@@ -267,7 +267,7 @@ const Properties = () => {
       built_surface: p.built_surface || 0, plot_surface: p.plot_surface || 0,
       energy_cert: p.energy_cert || "en_tramite", neighborhood: p.neighborhood || "",
       floor: p.floor, community_fees: p.community_fees || 0, ibi_annual: p.ibi_annual || 0,
-      has_elevator: p.has_elevator || false, has_terrace: p.has_terrace || false,
+      has_elevator: p.has_elevator || false, has_service_elevator: p.has_service_elevator || false, has_terrace: p.has_terrace || false,
       has_pool: p.has_pool || false, has_garage: p.has_garage || false,
       has_air_conditioning: p.has_air_conditioning || false,
       operationType: p.operationType || "venta", monthly_rent: p.monthly_rent || 0,
@@ -748,7 +748,7 @@ const Properties = () => {
               <Label className="text-xs font-semibold">Extras</Label>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-1.5">
                 {([
-                  ['has_elevator', 'Ascensor'], ['has_terrace', 'Terraza'], ['has_pool', 'Piscina'],
+                  ['has_elevator', 'Ascensor'], ['has_service_elevator', 'Elevador'], ['has_terrace', 'Terraza'], ['has_pool', 'Piscina'],
                   ['has_garage', 'Garaje'], ['has_air_conditioning', 'Aire acond.']
                 ] as [string, string][]).map(([key, label]) => (
                   <label key={key} className="flex items-center gap-2 text-xs cursor-pointer">
