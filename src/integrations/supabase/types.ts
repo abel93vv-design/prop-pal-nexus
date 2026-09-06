@@ -1194,6 +1194,7 @@ export type Database = {
           has_elevator: boolean | null
           has_garage: boolean | null
           has_pool: boolean | null
+          has_service_elevator: boolean
           has_terrace: boolean | null
           ibi_annual: number | null
           id: string
@@ -1243,6 +1244,7 @@ export type Database = {
           has_elevator?: boolean | null
           has_garage?: boolean | null
           has_pool?: boolean | null
+          has_service_elevator?: boolean
           has_terrace?: boolean | null
           ibi_annual?: number | null
           id?: string
@@ -1292,6 +1294,7 @@ export type Database = {
           has_elevator?: boolean | null
           has_garage?: boolean | null
           has_pool?: boolean | null
+          has_service_elevator?: boolean
           has_terrace?: boolean | null
           ibi_annual?: number | null
           id?: string
@@ -2012,6 +2015,7 @@ export type Database = {
           has_elevator: boolean | null
           has_garage: boolean | null
           has_pool: boolean | null
+          has_service_elevator: boolean
           has_terrace: boolean | null
           ibi_annual: number | null
           id: string
