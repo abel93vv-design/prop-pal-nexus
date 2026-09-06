@@ -76,7 +76,7 @@ const emptyDoc: Omit<Document, "id"> = {
 };
 
 const Properties = () => {
-  const { properties, users, agencies, clients, documents, addProperty, updateProperty, deleteProperty, convertListingType, addDocument, deleteDocument } = useData();
+  const { properties, users, agencies, clients, documents, addProperty, updateProperty, deleteProperty, convertListingType, addDocument, deleteDocument, addClient, updateClient } = useData();
   const { isAdmin, can } = useUserRole();
   const canEditNe = can("ne", "edit");
   const canEditNoticias = can("noticias", "edit");
