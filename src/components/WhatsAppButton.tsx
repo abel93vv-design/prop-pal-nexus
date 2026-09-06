@@ -2,6 +2,7 @@ import { MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
 import { toast } from "@/hooks/use-toast";
+import { useTenantSettings } from "@/hooks/useTenantSettings";
 
 interface WhatsAppButtonProps {
   phone?: string | null;
