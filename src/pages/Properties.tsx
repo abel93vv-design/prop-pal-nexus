@@ -366,8 +366,21 @@ const Properties = () => {
         await saveCfValues(editing.id, cfValues);
         toast({ title: "Propiedad actualizada" });
       } else {
-        await addProperty(form);
-        toast({ title: "Propiedad creada" });
+        const created = await addProperty(form);
+        let contactResult: "created" | "linked" | null = null;
+        try {
+          contactResult = created?.id ? await syncContactAsClient(created) : null;
+        } catch (err) {
+          contactResult = null;
+        }
+        toast({
+          title: "Propiedad creada",
+          description: contactResult === "created"
+            ? "El contacto se ha añadido como cliente."
+            : contactResult === "linked"
+              ? "El contacto ya existía y se ha vinculado a la propiedad."
+              : undefined,
+        });
       }
       setSaving(false);
       handleDialogOpenChange(false);
