@@ -13,13 +13,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import {
   User, Lock, Plug, Palette, Bell, Shield,
-  Save, RefreshCw, Settings2, Crown, Database
+  Save, RefreshCw, Settings2, Crown, Database, SlidersHorizontal
 } from "lucide-react";
 import { SubscriptionTab } from "@/components/settings/SubscriptionTab";
 import { CustomFieldsAdmin } from "@/components/CustomFieldsAdmin";
 import { ConnectionsTab } from "@/components/settings/ConnectionsTab";
 import { SecurityTab } from "@/components/settings/SecurityTab";
 import { BackupTab } from "@/components/settings/BackupTab";
+import { AdvancedSettingsTab } from "@/components/settings/AdvancedSettingsTab";
+import { useUserRole } from "@/hooks/useUserRole";
 
 function GeneralTab() {
   const { user } = useAuth();
@@ -238,6 +240,8 @@ function NotificationsTab() {
 // SecurityTab is now imported from @/components/settings/SecurityTab
 
 export default function Settings() {
+  const { isAdmin, isSuperAdmin } = useUserRole();
+  const showAdvanced = isAdmin || isSuperAdmin;
   return (
     <Layout>
       <div className="max-w-4xl mx-auto">
@@ -247,7 +251,7 @@ export default function Settings() {
         </div>
 
         <Tabs defaultValue="general" className="space-y-6">
-          <TabsList className="grid grid-cols-8 w-full">
+          <TabsList className={`grid ${showAdvanced ? "grid-cols-9" : "grid-cols-8"} w-full`}>
             <TabsTrigger value="general" className="text-xs sm:text-sm">
               <User className="w-4 h-4 mr-1 hidden sm:inline" /> General
             </TabsTrigger>
@@ -272,6 +276,11 @@ export default function Settings() {
             <TabsTrigger value="security" className="text-xs sm:text-sm">
               <Shield className="w-4 h-4 mr-1 hidden sm:inline" /> Seguridad
             </TabsTrigger>
+            {showAdvanced && (
+              <TabsTrigger value="advanced" className="text-xs sm:text-sm">
+                <SlidersHorizontal className="w-4 h-4 mr-1 hidden sm:inline" /> Avanzado
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="general"><GeneralTab /></TabsContent>
@@ -282,6 +291,7 @@ export default function Settings() {
           <TabsContent value="personalization"><PersonalizationTab /></TabsContent>
           <TabsContent value="notifications"><NotificationsTab /></TabsContent>
           <TabsContent value="security"><SecurityTab /></TabsContent>
+          {showAdvanced && <TabsContent value="advanced"><AdvancedSettingsTab /></TabsContent>}
         </Tabs>
       </div>
     </Layout>

@@ -11,6 +11,7 @@ import { usePortalConnections, PortalName } from "@/hooks/usePortals";
 import { toast } from "@/hooks/use-toast";
 import { WhatsAppCard } from "@/components/settings/WhatsAppCard";
 import { WebsInmocroCard } from "@/components/settings/WebsInmocroCard";
+import { useTenantSettings } from "@/hooks/useTenantSettings";
 
 
 const portalMeta: Record<PortalName, { label: string; icon: typeof Home; color: string }> = {
@@ -139,30 +140,49 @@ function PortalCard({ portal }: { portal: PortalName }) {
 }
 
 export function ConnectionsTab() {
+  const { getBool, loading } = useTenantSettings();
+  const showFotocasa = !loading && getBool("portal_fotocasa");
+  const showIdealista = !loading && getBool("portal_idealista");
+  const showWhatsApp = !loading && getBool("whatsapp");
+  const showAny = showFotocasa || showIdealista || showWhatsApp;
+
   return (
     <div className="space-y-6">
-      <Alert>
-        <Info className="h-4 w-4" />
-        <AlertDescription>
-          <strong>Cómo publicar en Idealista y Fotocasa:</strong>
-          <ol className="list-decimal ml-5 mt-2 space-y-1 text-sm">
-            {setupSteps.map((step, i) => <li key={i}>{step}</li>)}
-          </ol>
-          <p className="mt-2 text-xs text-muted-foreground">
-            Las viviendas vendidas, no disponibles o eliminadas se retiran del feed automáticamente.
-          </p>
-        </AlertDescription>
-      </Alert>
+      {(showFotocasa || showIdealista) && (
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            <strong>Cómo publicar en Idealista y Fotocasa:</strong>
+            <ol className="list-decimal ml-5 mt-2 space-y-1 text-sm">
+              {setupSteps.map((step, i) => <li key={i}>{step}</li>)}
+            </ol>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Las viviendas vendidas, no disponibles o eliminadas se retiran del feed automáticamente.
+            </p>
+          </AlertDescription>
+        </Alert>
+      )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <PortalCard portal="fotocasa" />
-        <PortalCard portal="idealista" />
-      </div>
+      {(showFotocasa || showIdealista) && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {showFotocasa && <PortalCard portal="fotocasa" />}
+          {showIdealista && <PortalCard portal="idealista" />}
+        </div>
+      )}
 
       <WebsInmocroCard />
 
-      <WhatsAppCard />
+      {showWhatsApp && <WhatsAppCard />}
 
+      {!loading && !showAny && (
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription className="text-sm">
+            Las conexiones con WhatsApp, Idealista y Fotocasa están desactivadas. Actívalas creando una configuración
+            con valor <strong>true</strong> en Ajustes → Configuración avanzada.
+          </AlertDescription>
+        </Alert>
+      )}
     </div>
   );
 }
