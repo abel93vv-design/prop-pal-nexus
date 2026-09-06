@@ -748,7 +748,7 @@ const Properties = () => {
               <Label className="text-xs font-semibold">Extras</Label>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-1.5">
                 {([
-                  ['has_elevator', 'Ascensor'], ['has_service_elevator', 'Elevador'], ['has_terrace', 'Terraza'], ['has_pool', 'Piscina'],
+                  ['has_elevator', 'Ascensor'], ['has_service_elevator', 'Plataforma Elevadora'], ['has_terrace', 'Terraza'], ['has_pool', 'Piscina'],
                   ['has_garage', 'Garaje'], ['has_air_conditioning', 'Aire acond.']
                 ] as [string, string][]).map(([key, label]) => (
                   <label key={key} className="flex items-center gap-2 text-xs cursor-pointer">

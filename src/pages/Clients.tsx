@@ -34,7 +34,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 
 const EXTRAS_OPTIONS = ['ascensor', 'elevador', 'terraza', 'piscina', 'garaje', 'aire_acondicionado', 'acepta_mascotas'] as const;
 const EXTRA_LABELS: Record<string, string> = {
-  ascensor: 'Ascensor', elevador: 'Elevador', terraza: 'Terraza', piscina: 'Piscina',
+  ascensor: 'Ascensor', elevador: 'Plataforma Elevadora', terraza: 'Terraza', piscina: 'Piscina',
   garaje: 'Garaje', aire_acondicionado: 'Aire acondicionado', acepta_mascotas: 'Acepta mascotas',
 };
 
