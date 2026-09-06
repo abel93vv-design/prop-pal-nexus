@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useSendWhatsApp, useWhatsAppStatus } from "@/hooks/useWhatsAppSend";
 import { normalizePhoneForWhatsApp } from "@/lib/whatsapp";
+import { useTenantSettings } from "@/hooks/useTenantSettings";
 
 interface WhatsAppSendButtonProps {
   phone?: string | null;
