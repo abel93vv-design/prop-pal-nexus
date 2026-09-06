@@ -579,17 +579,21 @@ export type Database = {
       }
       daily_leads: {
         Row: {
+          aa: number
           asesoramientos: number
           av: number
+          ca: number
           created_at: string
           cv: number
           date: string
           id: string
+          ne: number
           pedidos_actualizados: number
           pedidos_insertados: number
           pedidos_llamados: number
           pedidos_llamados_contactados: number
           pedidos_sin_contactar: number
+          propuesta: number
           source: Database["public"]["Enums"]["lead_source"]
           tenant_id: string
           total_pedidos: number
@@ -597,17 +601,21 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          aa?: number
           asesoramientos?: number
           av?: number
+          ca?: number
           created_at?: string
           cv?: number
           date: string
           id?: string
+          ne?: number
           pedidos_actualizados?: number
           pedidos_insertados?: number
           pedidos_llamados?: number
           pedidos_llamados_contactados?: number
           pedidos_sin_contactar?: number
+          propuesta?: number
           source: Database["public"]["Enums"]["lead_source"]
           tenant_id: string
           total_pedidos?: number
@@ -615,17 +623,21 @@ export type Database = {
           user_id: string
         }
         Update: {
+          aa?: number
           asesoramientos?: number
           av?: number
+          ca?: number
           created_at?: string
           cv?: number
           date?: string
           id?: string
+          ne?: number
           pedidos_actualizados?: number
           pedidos_insertados?: number
           pedidos_llamados?: number
           pedidos_llamados_contactados?: number
           pedidos_sin_contactar?: number
+          propuesta?: number
           source?: Database["public"]["Enums"]["lead_source"]
           tenant_id?: string
           total_pedidos?: number
