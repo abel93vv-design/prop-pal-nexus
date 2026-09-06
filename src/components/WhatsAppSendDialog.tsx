@@ -29,6 +29,7 @@ export function WhatsAppSendButton({
   variant = "icon",
   className = "",
 }: WhatsAppSendButtonProps) {
+  const { getBool, loading: settingsLoading } = useTenantSettings();
   const { data: status } = useWhatsAppStatus();
   const send = useSendWhatsApp();
   const [open, setOpen] = useState(false);
