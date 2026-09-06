@@ -326,7 +326,7 @@ function totalsOf(rows: DailyLeadRow[]) {
   const t: Record<LeadColumnKey, number> = {
     total_pedidos: 0, pedidos_insertados: 0, pedidos_actualizados: 0,
     pedidos_llamados: 0, pedidos_llamados_contactados: 0, pedidos_sin_contactar: 0,
-    cv: 0, av: 0, asesoramientos: 0,
+    aa: 0, cv: 0, ca: 0, ne: 0, propuesta: 0, av: 0, asesoramientos: 0,
   };
   rows.forEach((r) => LEAD_COLUMNS.forEach((c) => { t[c.key] += Number((r as any)[c.key] ?? 0); }));
   return t;
@@ -535,7 +535,7 @@ function YearlyView({ scopeUserId }: { scopeUserId: ScopeUserId }) {
     const t: Record<LeadColumnKey, number> = {
       total_pedidos: 0, pedidos_insertados: 0, pedidos_actualizados: 0,
       pedidos_llamados: 0, pedidos_llamados_contactados: 0, pedidos_sin_contactar: 0,
-      cv: 0, av: 0, asesoramientos: 0,
+      aa: 0, cv: 0, ca: 0, ne: 0, propuesta: 0, av: 0, asesoramientos: 0,
     };
     monthly.forEach((m) => LEAD_COLUMNS.forEach((c) => { t[c.key] += m[c.key]; }));
     return t;
