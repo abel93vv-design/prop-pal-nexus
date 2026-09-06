@@ -11,6 +11,7 @@ import { usePortalConnections, PortalName } from "@/hooks/usePortals";
 import { toast } from "@/hooks/use-toast";
 import { WhatsAppCard } from "@/components/settings/WhatsAppCard";
 import { WebsInmocroCard } from "@/components/settings/WebsInmocroCard";
+import { useTenantSettings } from "@/hooks/useTenantSettings";
 
 
 const portalMeta: Record<PortalName, { label: string; icon: typeof Home; color: string }> = {
