@@ -12,7 +12,7 @@ export const users: User[] = [
   { id: 'u4', name: 'María López', email: 'maria@inmobiliaria.com', role: 'personalizado', phone: '+34 645 678 901', propertyIds: [], clientIds: [], avatar: '', agencyId: 'a1', accessType: 'personalizado', permissions: ['ver_propiedades','publicar_propiedades'] },
 ];
 
-const defaultPropExtras = { postal_code: '', latitude: null, longitude: null, built_surface: 0, plot_surface: 0, energy_cert: 'en_tramite', neighborhood: '', floor: null, community_fees: 0, ibi_annual: 0, has_elevator: false, has_terrace: false, has_pool: false, has_garage: false, has_air_conditioning: false, operationType: 'venta' as const, monthly_rent: 0 };
+const defaultPropExtras = { postal_code: '', latitude: null, longitude: null, built_surface: 0, plot_surface: 0, energy_cert: 'en_tramite', neighborhood: '', floor: null, community_fees: 0, ibi_annual: 0, has_elevator: false, has_service_elevator: false, has_terrace: false, has_pool: false, has_garage: false, has_air_conditioning: false, operationType: 'venta' as const, monthly_rent: 0 };
 
 export const properties: Property[] = [
   { id: 'p1', title: 'Ático luminoso en Salamanca', address: 'Calle Serrano 45, Madrid', type: 'piso', status: 'disponible', price: 485000, surface: 120, bedrooms: 3, bathrooms: 2, photos: [], agentId: 'u1', interestedClientIds: ['c1','c3'], publishedAt: '2025-12-01', description: 'Espectacular ático con terraza y vistas panorámicas.', agencyId: 'a1', category: 'lujo', ...defaultPropExtras },

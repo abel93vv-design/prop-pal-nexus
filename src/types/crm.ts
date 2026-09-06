@@ -82,6 +82,7 @@ export interface Property {
   community_fees: number;
   ibi_annual: number;
   has_elevator: boolean;
+  has_service_elevator?: boolean;
   has_terrace: boolean;
   has_pool: boolean;
   has_garage: boolean;

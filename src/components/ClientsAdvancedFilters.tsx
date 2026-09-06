@@ -67,9 +67,9 @@ const SOURCE_LABELS: Record<string, string> = {
   publicidad_zona: 'Publicidad zona', referido: 'Referido', otros: 'Otros',
 };
 const PROP_TYPES = ['piso','casa','local','terreno','parking'];
-const EXTRAS = ['ascensor','terraza','piscina','garaje','aire_acondicionado','acepta_mascotas'];
+const EXTRAS = ['ascensor','elevador','terraza','piscina','garaje','aire_acondicionado','acepta_mascotas'];
 const EXTRA_LABELS: Record<string,string> = {
-  ascensor: 'Ascensor', terraza: 'Terraza', piscina: 'Piscina',
+  ascensor: 'Ascensor', elevador: 'Elevador', terraza: 'Terraza', piscina: 'Piscina',
   garaje: 'Garaje', aire_acondicionado: 'Aire acondicionado', acepta_mascotas: 'Acepta mascotas',
 };
 
