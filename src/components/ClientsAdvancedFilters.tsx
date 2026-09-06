@@ -69,7 +69,7 @@ const SOURCE_LABELS: Record<string, string> = {
 const PROP_TYPES = ['piso','casa','local','terreno','parking'];
 const EXTRAS = ['ascensor','elevador','terraza','piscina','garaje','aire_acondicionado','acepta_mascotas'];
 const EXTRA_LABELS: Record<string,string> = {
-  ascensor: 'Ascensor', elevador: 'Elevador', terraza: 'Terraza', piscina: 'Piscina',
+  ascensor: 'Ascensor', elevador: 'Plataforma Elevadora', terraza: 'Terraza', piscina: 'Piscina',
   garaje: 'Garaje', aire_acondicionado: 'Aire acondicionado', acepta_mascotas: 'Acepta mascotas',
 };
 
