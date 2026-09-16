@@ -14,6 +14,10 @@ export const ZONE_COLUMNS = [
   { key: "contactos", label: "Contactos", type: "number" as const },
   { key: "noticias", label: "Noticias", type: "number" as const },
   { key: "av", label: "AV", type: "number" as const },
+  { key: "aa", label: "AA", type: "number" as const },
+  { key: "cv", label: "CV", type: "number" as const },
+  { key: "ca", label: "CA", type: "number" as const },
+  { key: "ne", label: "NE", type: "number" as const },
 ] as const;
 export const ZONE_ROW_COUNT = 6;
 
@@ -31,6 +35,10 @@ export const MARKETING_COLUMNS = [
   { key: "pedidos", label: "Pedidos" },
   { key: "noticias", label: "Noticias" },
   { key: "av", label: "AV" },
+  { key: "aa", label: "AA" },
+  { key: "cv", label: "CV" },
+  { key: "ca", label: "CA" },
+  { key: "ne", label: "NE" },
 ] as const;
 
 export const CALLS_SOURCES = [
@@ -42,6 +50,10 @@ export const CALLS_COLUMNS = [
   { key: "llamadas", label: "Llamadas" },
   { key: "contactadas", label: "Contactadas" },
   { key: "av", label: "AV" },
+  { key: "aa", label: "AA" },
+  { key: "cv", label: "CV" },
+  { key: "ca", label: "CA" },
+  { key: "ne", label: "NE" },
 ] as const;
 
 // ---------- Types ----------
@@ -52,6 +64,10 @@ export interface ZoneRow {
   contactos: number;
   noticias: number;
   av: number;
+  aa: number;
+  cv: number;
+  ca: number;
+  ne: number;
 }
 export interface MarketingRow {
   source: string;
@@ -60,12 +76,20 @@ export interface MarketingRow {
   pedidos: number;
   noticias: number;
   av: number;
+  aa: number;
+  cv: number;
+  ca: number;
+  ne: number;
 }
 export interface CallsRow {
   source: string;
   llamadas: number;
   contactadas: number;
   av: number;
+  aa: number;
+  cv: number;
+  ca: number;
+  ne: number;
 }
 export interface AdvisorSheet {
   zone_rows: ZoneRow[];
@@ -75,13 +99,18 @@ export interface AdvisorSheet {
 
 export const emptyZoneRow = (): ZoneRow => ({
   direccion: "", hora: "", puertas: 0, contactos: 0, noticias: 0, av: 0,
+  aa: 0, cv: 0, ca: 0, ne: 0,
 });
 export const emptyMarketingRows = (): MarketingRow[] =>
   MARKETING_SOURCES.map((s) => ({
     source: s.value, publicaciones: 0, contactos: 0, pedidos: 0, noticias: 0, av: 0,
+    aa: 0, cv: 0, ca: 0, ne: 0,
   }));
 export const emptyCallsRows = (): CallsRow[] =>
-  CALLS_SOURCES.map((s) => ({ source: s.value, llamadas: 0, contactadas: 0, av: 0 }));
+  CALLS_SOURCES.map((s) => ({
+    source: s.value, llamadas: 0, contactadas: 0, av: 0,
+    aa: 0, cv: 0, ca: 0, ne: 0,
+  }));
 
 export const emptyAdvisorSheet = (): AdvisorSheet => ({
   zone_rows: Array.from({ length: ZONE_ROW_COUNT }, emptyZoneRow),
@@ -102,14 +131,14 @@ function normalizeSheet(data: any): AdvisorSheet {
     if (r?.source) mktMap.set(r.source, { ...emptyMarketingRows()[0], ...r });
   });
   const marketing_rows = MARKETING_SOURCES.map(
-    (s) => mktMap.get(s.value) ?? { source: s.value, publicaciones: 0, contactos: 0, pedidos: 0, noticias: 0, av: 0 }
+    (s) => mktMap.get(s.value) ?? { source: s.value, publicaciones: 0, contactos: 0, pedidos: 0, noticias: 0, av: 0, aa: 0, cv: 0, ca: 0, ne: 0 }
   );
   const callsMap = new Map<string, CallsRow>();
   (Array.isArray(data.calls_rows) ? data.calls_rows : []).forEach((r: any) => {
     if (r?.source) callsMap.set(r.source, { ...emptyCallsRows()[0], ...r });
   });
   const calls_rows = CALLS_SOURCES.map(
-    (s) => callsMap.get(s.value) ?? { source: s.value, llamadas: 0, contactadas: 0, av: 0 }
+    (s) => callsMap.get(s.value) ?? { source: s.value, llamadas: 0, contactadas: 0, av: 0, aa: 0, cv: 0, ca: 0, ne: 0 }
   );
   return { zone_rows, marketing_rows, calls_rows };
 }
@@ -171,7 +200,7 @@ export function useAdvisorRange(from: string, to: string, userId?: ScopeUserId) 
 export function aggregateMarketing(sheets: AdvisorSheet[]): MarketingRow[] {
   const acc = new Map<string, MarketingRow>();
   MARKETING_SOURCES.forEach((s) =>
-    acc.set(s.value, { source: s.value, publicaciones: 0, contactos: 0, pedidos: 0, noticias: 0, av: 0 })
+    acc.set(s.value, { source: s.value, publicaciones: 0, contactos: 0, pedidos: 0, noticias: 0, av: 0, aa: 0, cv: 0, ca: 0, ne: 0 })
   );
   sheets.forEach((s) => {
     s.marketing_rows.forEach((r) => {
@@ -182,6 +211,10 @@ export function aggregateMarketing(sheets: AdvisorSheet[]): MarketingRow[] {
       cur.pedidos += Number(r.pedidos || 0);
       cur.noticias += Number(r.noticias || 0);
       cur.av += Number(r.av || 0);
+      cur.aa += Number(r.aa || 0);
+      cur.cv += Number(r.cv || 0);
+      cur.ca += Number(r.ca || 0);
+      cur.ne += Number(r.ne || 0);
     });
   });
   return Array.from(acc.values());
@@ -189,7 +222,7 @@ export function aggregateMarketing(sheets: AdvisorSheet[]): MarketingRow[] {
 
 export function aggregateCalls(sheets: AdvisorSheet[]): CallsRow[] {
   const acc = new Map<string, CallsRow>();
-  CALLS_SOURCES.forEach((s) => acc.set(s.value, { source: s.value, llamadas: 0, contactadas: 0, av: 0 }));
+  CALLS_SOURCES.forEach((s) => acc.set(s.value, { source: s.value, llamadas: 0, contactadas: 0, av: 0, aa: 0, cv: 0, ca: 0, ne: 0 }));
   sheets.forEach((s) => {
     s.calls_rows.forEach((r) => {
       const cur = acc.get(r.source);
@@ -197,19 +230,27 @@ export function aggregateCalls(sheets: AdvisorSheet[]): CallsRow[] {
       cur.llamadas += Number(r.llamadas || 0);
       cur.contactadas += Number(r.contactadas || 0);
       cur.av += Number(r.av || 0);
+      cur.aa += Number(r.aa || 0);
+      cur.cv += Number(r.cv || 0);
+      cur.ca += Number(r.ca || 0);
+      cur.ne += Number(r.ne || 0);
     });
   });
   return Array.from(acc.values());
 }
 
 export function aggregateZoneTotals(sheets: AdvisorSheet[]) {
-  const t = { puertas: 0, contactos: 0, noticias: 0, av: 0 };
+  const t = { puertas: 0, contactos: 0, noticias: 0, av: 0, aa: 0, cv: 0, ca: 0, ne: 0 };
   sheets.forEach((s) => {
     s.zone_rows.forEach((r) => {
       t.puertas += Number(r.puertas || 0);
       t.contactos += Number(r.contactos || 0);
       t.noticias += Number(r.noticias || 0);
       t.av += Number(r.av || 0);
+      t.aa += Number(r.aa || 0);
+      t.cv += Number(r.cv || 0);
+      t.ca += Number(r.ca || 0);
+      t.ne += Number(r.ne || 0);
     });
   });
   return t;
