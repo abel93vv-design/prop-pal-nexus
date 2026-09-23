@@ -16,7 +16,15 @@ import { useZoneSheets, emptyZoneRow, ZoneSheet as ZoneSheetType, ZoneSheetRow }
 import { useData } from "@/context/DataContext";
 import { useUserRole } from "@/hooks/useUserRole";
 
-const MONTH_NAMES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+const DWELLING_STATUSES = [
+  { value: "ocupado", label: "Ocupado" },
+  { value: "vacio", label: "Vacío" },
+  { value: "alquilado", label: "Alquilado" },
+  { value: "en_venta", label: "En venta" },
+  { value: "vacacional", label: "Vacacional" },
+] as const;
+
+const MONTH_NAMES =  ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
 const formatSheetLabel = (s: ZoneSheetType) => {
   const d = new Date(s.sheet_date + "T00:00:00");
@@ -372,6 +380,7 @@ const ZoneSheetPage = () => {
                       <TableHead className="w-24">Piso</TableHead>
                       <TableHead className="w-48">Nombre</TableHead>
                       <TableHead className="w-28">P / M</TableHead>
+                      <TableHead className="w-36">Estado</TableHead>
                       <TableHead>Comentario</TableHead>
                       <TableHead className="w-36">Teléfono</TableHead>
                       <TableHead className="w-40 text-right">Noticia</TableHead>
