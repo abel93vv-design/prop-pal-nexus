@@ -134,6 +134,24 @@ export function useZoneSheets(viewUserId?: string) {
   return { sheets, loading: isLoading, createSheet, updateSheet, deleteSheet };
 }
 
+export function useAllZoneSheets(enabled: boolean) {
+  const { tenantId } = useTenant();
+  return useQuery({
+    queryKey: ["zone_sheets", tenantId, "all"],
+    enabled: enabled && !!tenantId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("zone_sheets")
+        .select("*")
+        .eq("tenant_id", tenantId!)
+        .order("sheet_date", { ascending: false })
+        .limit(1000);
+      if (error) throw error;
+      return (data || []).map((s: any) => ({ ...s, rows: (s.rows || []) as ZoneSheetRow[] })) as ZoneSheet[];
+    },
+  });
+}
+
 export function useTenantZoneUsers(enabled: boolean) {
   const { tenantId } = useTenant();
   return useQuery({
