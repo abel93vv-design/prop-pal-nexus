@@ -89,9 +89,11 @@ const ZoneSheetPage = () => {
         community: draft.community,
         president: draft.president,
         property_type: draft.property_type,
-        has_use: draft.has_use,
+        is_vpo: draft.is_vpo,
         has_garage: draft.has_garage,
         has_elevator: draft.has_elevator,
+        has_accessible_access: draft.has_accessible_access,
+        building_year: draft.building_year,
       });
       setActiveId(created.id);
       setDraft(created);
