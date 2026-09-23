@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { CalendarIcon, Download, FileSpreadsheet } from "lucide-react";
+import { CalendarIcon, Download, FileSpreadsheet, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
@@ -28,6 +28,7 @@ interface Props {
   rangeLabel: string;
   onExportCsv: () => void;
   onExportExcel: () => void;
+  onExportPdf: () => void;
 }
 
 const anchorLabelMap: Record<string, string> = {
@@ -53,6 +54,7 @@ const StatsFilters = ({
   rangeLabel,
   onExportCsv,
   onExportExcel,
+  onExportPdf,
 }: Props) => {
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 6 }, (_, i) => currentYear - i);
@@ -138,6 +140,9 @@ const StatsFilters = ({
           <div className="flex gap-2 ml-auto">
             <Button variant="outline" size="sm" onClick={onExportCsv}>
               <Download className="w-4 h-4 mr-1" /> CSV
+            </Button>
+            <Button variant="outline" size="sm" onClick={onExportPdf}>
+              <FileText className="w-4 h-4 mr-1" /> PDF
             </Button>
             <Button size="sm" onClick={onExportExcel}>
               <FileSpreadsheet className="w-4 h-4 mr-1" /> Excel
