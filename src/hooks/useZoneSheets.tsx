@@ -30,9 +30,11 @@ export interface ZoneSheet {
   community: string | null;
   president: string | null;
   property_type: string | null;
-  has_use: boolean;
+  is_vpo: boolean;
   has_garage: boolean;
   has_elevator: boolean;
+  has_accessible_access: boolean;
+  building_year: number | null;
   rows: ZoneSheetRow[];
   created_at: string;
   updated_at: string;
