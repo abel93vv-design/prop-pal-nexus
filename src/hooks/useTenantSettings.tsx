@@ -44,7 +44,7 @@ export function useTenantSettings() {
   const { tenantId } = useTenant();
   const qc = useQueryClient();
 
-  const { data: settings = [], isLoading } = useQuery({
+  const { data: settings = [], isLoading, isFetched } = useQuery({
     queryKey: ["tenant_settings", tenantId],
     enabled: !!tenantId,
     queryFn: async () => {
@@ -94,5 +94,7 @@ export function useTenantSettings() {
 
   const getBool = (key: string) => isTrue(settings.find((s) => s.key === key)?.value);
 
-  return { settings, loading: isLoading, getBool, upsertSetting, deleteSetting };
+  const loading = isLoading || !tenantId || !isFetched;
+
+  return { settings, loading, getBool, upsertSetting, deleteSetting };
 }
