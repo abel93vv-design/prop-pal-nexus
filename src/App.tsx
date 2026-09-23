@@ -33,6 +33,7 @@ import ControlLeads from "./pages/ControlLeads";
 import Trust from "./pages/Trust";
 import FeatureConfigs from "./pages/FeatureConfigs";
 import ZoneSheetPage from "./pages/ZoneSheet";
+import StatisticsPage from "./pages/Statistics";
 
 const queryClient = new QueryClient();
 
@@ -96,6 +97,7 @@ const AppRoutes = () => (
     <Route path="/control-leads" element={<ProtectedRoute><ControlLeads /></ProtectedRoute>} />
     <Route path="/control-leads/:subSection" element={<ProtectedRoute><ControlLeads /></ProtectedRoute>} />
     <Route path="/hoja-zona" element={<ProtectedRoute><ZoneSheetPage /></ProtectedRoute>} />
+    <Route path="/estadisticas" element={<ProtectedRoute><StatisticsPage /></ProtectedRoute>} />
 
     <Route path="/tenants" element={<ProtectedRoute><Tenants /></ProtectedRoute>} />
     <Route path="/configuraciones" element={<ProtectedRoute><FeatureConfigs /></ProtectedRoute>} />

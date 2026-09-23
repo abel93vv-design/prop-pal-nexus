@@ -1,4 +1,4 @@
-import { Building2, Users, ClipboardList, LayoutDashboard, UserCog, Landmark, Settings, ShieldCheck, Kanban, Target, FileSignature, Newspaper, KeyRound, Crown, LineChart, Settings2, NotebookPen } from "lucide-react";
+import { Building2, Users, ClipboardList, LayoutDashboard, UserCog, Landmark, Settings, ShieldCheck, Kanban, Target, FileSignature, Newspaper, KeyRound, Crown, LineChart, Settings2, NotebookPen, BarChart3 } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useTenantSettings } from "@/hooks/useTenantSettings";
 import { NavLink } from "@/components/NavLink";
@@ -50,9 +50,15 @@ export function AppSidebar() {
   const { isAdmin, isSuperAdmin, can, loading, role } = useUserRole();
   const { getBool } = useTenantSettings();
   const isAsesor = role === "asesor" && !isAdmin && !isSuperAdmin;
-  const withZoneSheet = getBool("hoja_zona")
-    ? [...mainItems, { title: "Hoja de zona", url: "/hoja-zona", icon: NotebookPen, module: null }]
-    : mainItems;
+  const extraItems: typeof mainItems = [
+    ...(getBool("hoja_zona")
+      ? [{ title: "Hoja de zona", url: "/hoja-zona", icon: NotebookPen, module: null }]
+      : []),
+    ...(isAdmin || isSuperAdmin
+      ? [{ title: "Estadísticas", url: "/estadisticas", icon: BarChart3, module: null }]
+      : []),
+  ];
+  const withZoneSheet = [...mainItems, ...extraItems];
   const baseMain = loading
     ? withZoneSheet.filter((i) => !i.module)
     : withZoneSheet.filter((i) => !i.module || can(i.module, "view") || isAdmin);
