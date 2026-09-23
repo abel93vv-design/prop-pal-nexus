@@ -292,9 +292,28 @@ const ZoneSheetPage = () => {
           </div>
         </div>
 
-        {loading ? (
-          <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
-        ) : !draft ? (
+        {isAdmin ? (
+          <Tabs defaultValue="hojas">
+            <TabsList>
+              <TabsTrigger value="hojas">Mis hojas</TabsTrigger>
+              <TabsTrigger value="stats" className="flex items-center gap-1.5">
+                <BarChart3 className="w-4 h-4" /> Estadísticas
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="hojas" className="mt-6">{sheetsContent()}</TabsContent>
+            <TabsContent value="stats" className="mt-6"><ZoneSheetStats /></TabsContent>
+          </Tabs>
+        ) : (
+          sheetsContent()
+        )}
+      </div>
+    </Layout>
+  );
+};
+
+export default ZoneSheetPage;
+
+function _unused() { return null; }
           <Card>
             <CardContent className="py-12 text-center space-y-3">
               <p className="text-sm text-muted-foreground">
