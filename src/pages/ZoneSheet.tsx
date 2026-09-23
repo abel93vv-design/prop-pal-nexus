@@ -409,6 +409,15 @@ const ZoneSheetPage = () => {
                           </Select>
                         </TableCell>
                         <TableCell>
+                          <Select value={r.status || "none"} onValueChange={(v) => updateRow(r.id, { status: v === "none" ? null : (v as ZoneSheetRow["status"]) })}>
+                            <SelectTrigger className="h-8"><SelectValue placeholder="—" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">—</SelectItem>
+                              {DWELLING_STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell>
                           <Input className="h-8" value={r.comment} onChange={(e) => updateRow(r.id, { comment: e.target.value }, false)} onBlur={() => persist({ rows: draft.rows } as any)} />
                         </TableCell>
                         <TableCell>
