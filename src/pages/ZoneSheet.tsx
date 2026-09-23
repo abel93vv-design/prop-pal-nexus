@@ -496,6 +496,11 @@ const ZoneSheetPage = () => {
             </Card>
           </>
         )}
+          </TabsContent>
+          {isAdmin && (
+            <TabsContent value="stats" className="mt-6"><ZoneSheetStats /></TabsContent>
+          )}
+        </Tabs>
       </div>
     </Layout>
   );
