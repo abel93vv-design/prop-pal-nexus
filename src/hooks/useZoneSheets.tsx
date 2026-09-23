@@ -93,9 +93,11 @@ export function useZoneSheets() {
           community: input.community ?? null,
           president: input.president ?? null,
           property_type: input.property_type ?? null,
-          has_use: input.has_use ?? false,
+          is_vpo: input.is_vpo ?? false,
           has_garage: input.has_garage ?? false,
           has_elevator: input.has_elevator ?? false,
+          has_accessible_access: input.has_accessible_access ?? false,
+          building_year: input.building_year ?? null,
           rows: (input.rows ?? Array.from({ length: 8 }, emptyZoneRow)) as any,
         })
         .select()
