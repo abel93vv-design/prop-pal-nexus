@@ -325,10 +325,7 @@ const StatisticsPage = () => {
     { label: "Puertas visitadas", value: zoneTotals.doors, icon: DoorOpen },
     { label: "Contactados (P+M)", value: zoneTotals.p + zoneTotals.m, icon: PhoneCall },
     { label: "Noticias", value: zoneTotals.news, icon: Newspaper },
-    { label: "Pedidos", value: leadTotals.total_pedidos ?? 0, icon: BarChart3 },
-    { label: "Pedidos llamados", value: leadTotals.pedidos_llamados ?? 0, icon: PhoneCall },
-    { label: "Contactados leads", value: leadTotals.pedidos_llamados_contactados ?? 0, icon: PhoneCall },
-    { label: "NE firmadas", value: leadTotals.ne ?? 0, icon: ClipboardList },
+    { label: "Leads", value: leadTotals.total_pedidos ?? 0, icon: BarChart3 },
   ];
 
   const loading = roleLoading || zoneLoading || leadsLoading;
@@ -367,7 +364,7 @@ const StatisticsPage = () => {
           <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
         ) : (
           <>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
               {kpis.map((k) => (
                 <Card key={k.label}>
                   <CardContent className="pt-5 flex items-center gap-3">
