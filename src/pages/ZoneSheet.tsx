@@ -242,7 +242,7 @@ const ZoneSheetPage = () => {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {canSeeAll && (
-              <Select value={viewUserId} onValueChange={(v) => { setViewUserId(v); setActiveId(null); setDraft(null); setFilterYear("all"); setFilterMonth("all"); }}>
+              <Select disabled={readOnly} value={viewUserId} onValueChange={(v) => { setViewUserId(v); setActiveId(null); setDraft(null); setFilterYear("all"); setFilterMonth("all"); }}>
                 <SelectTrigger className="w-[200px]"><SelectValue placeholder="Asesor" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="me">Mis hojas</SelectItem>
@@ -256,21 +256,21 @@ const ZoneSheetPage = () => {
             )}
             {sheets.length > 0 && (
               <>
-                <Select value={filterYear} onValueChange={(v) => { setFilterYear(v); setFilterMonth("all"); }}>
+                <Select disabled={readOnly} value={filterYear} onValueChange={(v) => { setFilterYear(v); setFilterMonth("all"); }}>
                   <SelectTrigger className="w-[120px]"><SelectValue placeholder="Año" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todos los años</SelectItem>
                     {years.map((y) => <SelectItem key={y} value={y}>{y}</SelectItem>)}
                   </SelectContent>
                 </Select>
-                <Select value={filterMonth} onValueChange={setFilterMonth}>
+                <Select disabled={readOnly} value={filterMonth} onValueChange={setFilterMonth}>
                   <SelectTrigger className="w-[140px]"><SelectValue placeholder="Mes" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todos los meses</SelectItem>
                     {months.map((m) => <SelectItem key={m} value={m}>{MONTH_NAMES[Number(m) - 1]}</SelectItem>)}
                   </SelectContent>
                 </Select>
-                <Select value={active?.id || ""} onValueChange={(v) => setActiveId(v)}>
+                <Select disabled={readOnly} value={active?.id || ""} onValueChange={(v) => setActiveId(v)}>
                   <SelectTrigger className="w-[320px]">
                     <SelectValue placeholder="Día y hora" />
                   </SelectTrigger>
@@ -321,43 +321,43 @@ const ZoneSheetPage = () => {
               <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="space-y-1.5">
                   <Label className="text-xs">Agente</Label>
-                  <Input value={draft.agent_name || ""} onChange={(e) => patch({ agent_name: e.target.value })} onBlur={() => persist({ agent_name: draft.agent_name })} />
+                  <Input disabled={readOnly} value={draft.agent_name || ""} onChange={(e) => patch({ agent_name: e.target.value })} onBlur={() => persist({ agent_name: draft.agent_name })} />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Fecha</Label>
-                  <Input type="date" value={draft.sheet_date} onChange={(e) => patch({ sheet_date: e.target.value })} onBlur={() => persist({ sheet_date: draft.sheet_date })} />
+                  <Input disabled={readOnly} type="date" value={draft.sheet_date} onChange={(e) => patch({ sheet_date: e.target.value })} onBlur={() => persist({ sheet_date: draft.sheet_date })} />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Hora de entrada</Label>
-                  <Input type="time" value={(draft.sheet_time || "").slice(0, 5)} onChange={(e) => patch({ sheet_time: `${e.target.value}:00` })} onBlur={() => persist({ sheet_time: draft.sheet_time })} />
+                  <Input disabled={readOnly} type="time" value={(draft.sheet_time || "").slice(0, 5)} onChange={(e) => patch({ sheet_time: `${e.target.value}:00` })} onBlur={() => persist({ sheet_time: draft.sheet_time })} />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Hora de salida</Label>
-                  <Input type="time" value={(draft.exit_time || "").slice(0, 5)} onChange={(e) => patch({ exit_time: e.target.value ? `${e.target.value}:00` : null })} onBlur={() => persist({ exit_time: draft.exit_time })} />
+                  <Input disabled={readOnly} type="time" value={(draft.exit_time || "").slice(0, 5)} onChange={(e) => patch({ exit_time: e.target.value ? `${e.target.value}:00` : null })} onBlur={() => persist({ exit_time: draft.exit_time })} />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Calle</Label>
-                  <Input value={draft.street || ""} onChange={(e) => patch({ street: e.target.value })} onBlur={() => persist({ street: draft.street })} />
+                  <Input disabled={readOnly} value={draft.street || ""} onChange={(e) => patch({ street: e.target.value })} onBlur={() => persist({ street: draft.street })} />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Portal</Label>
-                  <Input value={draft.portal || ""} onChange={(e) => patch({ portal: e.target.value })} onBlur={() => persist({ portal: draft.portal })} />
+                  <Input disabled={readOnly} value={draft.portal || ""} onChange={(e) => patch({ portal: e.target.value })} onBlur={() => persist({ portal: draft.portal })} />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Administrador</Label>
-                  <Input value={draft.administrator || ""} onChange={(e) => patch({ administrator: e.target.value })} onBlur={() => persist({ administrator: draft.administrator })} />
+                  <Input disabled={readOnly} value={draft.administrator || ""} onChange={(e) => patch({ administrator: e.target.value })} onBlur={() => persist({ administrator: draft.administrator })} />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Comunidad</Label>
-                  <Input value={draft.community || ""} onChange={(e) => patch({ community: e.target.value })} onBlur={() => persist({ community: draft.community })} />
+                  <Input disabled={readOnly} value={draft.community || ""} onChange={(e) => patch({ community: e.target.value })} onBlur={() => persist({ community: draft.community })} />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Presidente</Label>
-                  <Input value={draft.president || ""} onChange={(e) => patch({ president: e.target.value })} onBlur={() => persist({ president: draft.president })} />
+                  <Input disabled={readOnly} value={draft.president || ""} onChange={(e) => patch({ president: e.target.value })} onBlur={() => persist({ president: draft.president })} />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Tipo de piso</Label>
-                  <Select value={draft.property_type || "none"} onValueChange={(v) => { const val = v === "none" ? null : v; patch({ property_type: val }); persist({ property_type: val }); }}>
+                  <Select disabled={readOnly} value={draft.property_type || "none"} onValueChange={(v) => { const val = v === "none" ? null : v; patch({ property_type: val }); persist({ property_type: val }); }}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">Sin especificar</SelectItem>
@@ -385,7 +385,7 @@ const ZoneSheetPage = () => {
                     ["has_accessible_access", "Acceso minusválido"],
                   ] as const).map(([key, label]) => (
                     <label key={key} className="flex items-center gap-2 text-sm">
-                      <Checkbox
+                      <Checkbox disabled={readOnly} disabled={readOnly}
                         checked={draft[key]}
                         onCheckedChange={(c) => { const val = !!c; patch({ [key]: val } as any); persist({ [key]: val } as any); }}
                       />
@@ -421,16 +421,16 @@ const ZoneSheetPage = () => {
                     {draft.rows.map((r) => (
                       <TableRow key={r.id} className={rowClass(r)}>
                         <TableCell className="text-center">
-                          <Checkbox checked={r.is_news} onCheckedChange={(c) => updateRow(r.id, { is_news: !!c })} />
+                          <Checkbox disabled={readOnly} checked={r.is_news} onCheckedChange={(c) => updateRow(r.id, { is_news: !!c })} />
                         </TableCell>
                         <TableCell>
-                          <Input className="h-8" value={r.floor} onChange={(e) => updateRow(r.id, { floor: e.target.value }, false)} onBlur={() => persist({ rows: draft.rows } as any)} />
+                          <Input disabled={readOnly} className="h-8" value={r.floor} onChange={(e) => updateRow(r.id, { floor: e.target.value }, false)} onBlur={() => persist({ rows: draft.rows } as any)} />
                         </TableCell>
                         <TableCell>
-                          <Input className="h-8" value={r.name} onChange={(e) => updateRow(r.id, { name: e.target.value }, false)} onBlur={() => persist({ rows: draft.rows } as any)} />
+                          <Input disabled={readOnly} className="h-8" value={r.name} onChange={(e) => updateRow(r.id, { name: e.target.value }, false)} onBlur={() => persist({ rows: draft.rows } as any)} />
                         </TableCell>
                         <TableCell>
-                          <Select value={r.contact_mode || "none"} onValueChange={(v) => updateRow(r.id, { contact_mode: v === "none" ? null : (v as "P" | "M") })}>
+                          <Select disabled={readOnly} value={r.contact_mode || "none"} onValueChange={(v) => updateRow(r.id, { contact_mode: v === "none" ? null : (v as "P" | "M") })}>
                             <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
                             <SelectContent>
                               <SelectItem value="none">—</SelectItem>
@@ -440,7 +440,7 @@ const ZoneSheetPage = () => {
                           </Select>
                         </TableCell>
                         <TableCell>
-                          <Select value={r.status || "none"} onValueChange={(v) => updateRow(r.id, { status: v === "none" ? null : (v as ZoneSheetRow["status"]) })}>
+                          <Select disabled={readOnly} value={r.status || "none"} onValueChange={(v) => updateRow(r.id, { status: v === "none" ? null : (v as ZoneSheetRow["status"]) })}>
                             <SelectTrigger className="h-8"><SelectValue placeholder="—" /></SelectTrigger>
                             <SelectContent>
                               <SelectItem value="none">—</SelectItem>
@@ -449,10 +449,10 @@ const ZoneSheetPage = () => {
                           </Select>
                         </TableCell>
                         <TableCell>
-                          <Input className="h-8" value={r.comment} onChange={(e) => updateRow(r.id, { comment: e.target.value }, false)} onBlur={() => persist({ rows: draft.rows } as any)} />
+                          <Input disabled={readOnly} className="h-8" value={r.comment} onChange={(e) => updateRow(r.id, { comment: e.target.value }, false)} onBlur={() => persist({ rows: draft.rows } as any)} />
                         </TableCell>
                         <TableCell>
-                          <Input className="h-8" value={r.phone} onChange={(e) => updateRow(r.id, { phone: e.target.value }, false)} onBlur={() => persist({ rows: draft.rows } as any)} />
+                          <Input disabled={readOnly} className="h-8" value={r.phone} onChange={(e) => updateRow(r.id, { phone: e.target.value }, false)} onBlur={() => persist({ rows: draft.rows } as any)} />
                         </TableCell>
                         <TableCell className="text-right whitespace-nowrap">
                           {r.is_news && (
