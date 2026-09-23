@@ -29,7 +29,7 @@ export const accumulateZone = (agg: ZoneAgg, sheet: ZoneSheet) => {
   }
 };
 
-export const contactRate = (a: ZoneAgg) => (a.doors > 0 ? Math.round(((a.p + a.m) / a.doors) * 100) : 0);
+export const contactRate = (a: ZoneAgg) => (a.doors > 0 ? Math.round((a.m / a.doors) * 100) : 0);
 
 export const sheetPlace = (s: ZoneSheet) =>
   [s.street, s.portal ? `portal ${s.portal}` : null].filter(Boolean).join(", ") || "Sin calle";
