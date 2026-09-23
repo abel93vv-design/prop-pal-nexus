@@ -4,6 +4,7 @@ import { useTenant } from "@/context/TenantContext";
 import { useAuth } from "@/hooks/useAuth";
 
 export type ContactMode = "P" | "M" | null;
+export type DwellingStatus = "ocupado" | "vacio" | "alquilado" | "en_venta" | "vacacional" | null;
 
 export interface ZoneSheetRow {
   id: string;
@@ -11,6 +12,7 @@ export interface ZoneSheetRow {
   floor: string;
   name: string;
   contact_mode: ContactMode;
+  status: DwellingStatus;
   comment: string;
   phone: string;
   property_id: string | null;
@@ -46,6 +48,7 @@ export const emptyZoneRow = (): ZoneSheetRow => ({
   floor: "",
   name: "",
   contact_mode: null,
+  status: null,
   comment: "",
   phone: "",
   property_id: null,
