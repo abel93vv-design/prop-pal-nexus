@@ -191,18 +191,34 @@ const ZoneSheetPage = () => {
             </h1>
             <p className="text-sm text-muted-foreground mt-1">Registra los vecinos de cada portal y marca las noticias.</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {sheets.length > 0 && (
-              <Select value={active?.id || ""} onValueChange={(v) => setActiveId(v)}>
-                <SelectTrigger className="w-[320px]">
-                  <SelectValue placeholder="Elige una hoja" />
-                </SelectTrigger>
-                <SelectContent>
-                  {sheets.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>{formatSheetLabel(s)}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <>
+                <Select value={filterYear} onValueChange={(v) => { setFilterYear(v); setFilterMonth("all"); }}>
+                  <SelectTrigger className="w-[120px]"><SelectValue placeholder="Año" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos los años</SelectItem>
+                    {years.map((y) => <SelectItem key={y} value={y}>{y}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <Select value={filterMonth} onValueChange={setFilterMonth}>
+                  <SelectTrigger className="w-[140px]"><SelectValue placeholder="Mes" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos los meses</SelectItem>
+                    {months.map((m) => <SelectItem key={m} value={m}>{MONTH_NAMES[Number(m) - 1]}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <Select value={active?.id || ""} onValueChange={(v) => setActiveId(v)}>
+                  <SelectTrigger className="w-[320px]">
+                    <SelectValue placeholder="Día y hora" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {filteredSheets.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>{formatSheetLabel(s)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </>
             )}
             <Button size="sm" onClick={handleNewSheet} disabled={createSheet.isPending}>
               <Plus className="w-4 h-4 mr-1" /> Nueva hoja
