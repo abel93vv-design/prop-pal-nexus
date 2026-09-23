@@ -40,11 +40,18 @@ const formatSheetLabel = (s: ZoneSheetType) => {
 const ZoneSheetPage = () => {
   const { getBool, loading: settingsLoading } = useTenantSettings();
   const enabled = getBool("hoja_zona");
-  const { sheets, loading, createSheet, updateSheet, deleteSheet } = useZoneSheets();
   const { addProperty } = useData();
-  const { can } = useUserRole();
+  const { can, role, isAdmin } = useUserRole();
+  const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  const canSeeAll = isAdmin || role === "socio" || role === "coordinadora";
+  const [viewUserId, setViewUserId] = useState<string>("me");
+  const { data: tenantUsers = [] } = useTenantZoneUsers(canSeeAll);
+  const targetUserId = viewUserId === "me" ? undefined : viewUserId;
+  const readOnly = !!targetUserId && targetUserId !== user?.id;
+  const { sheets, loading, createSheet, updateSheet, deleteSheet } = useZoneSheets(targetUserId);
 
   const [activeId, setActiveId] = useState<string | null>(null);
   const [draft, setDraft] = useState<ZoneSheetType | null>(null);
