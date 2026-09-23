@@ -9,7 +9,9 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, Plus, Trash2, ClipboardList, Newspaper, ExternalLink } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ZoneSheetStats from "@/components/zonesheet/ZoneSheetStats";
+import { Loader2, Plus, Trash2, ClipboardList, Newspaper, ExternalLink, BarChart3 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useTenantSettings } from "@/hooks/useTenantSettings";
 import { useZoneSheets, useTenantZoneUsers, emptyZoneRow, ZoneSheet as ZoneSheetType, ZoneSheetRow } from "@/hooks/useZoneSheets";
@@ -290,6 +292,16 @@ const ZoneSheetPage = () => {
           </div>
         </div>
 
+        <Tabs defaultValue="hojas">
+          {isAdmin && (
+            <TabsList>
+              <TabsTrigger value="hojas">Mis hojas</TabsTrigger>
+              <TabsTrigger value="stats" className="flex items-center gap-1.5">
+                <BarChart3 className="w-4 h-4" /> Estadísticas
+              </TabsTrigger>
+            </TabsList>
+          )}
+          <TabsContent value="hojas" className={isAdmin ? "mt-6" : ""}>
         {loading ? (
           <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
         ) : !draft ? (
@@ -484,6 +496,11 @@ const ZoneSheetPage = () => {
             </Card>
           </>
         )}
+          </TabsContent>
+          {isAdmin && (
+            <TabsContent value="stats" className="mt-6"><ZoneSheetStats /></TabsContent>
+          )}
+        </Tabs>
       </div>
     </Layout>
   );
