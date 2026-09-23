@@ -241,6 +241,19 @@ const ZoneSheetPage = () => {
             <p className="text-sm text-muted-foreground mt-1">Registra los vecinos de cada portal y marca las noticias.</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            {canSeeAll && (
+              <Select value={viewUserId} onValueChange={(v) => { setViewUserId(v); setActiveId(null); setDraft(null); setFilterYear("all"); setFilterMonth("all"); }}>
+                <SelectTrigger className="w-[200px]"><SelectValue placeholder="Asesor" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="me">Mis hojas</SelectItem>
+                  {tenantUsers
+                    .filter((u) => u.user_id !== user?.id)
+                    .map((u) => (
+                      <SelectItem key={u.user_id} value={u.user_id}>{u.full_name || "Sin nombre"}</SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            )}
             {sheets.length > 0 && (
               <>
                 <Select value={filterYear} onValueChange={(v) => { setFilterYear(v); setFilterMonth("all"); }}>
