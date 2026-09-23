@@ -16,6 +16,8 @@ import { useZoneSheets, emptyZoneRow, ZoneSheet as ZoneSheetType, ZoneSheetRow }
 import { useData } from "@/context/DataContext";
 import { useUserRole } from "@/hooks/useUserRole";
 
+const MONTH_NAMES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+
 const formatSheetLabel = (s: ZoneSheetType) => {
   const d = new Date(s.sheet_date + "T00:00:00");
   const date = d.toLocaleDateString("es-ES", { weekday: "long", day: "2-digit", month: "short" });
