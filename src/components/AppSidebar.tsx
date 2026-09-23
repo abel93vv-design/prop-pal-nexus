@@ -1,5 +1,6 @@
-import { Building2, Users, ClipboardList, LayoutDashboard, UserCog, Landmark, Settings, ShieldCheck, Kanban, Target, FileSignature, Newspaper, KeyRound, Crown, LineChart, Settings2 } from "lucide-react";
+import { Building2, Users, ClipboardList, LayoutDashboard, UserCog, Landmark, Settings, ShieldCheck, Kanban, Target, FileSignature, Newspaper, KeyRound, Crown, LineChart, Settings2, NotebookPen } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useTenantSettings } from "@/hooks/useTenantSettings";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import logoIsotipo from "@/assets/logo-isotipo.png";
