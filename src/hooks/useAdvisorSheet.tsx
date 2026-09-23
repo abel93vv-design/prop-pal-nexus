@@ -13,6 +13,7 @@ export const ZONE_COLUMNS = [
   { key: "puertas", label: "Puertas", type: "number" as const },
   { key: "contactos", label: "Contactos", type: "number" as const },
   { key: "noticias", label: "Noticias", type: "number" as const },
+  { key: "leads", label: "Leads", type: "number" as const },
   { key: "av", label: "AV", type: "number" as const },
   { key: "aa", label: "AA", type: "number" as const },
   { key: "cv", label: "CV", type: "number" as const },
@@ -34,6 +35,7 @@ export const MARKETING_COLUMNS = [
   { key: "contactos", label: "Contactos" },
   { key: "pedidos", label: "Pedidos" },
   { key: "noticias", label: "Noticias" },
+  { key: "leads", label: "Leads" },
   { key: "av", label: "AV" },
   { key: "aa", label: "AA" },
   { key: "cv", label: "CV" },
@@ -63,6 +65,7 @@ export interface ZoneRow {
   puertas: number;
   contactos: number;
   noticias: number;
+  leads: number;
   av: number;
   aa: number;
   cv: number;
@@ -75,6 +78,7 @@ export interface MarketingRow {
   contactos: number;
   pedidos: number;
   noticias: number;
+  leads: number;
   av: number;
   aa: number;
   cv: number;
@@ -98,12 +102,12 @@ export interface AdvisorSheet {
 }
 
 export const emptyZoneRow = (): ZoneRow => ({
-  direccion: "", hora: "", puertas: 0, contactos: 0, noticias: 0, av: 0,
+  direccion: "", hora: "", puertas: 0, contactos: 0, noticias: 0, leads: 0, av: 0,
   aa: 0, cv: 0, ca: 0, ne: 0,
 });
 export const emptyMarketingRows = (): MarketingRow[] =>
   MARKETING_SOURCES.map((s) => ({
-    source: s.value, publicaciones: 0, contactos: 0, pedidos: 0, noticias: 0, av: 0,
+    source: s.value, publicaciones: 0, contactos: 0, pedidos: 0, noticias: 0, leads: 0, av: 0,
     aa: 0, cv: 0, ca: 0, ne: 0,
   }));
 export const emptyCallsRows = (): CallsRow[] =>
@@ -131,7 +135,7 @@ function normalizeSheet(data: any): AdvisorSheet {
     if (r?.source) mktMap.set(r.source, { ...emptyMarketingRows()[0], ...r });
   });
   const marketing_rows = MARKETING_SOURCES.map(
-    (s) => mktMap.get(s.value) ?? { source: s.value, publicaciones: 0, contactos: 0, pedidos: 0, noticias: 0, av: 0, aa: 0, cv: 0, ca: 0, ne: 0 }
+    (s) => mktMap.get(s.value) ?? { source: s.value, publicaciones: 0, contactos: 0, pedidos: 0, noticias: 0, leads: 0, av: 0, aa: 0, cv: 0, ca: 0, ne: 0 }
   );
   const callsMap = new Map<string, CallsRow>();
   (Array.isArray(data.calls_rows) ? data.calls_rows : []).forEach((r: any) => {
@@ -200,7 +204,7 @@ export function useAdvisorRange(from: string, to: string, userId?: ScopeUserId) 
 export function aggregateMarketing(sheets: AdvisorSheet[]): MarketingRow[] {
   const acc = new Map<string, MarketingRow>();
   MARKETING_SOURCES.forEach((s) =>
-    acc.set(s.value, { source: s.value, publicaciones: 0, contactos: 0, pedidos: 0, noticias: 0, av: 0, aa: 0, cv: 0, ca: 0, ne: 0 })
+    acc.set(s.value, { source: s.value, publicaciones: 0, contactos: 0, pedidos: 0, noticias: 0, leads: 0, av: 0, aa: 0, cv: 0, ca: 0, ne: 0 })
   );
   sheets.forEach((s) => {
     s.marketing_rows.forEach((r) => {
@@ -210,6 +214,7 @@ export function aggregateMarketing(sheets: AdvisorSheet[]): MarketingRow[] {
       cur.contactos += Number(r.contactos || 0);
       cur.pedidos += Number(r.pedidos || 0);
       cur.noticias += Number(r.noticias || 0);
+      cur.leads += Number(r.leads || 0);
       cur.av += Number(r.av || 0);
       cur.aa += Number(r.aa || 0);
       cur.cv += Number(r.cv || 0);
@@ -240,12 +245,13 @@ export function aggregateCalls(sheets: AdvisorSheet[]): CallsRow[] {
 }
 
 export function aggregateZoneTotals(sheets: AdvisorSheet[]) {
-  const t = { puertas: 0, contactos: 0, noticias: 0, av: 0, aa: 0, cv: 0, ca: 0, ne: 0 };
+  const t = { puertas: 0, contactos: 0, noticias: 0, leads: 0, av: 0, aa: 0, cv: 0, ca: 0, ne: 0 };
   sheets.forEach((s) => {
     s.zone_rows.forEach((r) => {
       t.puertas += Number(r.puertas || 0);
       t.contactos += Number(r.contactos || 0);
       t.noticias += Number(r.noticias || 0);
+      t.leads += Number(r.leads || 0);
       t.av += Number(r.av || 0);
       t.aa += Number(r.aa || 0);
       t.cv += Number(r.cv || 0);
