@@ -1847,6 +1847,7 @@ export type Database = {
           agent_name: string | null
           community: string | null
           created_at: string
+          exit_time: string | null
           has_elevator: boolean
           has_garage: boolean
           has_use: boolean
@@ -1867,6 +1868,7 @@ export type Database = {
           agent_name?: string | null
           community?: string | null
           created_at?: string
+          exit_time?: string | null
           has_elevator?: boolean
           has_garage?: boolean
           has_use?: boolean
@@ -1887,6 +1889,7 @@ export type Database = {
           agent_name?: string | null
           community?: string | null
           created_at?: string
+          exit_time?: string | null
           has_elevator?: boolean
           has_garage?: boolean
           has_use?: boolean

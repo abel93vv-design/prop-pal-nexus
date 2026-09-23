@@ -19,7 +19,9 @@ import { useUserRole } from "@/hooks/useUserRole";
 const formatSheetLabel = (s: ZoneSheetType) => {
   const d = new Date(s.sheet_date + "T00:00:00");
   const date = d.toLocaleDateString("es-ES", { weekday: "long", day: "2-digit", month: "short" });
-  const time = (s.sheet_time || "").slice(0, 5);
+  const entry = (s.sheet_time || "").slice(0, 5);
+  const exit = (s.exit_time || "").slice(0, 5);
+  const time = exit ? `${entry}–${exit}` : entry;
   const place = [s.street, s.portal ? `portal ${s.portal}` : null].filter(Boolean).join(", ");
   return `${date} ${time}${place ? ` · ${place}` : ""}`;
 };
@@ -237,8 +239,12 @@ const ZoneSheetPage = () => {
                   <Input type="date" value={draft.sheet_date} onChange={(e) => patch({ sheet_date: e.target.value })} onBlur={() => persist({ sheet_date: draft.sheet_date })} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs">Hora</Label>
+                  <Label className="text-xs">Hora de entrada</Label>
                   <Input type="time" value={(draft.sheet_time || "").slice(0, 5)} onChange={(e) => patch({ sheet_time: `${e.target.value}:00` })} onBlur={() => persist({ sheet_time: draft.sheet_time })} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Hora de salida</Label>
+                  <Input type="time" value={(draft.exit_time || "").slice(0, 5)} onChange={(e) => patch({ exit_time: e.target.value ? `${e.target.value}:00` : null })} onBlur={() => persist({ exit_time: draft.exit_time })} />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Calle</Label>
