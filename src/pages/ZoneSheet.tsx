@@ -38,8 +38,38 @@ const ZoneSheetPage = () => {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [draft, setDraft] = useState<ZoneSheetType | null>(null);
   const [creatingNews, setCreatingNews] = useState<string | null>(null);
+  const [filterYear, setFilterYear] = useState("all");
+  const [filterMonth, setFilterMonth] = useState("all");
 
-  const active = useMemo(() => sheets.find((s) => s.id === activeId) || sheets[0] || null, [sheets, activeId]);
+  const years = useMemo(
+    () => Array.from(new Set(sheets.map((s) => s.sheet_date.slice(0, 4)))).sort((a, b) => b.localeCompare(a)),
+    [sheets]
+  );
+  const months = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          sheets
+            .filter((s) => filterYear === "all" || s.sheet_date.slice(0, 4) === filterYear)
+            .map((s) => s.sheet_date.slice(5, 7))
+        )
+      ).sort((a, b) => Number(a) - Number(b)),
+    [sheets, filterYear]
+  );
+  const filteredSheets = useMemo(
+    () =>
+      sheets.filter(
+        (s) =>
+          (filterYear === "all" || s.sheet_date.slice(0, 4) === filterYear) &&
+          (filterMonth === "all" || s.sheet_date.slice(5, 7) === filterMonth)
+      ),
+    [sheets, filterYear, filterMonth]
+  );
+
+  const active = useMemo(
+    () => filteredSheets.find((s) => s.id === activeId) || filteredSheets[0] || null,
+    [filteredSheets, activeId]
+  );
 
   useEffect(() => {
     if (active && (!draft || draft.id !== active.id)) setDraft(active);
