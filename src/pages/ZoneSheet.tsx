@@ -399,7 +399,7 @@ const ZoneSheetPage = () => {
             <Card>
               <CardHeader className="pb-3 flex flex-row items-center justify-between">
                 <CardTitle className="text-base font-semibold">Vecinos</CardTitle>
-                <Button size="sm" variant="outline" onClick={() => setRows([...draft.rows, emptyZoneRow()])}>
+                <Button size="sm" variant="outline" disabled={readOnly} onClick={() => setRows([...draft.rows, emptyZoneRow()])}>
                   <Plus className="w-4 h-4 mr-1" /> Añadir fila
                 </Button>
               </CardHeader>
@@ -461,13 +461,13 @@ const ZoneSheetPage = () => {
                                 <ExternalLink className="w-3.5 h-3.5 mr-1" /> Ver noticia
                               </Button>
                             ) : (
-                              <Button size="sm" className="h-8" disabled={creatingNews === r.id} onClick={() => handleCreateNews(r)}>
+                              <Button size="sm" className="h-8" disabled={readOnly || creatingNews === r.id} onClick={() => handleCreateNews(r)}>
                                 {creatingNews === r.id ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Newspaper className="w-3.5 h-3.5 mr-1" />}
                                 Crear noticia
                               </Button>
                             )
                           )}
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive ml-1" onClick={() => setRows(draft.rows.filter((x) => x.id !== r.id))}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive ml-1" disabled={readOnly} onClick={() => setRows(draft.rows.filter((x) => x.id !== r.id))}>
                             <Trash2 className="w-3.5 h-3.5" />
                           </Button>
                         </TableCell>
