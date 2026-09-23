@@ -1845,13 +1845,15 @@ export type Database = {
         Row: {
           administrator: string | null
           agent_name: string | null
+          building_year: number | null
           community: string | null
           created_at: string
           exit_time: string | null
+          has_accessible_access: boolean
           has_elevator: boolean
           has_garage: boolean
-          has_use: boolean
           id: string
+          is_vpo: boolean
           portal: string | null
           president: string | null
           property_type: string | null
@@ -1866,13 +1868,15 @@ export type Database = {
         Insert: {
           administrator?: string | null
           agent_name?: string | null
+          building_year?: number | null
           community?: string | null
           created_at?: string
           exit_time?: string | null
+          has_accessible_access?: boolean
           has_elevator?: boolean
           has_garage?: boolean
-          has_use?: boolean
           id?: string
+          is_vpo?: boolean
           portal?: string | null
           president?: string | null
           property_type?: string | null
@@ -1887,13 +1891,15 @@ export type Database = {
         Update: {
           administrator?: string | null
           agent_name?: string | null
+          building_year?: number | null
           community?: string | null
           created_at?: string
           exit_time?: string | null
+          has_accessible_access?: boolean
           has_elevator?: boolean
           has_garage?: boolean
-          has_use?: boolean
           id?: string
+          is_vpo?: boolean
           portal?: string | null
           president?: string | null
           property_type?: string | null
