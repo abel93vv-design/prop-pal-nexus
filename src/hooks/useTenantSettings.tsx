@@ -48,13 +48,30 @@ export function useTenantSettings() {
     queryKey: ["tenant_settings", tenantId],
     enabled: !!tenantId,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("tenant_settings")
-        .select("*")
-        .eq("tenant_id", tenantId!)
-        .order("key");
-      if (error) throw error;
-      return (data || []) as TenantSetting[];
+      if (!tenantId) return [];
+      const [legacyResult, activeConfigsResult] = await Promise.all([
+        supabase.from("tenant_settings").select("*").eq("tenant_id", tenantId).order("key"),
+        supabase.rpc("get_tenant_active_configs", { _tenant_id: tenantId }),
+      ]);
+      if (legacyResult.error) throw legacyResult.error;
+      if (activeConfigsResult.error) throw activeConfigsResult.error;
+
+      const merged = new Map<string, TenantSetting>();
+      (legacyResult.data || []).forEach((setting) => merged.set(setting.key, setting as TenantSetting));
+      (activeConfigsResult.data || []).forEach((config) => {
+        const rawValue = config.value;
+        const value = typeof rawValue === "string" ? rawValue : JSON.stringify(rawValue);
+        merged.set(config.feature_key, {
+          id: `feature:${config.feature_key}`,
+          tenant_id: tenantId,
+          key: config.feature_key,
+          label: null,
+          value,
+          created_at: "",
+          updated_at: "",
+        });
+      });
+      return Array.from(merged.values()).sort((a, b) => a.key.localeCompare(b.key));
     },
   });
 
