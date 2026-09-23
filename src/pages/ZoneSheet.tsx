@@ -16,6 +16,8 @@ import { useZoneSheets, emptyZoneRow, ZoneSheet as ZoneSheetType, ZoneSheetRow }
 import { useData } from "@/context/DataContext";
 import { useUserRole } from "@/hooks/useUserRole";
 
+const MONTH_NAMES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+
 const formatSheetLabel = (s: ZoneSheetType) => {
   const d = new Date(s.sheet_date + "T00:00:00");
   const date = d.toLocaleDateString("es-ES", { weekday: "long", day: "2-digit", month: "short" });
@@ -38,8 +40,38 @@ const ZoneSheetPage = () => {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [draft, setDraft] = useState<ZoneSheetType | null>(null);
   const [creatingNews, setCreatingNews] = useState<string | null>(null);
+  const [filterYear, setFilterYear] = useState("all");
+  const [filterMonth, setFilterMonth] = useState("all");
 
-  const active = useMemo(() => sheets.find((s) => s.id === activeId) || sheets[0] || null, [sheets, activeId]);
+  const years = useMemo(
+    () => Array.from(new Set(sheets.map((s) => s.sheet_date.slice(0, 4)))).sort((a, b) => b.localeCompare(a)),
+    [sheets]
+  );
+  const months = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          sheets
+            .filter((s) => filterYear === "all" || s.sheet_date.slice(0, 4) === filterYear)
+            .map((s) => s.sheet_date.slice(5, 7))
+        )
+      ).sort((a, b) => Number(a) - Number(b)),
+    [sheets, filterYear]
+  );
+  const filteredSheets = useMemo(
+    () =>
+      sheets.filter(
+        (s) =>
+          (filterYear === "all" || s.sheet_date.slice(0, 4) === filterYear) &&
+          (filterMonth === "all" || s.sheet_date.slice(5, 7) === filterMonth)
+      ),
+    [sheets, filterYear, filterMonth]
+  );
+
+  const active = useMemo(
+    () => filteredSheets.find((s) => s.id === activeId) || filteredSheets[0] || null,
+    [filteredSheets, activeId]
+  );
 
   useEffect(() => {
     if (active && (!draft || draft.id !== active.id)) setDraft(active);
@@ -89,9 +121,11 @@ const ZoneSheetPage = () => {
         community: draft.community,
         president: draft.president,
         property_type: draft.property_type,
-        has_use: draft.has_use,
+        is_vpo: draft.is_vpo,
         has_garage: draft.has_garage,
         has_elevator: draft.has_elevator,
+        has_accessible_access: draft.has_accessible_access,
+        building_year: draft.building_year,
       });
       setActiveId(created.id);
       setDraft(created);
@@ -189,18 +223,34 @@ const ZoneSheetPage = () => {
             </h1>
             <p className="text-sm text-muted-foreground mt-1">Registra los vecinos de cada portal y marca las noticias.</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {sheets.length > 0 && (
-              <Select value={active?.id || ""} onValueChange={(v) => setActiveId(v)}>
-                <SelectTrigger className="w-[320px]">
-                  <SelectValue placeholder="Elige una hoja" />
-                </SelectTrigger>
-                <SelectContent>
-                  {sheets.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>{formatSheetLabel(s)}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <>
+                <Select value={filterYear} onValueChange={(v) => { setFilterYear(v); setFilterMonth("all"); }}>
+                  <SelectTrigger className="w-[120px]"><SelectValue placeholder="Año" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos los años</SelectItem>
+                    {years.map((y) => <SelectItem key={y} value={y}>{y}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <Select value={filterMonth} onValueChange={setFilterMonth}>
+                  <SelectTrigger className="w-[140px]"><SelectValue placeholder="Mes" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos los meses</SelectItem>
+                    {months.map((m) => <SelectItem key={m} value={m}>{MONTH_NAMES[Number(m) - 1]}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <Select value={active?.id || ""} onValueChange={(v) => setActiveId(v)}>
+                  <SelectTrigger className="w-[320px]">
+                    <SelectValue placeholder="Día y hora" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {filteredSheets.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>{formatSheetLabel(s)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </>
             )}
             <Button size="sm" onClick={handleNewSheet} disabled={createSheet.isPending}>
               <Plus className="w-4 h-4 mr-1" /> Nueva hoja
@@ -277,11 +327,23 @@ const ZoneSheetPage = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="flex items-end gap-4 sm:col-span-2 lg:col-span-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Año del bloque</Label>
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    placeholder="Ej. 1975"
+                    value={draft.building_year ?? ""}
+                    onChange={(e) => patch({ building_year: e.target.value ? Number(e.target.value) : null })}
+                    onBlur={() => persist({ building_year: draft.building_year })}
+                  />
+                </div>
+                <div className="flex flex-wrap items-end gap-4 sm:col-span-2 lg:col-span-4">
                   {([
-                    ["has_use", "Uso"],
+                    ["is_vpo", "VPO"],
                     ["has_garage", "Garaje"],
                     ["has_elevator", "Ascensor"],
+                    ["has_accessible_access", "Acceso minusválido"],
                   ] as const).map(([key, label]) => (
                     <label key={key} className="flex items-center gap-2 text-sm">
                       <Checkbox
