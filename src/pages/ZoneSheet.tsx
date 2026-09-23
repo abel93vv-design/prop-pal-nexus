@@ -12,9 +12,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Loader2, Plus, Trash2, ClipboardList, Newspaper, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useTenantSettings } from "@/hooks/useTenantSettings";
-import { useZoneSheets, emptyZoneRow, ZoneSheet as ZoneSheetType, ZoneSheetRow } from "@/hooks/useZoneSheets";
+import { useZoneSheets, useTenantZoneUsers, emptyZoneRow, ZoneSheet as ZoneSheetType, ZoneSheetRow } from "@/hooks/useZoneSheets";
 import { useData } from "@/context/DataContext";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useAuth } from "@/hooks/useAuth";
 
 const DWELLING_STATUSES = [
   { value: "ocupado", label: "Ocupado" },
