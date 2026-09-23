@@ -1841,6 +1841,77 @@ export type Database = {
         }
         Relationships: []
       }
+      zone_sheets: {
+        Row: {
+          administrator: string | null
+          agent_name: string | null
+          community: string | null
+          created_at: string
+          has_elevator: boolean
+          has_garage: boolean
+          has_use: boolean
+          id: string
+          portal: string | null
+          president: string | null
+          property_type: string | null
+          rows: Json
+          sheet_date: string
+          sheet_time: string
+          street: string | null
+          tenant_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          administrator?: string | null
+          agent_name?: string | null
+          community?: string | null
+          created_at?: string
+          has_elevator?: boolean
+          has_garage?: boolean
+          has_use?: boolean
+          id?: string
+          portal?: string | null
+          president?: string | null
+          property_type?: string | null
+          rows?: Json
+          sheet_date?: string
+          sheet_time?: string
+          street?: string | null
+          tenant_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          administrator?: string | null
+          agent_name?: string | null
+          community?: string | null
+          created_at?: string
+          has_elevator?: boolean
+          has_garage?: boolean
+          has_use?: boolean
+          id?: string
+          portal?: string | null
+          president?: string | null
+          property_type?: string | null
+          rows?: Json
+          sheet_date?: string
+          sheet_time?: string
+          street?: string | null
+          tenant_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zone_sheets_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

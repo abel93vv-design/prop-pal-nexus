@@ -32,6 +32,7 @@ import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import ControlLeads from "./pages/ControlLeads";
 import Trust from "./pages/Trust";
 import FeatureConfigs from "./pages/FeatureConfigs";
+import ZoneSheetPage from "./pages/ZoneSheet";
 
 const queryClient = new QueryClient();
 
@@ -94,6 +95,7 @@ const AppRoutes = () => (
     <Route path="/match-center" element={<ProtectedRoute><MatchCenter /></ProtectedRoute>} />
     <Route path="/control-leads" element={<ProtectedRoute><ControlLeads /></ProtectedRoute>} />
     <Route path="/control-leads/:subSection" element={<ProtectedRoute><ControlLeads /></ProtectedRoute>} />
+    <Route path="/hoja-zona" element={<ProtectedRoute><ZoneSheetPage /></ProtectedRoute>} />
 
     <Route path="/tenants" element={<ProtectedRoute><Tenants /></ProtectedRoute>} />
     <Route path="/configuraciones" element={<ProtectedRoute><FeatureConfigs /></ProtectedRoute>} />

@@ -29,6 +29,12 @@ export const TENANT_SETTING_PRESETS = [
     label: "Fotocasa",
     description: "Muestra la conexi\u00f3n con Fotocasa en Ajustes y permite marcar viviendas para publicarse en ese portal.",
   },
+  {
+    key: "hoja_zona",
+    label: "Hoja de zona",
+    description:
+      "A\u00f1ade la ventana \u201cHoja de zona\u201d en el men\u00fa principal: cabecera del portal, hojas por fecha y tabla de vecinos con marcado de noticias.",
+  },
 ];
 
 const isTrue = (v?: string | null) =>
