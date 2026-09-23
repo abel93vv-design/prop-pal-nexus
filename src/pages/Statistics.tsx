@@ -323,7 +323,7 @@ const StatisticsPage = () => {
   const kpis = [
     { label: "Hojas de zona", value: zoneTotals.sheets, icon: ClipboardList },
     { label: "Puertas visitadas", value: zoneTotals.doors, icon: DoorOpen },
-    { label: "Contactados (P+M)", value: zoneTotals.p + zoneTotals.m, icon: PhoneCall },
+    { label: "Contactados (M)", value: zoneTotals.m, icon: PhoneCall },
     { label: "Noticias", value: zoneTotals.news, icon: Newspaper },
     { label: "Leads", value: leadTotals.total_pedidos ?? 0, icon: BarChart3 },
   ];
