@@ -1120,6 +1120,7 @@ function AsesoresMonthly({ scopeUserId }: { scopeUserId: ScopeUserId }) {
                 <KpiCard label="Zona · Puertas" value={zoneTotals.puertas} />
                 <KpiCard label="Zona · Contactos" value={zoneTotals.contactos} />
                 <KpiCard label="Zona · Noticias" value={zoneTotals.noticias} />
+                <KpiCard label="Zona · Leads" value={zoneTotals.leads} />
                 <KpiCard label="Zona · AV" value={zoneTotals.av} />
                 <KpiCard label="Zona · AA" value={zoneTotals.aa} />
                 <KpiCard label="Zona · CV" value={zoneTotals.cv} />
@@ -1176,6 +1177,7 @@ function AsesoresYearly({ scopeUserId }: { scopeUserId: ScopeUserId }) {
                 <KpiCard label="Zona · Puertas" value={zoneTotals.puertas} />
                 <KpiCard label="Zona · Contactos" value={zoneTotals.contactos} />
                 <KpiCard label="Zona · Noticias" value={zoneTotals.noticias} />
+                <KpiCard label="Zona · Leads" value={zoneTotals.leads} />
                 <KpiCard label="Zona · AV" value={zoneTotals.av} />
                 <KpiCard label="Zona · AA" value={zoneTotals.aa} />
                 <KpiCard label="Zona · CV" value={zoneTotals.cv} />
@@ -1306,7 +1308,7 @@ function AsesoresCompare({ scopeUserId }: { scopeUserId: ScopeUserId }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {(["puertas","contactos","noticias","av","aa","cv","ca","ne"] as const).map((k) => (
+                  {(["puertas","contactos","noticias","leads","av","aa","cv","ca","ne"] as const).map((k) => (
                     <tr key={k} className="border-t border-border hover:bg-muted/20">
                       <td className="px-3 py-1.5 font-medium capitalize">{k}</td>
                       {renderDiff(zA[k], zB[k])}
