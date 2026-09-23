@@ -360,6 +360,7 @@ const StatisticsPage = () => {
           rangeLabel={range.label}
           onExportCsv={handleExportCsv}
           onExportExcel={handleExportExcel}
+          onExportPdf={handleExportPdf}
         />
 
         {loading ? (
