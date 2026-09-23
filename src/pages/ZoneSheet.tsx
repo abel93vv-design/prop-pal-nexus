@@ -242,7 +242,7 @@ const ZoneSheetPage = () => {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {canSeeAll && (
-              <Select disabled={readOnly} value={viewUserId} onValueChange={(v) => { setViewUserId(v); setActiveId(null); setDraft(null); setFilterYear("all"); setFilterMonth("all"); }}>
+              <Select value={viewUserId} onValueChange={(v) => { setViewUserId(v); setActiveId(null); setDraft(null); setFilterYear("all"); setFilterMonth("all"); }}>
                 <SelectTrigger className="w-[200px]"><SelectValue placeholder="Asesor" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="me">Mis hojas</SelectItem>
@@ -256,21 +256,21 @@ const ZoneSheetPage = () => {
             )}
             {sheets.length > 0 && (
               <>
-                <Select disabled={readOnly} value={filterYear} onValueChange={(v) => { setFilterYear(v); setFilterMonth("all"); }}>
+                <Select value={filterYear} onValueChange={(v) => { setFilterYear(v); setFilterMonth("all"); }}>
                   <SelectTrigger className="w-[120px]"><SelectValue placeholder="Año" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todos los años</SelectItem>
                     {years.map((y) => <SelectItem key={y} value={y}>{y}</SelectItem>)}
                   </SelectContent>
                 </Select>
-                <Select disabled={readOnly} value={filterMonth} onValueChange={setFilterMonth}>
+                <Select value={filterMonth} onValueChange={setFilterMonth}>
                   <SelectTrigger className="w-[140px]"><SelectValue placeholder="Mes" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todos los meses</SelectItem>
                     {months.map((m) => <SelectItem key={m} value={m}>{MONTH_NAMES[Number(m) - 1]}</SelectItem>)}
                   </SelectContent>
                 </Select>
-                <Select disabled={readOnly} value={active?.id || ""} onValueChange={(v) => setActiveId(v)}>
+                <Select value={active?.id || ""} onValueChange={(v) => setActiveId(v)}>
                   <SelectTrigger className="w-[320px]">
                     <SelectValue placeholder="Día y hora" />
                   </SelectTrigger>
@@ -385,7 +385,7 @@ const ZoneSheetPage = () => {
                     ["has_accessible_access", "Acceso minusválido"],
                   ] as const).map(([key, label]) => (
                     <label key={key} className="flex items-center gap-2 text-sm">
-                      <Checkbox disabled={readOnly} disabled={readOnly}
+                      <Checkbox disabled={readOnly}
                         checked={draft[key]}
                         onCheckedChange={(c) => { const val = !!c; patch({ [key]: val } as any); persist({ [key]: val } as any); }}
                       />
