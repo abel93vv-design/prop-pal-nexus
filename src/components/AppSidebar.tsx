@@ -50,7 +50,7 @@ export function AppSidebar() {
   const { isAdmin, isSuperAdmin, can, loading, role } = useUserRole();
   const { getBool } = useTenantSettings();
   const isAsesor = role === "asesor" && !isAdmin && !isSuperAdmin;
-  const extraItems = [
+  const extraItems: typeof mainItems = [
     ...(getBool("hoja_zona")
       ? [{ title: "Hoja de zona", url: "/hoja-zona", icon: NotebookPen, module: null }]
       : []),
