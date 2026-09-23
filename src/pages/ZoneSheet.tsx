@@ -237,8 +237,12 @@ const ZoneSheetPage = () => {
                   <Input type="date" value={draft.sheet_date} onChange={(e) => patch({ sheet_date: e.target.value })} onBlur={() => persist({ sheet_date: draft.sheet_date })} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs">Hora</Label>
+                  <Label className="text-xs">Hora de entrada</Label>
                   <Input type="time" value={(draft.sheet_time || "").slice(0, 5)} onChange={(e) => patch({ sheet_time: `${e.target.value}:00` })} onBlur={() => persist({ sheet_time: draft.sheet_time })} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Hora de salida</Label>
+                  <Input type="time" value={(draft.exit_time || "").slice(0, 5)} onChange={(e) => patch({ exit_time: e.target.value ? `${e.target.value}:00` : null })} onBlur={() => persist({ exit_time: draft.exit_time })} />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Calle</Label>

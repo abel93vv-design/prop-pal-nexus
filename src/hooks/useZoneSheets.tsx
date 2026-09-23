@@ -22,6 +22,7 @@ export interface ZoneSheet {
   user_id: string;
   sheet_date: string;
   sheet_time: string;
+  exit_time: string | null;
   agent_name: string | null;
   street: string | null;
   portal: string | null;
