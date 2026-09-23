@@ -54,21 +54,22 @@ export const emptyZoneRow = (): ZoneSheetRow => ({
   property_id: null,
 });
 
-export function useZoneSheets() {
+export function useZoneSheets(viewUserId?: string) {
   const { tenantId } = useTenant();
   const { user } = useAuth();
   const qc = useQueryClient();
-  const queryKey = ["zone_sheets", tenantId, user?.id];
+  const targetUserId = viewUserId || user?.id;
+  const queryKey = ["zone_sheets", tenantId, targetUserId];
 
   const { data: sheets = [], isLoading } = useQuery({
     queryKey,
-    enabled: !!tenantId && !!user?.id,
+    enabled: !!tenantId && !!targetUserId,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("zone_sheets")
         .select("*")
         .eq("tenant_id", tenantId!)
-        .eq("user_id", user!.id)
+        .eq("user_id", targetUserId!)
         .order("sheet_date", { ascending: false })
         .order("sheet_time", { ascending: false })
         .limit(300);
