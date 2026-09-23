@@ -19,7 +19,9 @@ import { useUserRole } from "@/hooks/useUserRole";
 const formatSheetLabel = (s: ZoneSheetType) => {
   const d = new Date(s.sheet_date + "T00:00:00");
   const date = d.toLocaleDateString("es-ES", { weekday: "long", day: "2-digit", month: "short" });
-  const time = (s.sheet_time || "").slice(0, 5);
+  const entry = (s.sheet_time || "").slice(0, 5);
+  const exit = (s.exit_time || "").slice(0, 5);
+  const time = exit ? `${entry}–${exit}` : entry;
   const place = [s.street, s.portal ? `portal ${s.portal}` : null].filter(Boolean).join(", ");
   return `${date} ${time}${place ? ` · ${place}` : ""}`;
 };
