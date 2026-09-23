@@ -279,11 +279,23 @@ const ZoneSheetPage = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="flex items-end gap-4 sm:col-span-2 lg:col-span-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Año del bloque</Label>
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    placeholder="Ej. 1975"
+                    value={draft.building_year ?? ""}
+                    onChange={(e) => patch({ building_year: e.target.value ? Number(e.target.value) : null })}
+                    onBlur={() => persist({ building_year: draft.building_year })}
+                  />
+                </div>
+                <div className="flex flex-wrap items-end gap-4 sm:col-span-2 lg:col-span-4">
                   {([
-                    ["has_use", "Uso"],
+                    ["is_vpo", "VPO"],
                     ["has_garage", "Garaje"],
                     ["has_elevator", "Ascensor"],
+                    ["has_accessible_access", "Acceso minusválido"],
                   ] as const).map(([key, label]) => (
                     <label key={key} className="flex items-center gap-2 text-sm">
                       <Checkbox
