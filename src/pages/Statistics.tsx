@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
 import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Layout } from "@/components/Layout";
@@ -240,6 +242,82 @@ const StatisticsPage = () => {
     download(new Blob([out], { type: "application/octet-stream" }), `${fileBase}.xlsx`);
   };
 
+  const handleExportPdf = () => {
+    if (perEmployee.length === 0) {
+      toast({ title: "Sin datos", description: "No hay datos en el periodo seleccionado.", variant: "destructive" });
+      return;
+    }
+    const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+    doc.setFontSize(16);
+    doc.text("Estadísticas", 40, 40);
+    doc.setFontSize(10);
+    doc.text(`Periodo: ${range.label}`, 40, 58);
+    doc.text(
+      `Empleado: ${employee === "all" ? "Todos los empleados" : userName(employee)}`,
+      40,
+      72
+    );
+
+    autoTable(doc, {
+      startY: 90,
+      head: [["Concepto", "Total"]],
+      body: kpis.map((k) => [k.label, String(k.value)]),
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [24, 105, 79] },
+      tableWidth: 300,
+    });
+
+    const headers = Object.keys(perEmployee[0]);
+    autoTable(doc, {
+      startY: (doc as any).lastAutoTable.finalY + 24,
+      head: [headers],
+      body: perEmployee.map((r) => headers.map((h) => String(r[h] ?? ""))),
+      styles: { fontSize: 7, cellPadding: 3 },
+      headStyles: { fillColor: [24, 105, 79], fontSize: 7 },
+    });
+
+    const zoneBody = sheets.map((s) => {
+      const agg = emptyZoneAgg();
+      accumulateZone(agg, s);
+      return [
+        s.sheet_date,
+        userName(s.user_id),
+        sheetPlace(s),
+        String(agg.doors),
+        String(agg.p),
+        String(agg.m),
+        String(agg.news),
+      ];
+    });
+    if (zoneBody.length) {
+      autoTable(doc, {
+        startY: (doc as any).lastAutoTable.finalY + 24,
+        head: [["Fecha", "Empleado", "Calle", "Puertas", "P", "M", "Noticias"]],
+        body: zoneBody,
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [24, 105, 79] },
+      });
+    }
+
+    const leadBody = leads.map((r) => [
+      r.date,
+      userName(r.user_id || ""),
+      LEAD_SOURCES.find((s) => s.value === r.source)?.label || r.source,
+      ...LEAD_COLUMNS.map((c) => String(Number((r as any)[c.key] ?? 0))),
+    ]);
+    if (leadBody.length) {
+      autoTable(doc, {
+        startY: (doc as any).lastAutoTable.finalY + 24,
+        head: [["Fecha", "Empleado", "Origen", ...LEAD_COLUMNS.map((c) => c.label)]],
+        body: leadBody,
+        styles: { fontSize: 7, cellPadding: 3 },
+        headStyles: { fillColor: [24, 105, 79], fontSize: 7 },
+      });
+    }
+
+    doc.save(`${fileBase}.pdf`);
+  };
+
   if (!roleLoading && !isAdmin) return <Navigate to="/" replace />;
 
   const kpis = [
@@ -282,6 +360,7 @@ const StatisticsPage = () => {
           rangeLabel={range.label}
           onExportCsv={handleExportCsv}
           onExportExcel={handleExportExcel}
+          onExportPdf={handleExportPdf}
         />
 
         {loading ? (
