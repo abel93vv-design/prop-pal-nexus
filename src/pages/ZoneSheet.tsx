@@ -282,9 +282,11 @@ const ZoneSheetPage = () => {
                 </Select>
               </>
             )}
-            <Button size="sm" onClick={handleNewSheet} disabled={createSheet.isPending}>
-              <Plus className="w-4 h-4 mr-1" /> Nueva hoja
-            </Button>
+            {!readOnly && (
+              <Button size="sm" onClick={handleNewSheet} disabled={createSheet.isPending}>
+                <Plus className="w-4 h-4 mr-1" /> Nueva hoja
+              </Button>
+            )}
           </div>
         </div>
 
@@ -293,21 +295,28 @@ const ZoneSheetPage = () => {
         ) : !draft ? (
           <Card>
             <CardContent className="py-12 text-center space-y-3">
-              <p className="text-sm text-muted-foreground">Todavía no tienes ninguna hoja de zona.</p>
-              <Button onClick={handleNewSheet}><Plus className="w-4 h-4 mr-1" /> Crear la primera hoja</Button>
+              <p className="text-sm text-muted-foreground">
+                {readOnly ? "Este asesor todavía no tiene hojas de zona." : "Todavía no tienes ninguna hoja de zona."}
+              </p>
+              {!readOnly && <Button onClick={handleNewSheet}><Plus className="w-4 h-4 mr-1" /> Crear la primera hoja</Button>}
             </CardContent>
           </Card>
         ) : (
           <>
             <Card>
               <CardHeader className="pb-3 flex flex-row items-center justify-between">
-                <CardTitle className="text-base font-semibold">Datos del portal</CardTitle>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={handleDuplicate}>Duplicar cabecera</Button>
-                  <Button variant="ghost" size="sm" className="text-destructive" onClick={handleDelete}>
-                    <Trash2 className="w-4 h-4 mr-1" /> Borrar hoja
-                  </Button>
-                </div>
+                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                  Datos del portal
+                  {readOnly && <Badge variant="secondary" className="text-[10px]">Solo lectura</Badge>}
+                </CardTitle>
+                {!readOnly && (
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={handleDuplicate}>Duplicar cabecera</Button>
+                    <Button variant="ghost" size="sm" className="text-destructive" onClick={handleDelete}>
+                      <Trash2 className="w-4 h-4 mr-1" /> Borrar hoja
+                    </Button>
+                  </div>
+                )}
               </CardHeader>
               <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="space-y-1.5">
