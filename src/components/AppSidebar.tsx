@@ -48,10 +48,14 @@ const settingsItems = [
 
 export function AppSidebar() {
   const { isAdmin, isSuperAdmin, can, loading, role } = useUserRole();
+  const { getBool } = useTenantSettings();
   const isAsesor = role === "asesor" && !isAdmin && !isSuperAdmin;
+  const withZoneSheet = getBool("hoja_zona")
+    ? [...mainItems, { title: "Hoja de zona", url: "/hoja-zona", icon: NotebookPen, module: null }]
+    : mainItems;
   const baseMain = loading
-    ? mainItems.filter((i) => !i.module)
-    : mainItems.filter((i) => !i.module || can(i.module, "view") || isAdmin);
+    ? withZoneSheet.filter((i) => !i.module)
+    : withZoneSheet.filter((i) => !i.module || can(i.module, "view") || isAdmin);
   const visibleMain = baseMain.map((item) =>
     isAsesor && item.url === "/control-leads"
       ? {
