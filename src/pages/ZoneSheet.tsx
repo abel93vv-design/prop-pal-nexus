@@ -91,22 +91,23 @@ const ZoneSheetPage = () => {
 
   useEffect(() => {
     if (active && (!draft || draft.id !== active.id)) setDraft(active);
+    if (!active && draft) setDraft(null);
   }, [active, draft]);
 
   if (!settingsLoading && !enabled) return <Navigate to="/" replace />;
 
   const patch = (changes: Partial<ZoneSheetType>) => {
-    if (!draft) return;
+    if (!draft || readOnly) return;
     setDraft({ ...draft, ...changes });
   };
 
   const persist = (changes: Partial<ZoneSheetType>) => {
-    if (!draft) return;
+    if (!draft || readOnly) return;
     updateSheet.mutate({ id: draft.id, ...changes });
   };
 
   const setRows = (rows: ZoneSheetRow[], save = true) => {
-    if (!draft) return;
+    if (!draft || readOnly) return;
     setDraft({ ...draft, rows });
     if (save) updateSheet.mutate({ id: draft.id, rows } as any);
   };
