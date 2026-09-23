@@ -133,3 +133,20 @@ export function useZoneSheets(viewUserId?: string) {
 
   return { sheets, loading: isLoading, createSheet, updateSheet, deleteSheet };
 }
+
+export function useTenantZoneUsers(enabled: boolean) {
+  const { tenantId } = useTenant();
+  return useQuery({
+    queryKey: ["zone_sheet_users", tenantId],
+    enabled: enabled && !!tenantId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("user_id, full_name")
+        .eq("tenant_id", tenantId!)
+        .order("full_name");
+      if (error) throw error;
+      return (data || []) as { user_id: string; full_name: string | null }[];
+    },
+  });
+}
