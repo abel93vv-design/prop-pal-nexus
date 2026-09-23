@@ -12,9 +12,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Loader2, Plus, Trash2, ClipboardList, Newspaper, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useTenantSettings } from "@/hooks/useTenantSettings";
-import { useZoneSheets, emptyZoneRow, ZoneSheet as ZoneSheetType, ZoneSheetRow } from "@/hooks/useZoneSheets";
+import { useZoneSheets, useTenantZoneUsers, emptyZoneRow, ZoneSheet as ZoneSheetType, ZoneSheetRow } from "@/hooks/useZoneSheets";
 import { useData } from "@/context/DataContext";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useAuth } from "@/hooks/useAuth";
 
 const DWELLING_STATUSES = [
   { value: "ocupado", label: "Ocupado" },
@@ -39,11 +40,18 @@ const formatSheetLabel = (s: ZoneSheetType) => {
 const ZoneSheetPage = () => {
   const { getBool, loading: settingsLoading } = useTenantSettings();
   const enabled = getBool("hoja_zona");
-  const { sheets, loading, createSheet, updateSheet, deleteSheet } = useZoneSheets();
   const { addProperty } = useData();
-  const { can } = useUserRole();
+  const { can, role, isAdmin } = useUserRole();
+  const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  const canSeeAll = isAdmin || role === "socio" || role === "coordinadora";
+  const [viewUserId, setViewUserId] = useState<string>("me");
+  const { data: tenantUsers = [] } = useTenantZoneUsers(canSeeAll);
+  const targetUserId = viewUserId === "me" ? undefined : viewUserId;
+  const readOnly = !!targetUserId && targetUserId !== user?.id;
+  const { sheets, loading, createSheet, updateSheet, deleteSheet } = useZoneSheets(targetUserId);
 
   const [activeId, setActiveId] = useState<string | null>(null);
   const [draft, setDraft] = useState<ZoneSheetType | null>(null);
@@ -83,22 +91,23 @@ const ZoneSheetPage = () => {
 
   useEffect(() => {
     if (active && (!draft || draft.id !== active.id)) setDraft(active);
+    if (!active && draft) setDraft(null);
   }, [active, draft]);
 
   if (!settingsLoading && !enabled) return <Navigate to="/" replace />;
 
   const patch = (changes: Partial<ZoneSheetType>) => {
-    if (!draft) return;
+    if (!draft || readOnly) return;
     setDraft({ ...draft, ...changes });
   };
 
   const persist = (changes: Partial<ZoneSheetType>) => {
-    if (!draft) return;
+    if (!draft || readOnly) return;
     updateSheet.mutate({ id: draft.id, ...changes });
   };
 
   const setRows = (rows: ZoneSheetRow[], save = true) => {
-    if (!draft) return;
+    if (!draft || readOnly) return;
     setDraft({ ...draft, rows });
     if (save) updateSheet.mutate({ id: draft.id, rows } as any);
   };
@@ -232,6 +241,19 @@ const ZoneSheetPage = () => {
             <p className="text-sm text-muted-foreground mt-1">Registra los vecinos de cada portal y marca las noticias.</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            {canSeeAll && (
+              <Select value={viewUserId} onValueChange={(v) => { setViewUserId(v); setActiveId(null); setDraft(null); setFilterYear("all"); setFilterMonth("all"); }}>
+                <SelectTrigger className="w-[200px]"><SelectValue placeholder="Asesor" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="me">Mis hojas</SelectItem>
+                  {tenantUsers
+                    .filter((u) => u.user_id !== user?.id)
+                    .map((u) => (
+                      <SelectItem key={u.user_id} value={u.user_id}>{u.full_name || "Sin nombre"}</SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            )}
             {sheets.length > 0 && (
               <>
                 <Select value={filterYear} onValueChange={(v) => { setFilterYear(v); setFilterMonth("all"); }}>
@@ -260,9 +282,11 @@ const ZoneSheetPage = () => {
                 </Select>
               </>
             )}
-            <Button size="sm" onClick={handleNewSheet} disabled={createSheet.isPending}>
-              <Plus className="w-4 h-4 mr-1" /> Nueva hoja
-            </Button>
+            {!readOnly && (
+              <Button size="sm" onClick={handleNewSheet} disabled={createSheet.isPending}>
+                <Plus className="w-4 h-4 mr-1" /> Nueva hoja
+              </Button>
+            )}
           </div>
         </div>
 
@@ -271,62 +295,69 @@ const ZoneSheetPage = () => {
         ) : !draft ? (
           <Card>
             <CardContent className="py-12 text-center space-y-3">
-              <p className="text-sm text-muted-foreground">Todavía no tienes ninguna hoja de zona.</p>
-              <Button onClick={handleNewSheet}><Plus className="w-4 h-4 mr-1" /> Crear la primera hoja</Button>
+              <p className="text-sm text-muted-foreground">
+                {readOnly ? "Este asesor todavía no tiene hojas de zona." : "Todavía no tienes ninguna hoja de zona."}
+              </p>
+              {!readOnly && <Button onClick={handleNewSheet}><Plus className="w-4 h-4 mr-1" /> Crear la primera hoja</Button>}
             </CardContent>
           </Card>
         ) : (
           <>
             <Card>
               <CardHeader className="pb-3 flex flex-row items-center justify-between">
-                <CardTitle className="text-base font-semibold">Datos del portal</CardTitle>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={handleDuplicate}>Duplicar cabecera</Button>
-                  <Button variant="ghost" size="sm" className="text-destructive" onClick={handleDelete}>
-                    <Trash2 className="w-4 h-4 mr-1" /> Borrar hoja
-                  </Button>
-                </div>
+                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                  Datos del portal
+                  {readOnly && <Badge variant="secondary" className="text-[10px]">Solo lectura</Badge>}
+                </CardTitle>
+                {!readOnly && (
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={handleDuplicate}>Duplicar cabecera</Button>
+                    <Button variant="ghost" size="sm" className="text-destructive" onClick={handleDelete}>
+                      <Trash2 className="w-4 h-4 mr-1" /> Borrar hoja
+                    </Button>
+                  </div>
+                )}
               </CardHeader>
               <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="space-y-1.5">
                   <Label className="text-xs">Agente</Label>
-                  <Input value={draft.agent_name || ""} onChange={(e) => patch({ agent_name: e.target.value })} onBlur={() => persist({ agent_name: draft.agent_name })} />
+                  <Input disabled={readOnly} value={draft.agent_name || ""} onChange={(e) => patch({ agent_name: e.target.value })} onBlur={() => persist({ agent_name: draft.agent_name })} />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Fecha</Label>
-                  <Input type="date" value={draft.sheet_date} onChange={(e) => patch({ sheet_date: e.target.value })} onBlur={() => persist({ sheet_date: draft.sheet_date })} />
+                  <Input disabled={readOnly} type="date" value={draft.sheet_date} onChange={(e) => patch({ sheet_date: e.target.value })} onBlur={() => persist({ sheet_date: draft.sheet_date })} />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Hora de entrada</Label>
-                  <Input type="time" value={(draft.sheet_time || "").slice(0, 5)} onChange={(e) => patch({ sheet_time: `${e.target.value}:00` })} onBlur={() => persist({ sheet_time: draft.sheet_time })} />
+                  <Input disabled={readOnly} type="time" value={(draft.sheet_time || "").slice(0, 5)} onChange={(e) => patch({ sheet_time: `${e.target.value}:00` })} onBlur={() => persist({ sheet_time: draft.sheet_time })} />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Hora de salida</Label>
-                  <Input type="time" value={(draft.exit_time || "").slice(0, 5)} onChange={(e) => patch({ exit_time: e.target.value ? `${e.target.value}:00` : null })} onBlur={() => persist({ exit_time: draft.exit_time })} />
+                  <Input disabled={readOnly} type="time" value={(draft.exit_time || "").slice(0, 5)} onChange={(e) => patch({ exit_time: e.target.value ? `${e.target.value}:00` : null })} onBlur={() => persist({ exit_time: draft.exit_time })} />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Calle</Label>
-                  <Input value={draft.street || ""} onChange={(e) => patch({ street: e.target.value })} onBlur={() => persist({ street: draft.street })} />
+                  <Input disabled={readOnly} value={draft.street || ""} onChange={(e) => patch({ street: e.target.value })} onBlur={() => persist({ street: draft.street })} />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Portal</Label>
-                  <Input value={draft.portal || ""} onChange={(e) => patch({ portal: e.target.value })} onBlur={() => persist({ portal: draft.portal })} />
+                  <Input disabled={readOnly} value={draft.portal || ""} onChange={(e) => patch({ portal: e.target.value })} onBlur={() => persist({ portal: draft.portal })} />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Administrador</Label>
-                  <Input value={draft.administrator || ""} onChange={(e) => patch({ administrator: e.target.value })} onBlur={() => persist({ administrator: draft.administrator })} />
+                  <Input disabled={readOnly} value={draft.administrator || ""} onChange={(e) => patch({ administrator: e.target.value })} onBlur={() => persist({ administrator: draft.administrator })} />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Comunidad</Label>
-                  <Input value={draft.community || ""} onChange={(e) => patch({ community: e.target.value })} onBlur={() => persist({ community: draft.community })} />
+                  <Input disabled={readOnly} value={draft.community || ""} onChange={(e) => patch({ community: e.target.value })} onBlur={() => persist({ community: draft.community })} />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Presidente</Label>
-                  <Input value={draft.president || ""} onChange={(e) => patch({ president: e.target.value })} onBlur={() => persist({ president: draft.president })} />
+                  <Input disabled={readOnly} value={draft.president || ""} onChange={(e) => patch({ president: e.target.value })} onBlur={() => persist({ president: draft.president })} />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Tipo de piso</Label>
-                  <Select value={draft.property_type || "none"} onValueChange={(v) => { const val = v === "none" ? null : v; patch({ property_type: val }); persist({ property_type: val }); }}>
+                  <Select disabled={readOnly} value={draft.property_type || "none"} onValueChange={(v) => { const val = v === "none" ? null : v; patch({ property_type: val }); persist({ property_type: val }); }}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">Sin especificar</SelectItem>
@@ -354,7 +385,7 @@ const ZoneSheetPage = () => {
                     ["has_accessible_access", "Acceso minusválido"],
                   ] as const).map(([key, label]) => (
                     <label key={key} className="flex items-center gap-2 text-sm">
-                      <Checkbox
+                      <Checkbox disabled={readOnly}
                         checked={draft[key]}
                         onCheckedChange={(c) => { const val = !!c; patch({ [key]: val } as any); persist({ [key]: val } as any); }}
                       />
@@ -368,7 +399,7 @@ const ZoneSheetPage = () => {
             <Card>
               <CardHeader className="pb-3 flex flex-row items-center justify-between">
                 <CardTitle className="text-base font-semibold">Vecinos</CardTitle>
-                <Button size="sm" variant="outline" onClick={() => setRows([...draft.rows, emptyZoneRow()])}>
+                <Button size="sm" variant="outline" disabled={readOnly} onClick={() => setRows([...draft.rows, emptyZoneRow()])}>
                   <Plus className="w-4 h-4 mr-1" /> Añadir fila
                 </Button>
               </CardHeader>
@@ -390,16 +421,16 @@ const ZoneSheetPage = () => {
                     {draft.rows.map((r) => (
                       <TableRow key={r.id} className={rowClass(r)}>
                         <TableCell className="text-center">
-                          <Checkbox checked={r.is_news} onCheckedChange={(c) => updateRow(r.id, { is_news: !!c })} />
+                          <Checkbox disabled={readOnly} checked={r.is_news} onCheckedChange={(c) => updateRow(r.id, { is_news: !!c })} />
                         </TableCell>
                         <TableCell>
-                          <Input className="h-8" value={r.floor} onChange={(e) => updateRow(r.id, { floor: e.target.value }, false)} onBlur={() => persist({ rows: draft.rows } as any)} />
+                          <Input disabled={readOnly} className="h-8" value={r.floor} onChange={(e) => updateRow(r.id, { floor: e.target.value }, false)} onBlur={() => persist({ rows: draft.rows } as any)} />
                         </TableCell>
                         <TableCell>
-                          <Input className="h-8" value={r.name} onChange={(e) => updateRow(r.id, { name: e.target.value }, false)} onBlur={() => persist({ rows: draft.rows } as any)} />
+                          <Input disabled={readOnly} className="h-8" value={r.name} onChange={(e) => updateRow(r.id, { name: e.target.value }, false)} onBlur={() => persist({ rows: draft.rows } as any)} />
                         </TableCell>
                         <TableCell>
-                          <Select value={r.contact_mode || "none"} onValueChange={(v) => updateRow(r.id, { contact_mode: v === "none" ? null : (v as "P" | "M") })}>
+                          <Select disabled={readOnly} value={r.contact_mode || "none"} onValueChange={(v) => updateRow(r.id, { contact_mode: v === "none" ? null : (v as "P" | "M") })}>
                             <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
                             <SelectContent>
                               <SelectItem value="none">—</SelectItem>
@@ -409,7 +440,7 @@ const ZoneSheetPage = () => {
                           </Select>
                         </TableCell>
                         <TableCell>
-                          <Select value={r.status || "none"} onValueChange={(v) => updateRow(r.id, { status: v === "none" ? null : (v as ZoneSheetRow["status"]) })}>
+                          <Select disabled={readOnly} value={r.status || "none"} onValueChange={(v) => updateRow(r.id, { status: v === "none" ? null : (v as ZoneSheetRow["status"]) })}>
                             <SelectTrigger className="h-8"><SelectValue placeholder="—" /></SelectTrigger>
                             <SelectContent>
                               <SelectItem value="none">—</SelectItem>
@@ -418,10 +449,10 @@ const ZoneSheetPage = () => {
                           </Select>
                         </TableCell>
                         <TableCell>
-                          <Input className="h-8" value={r.comment} onChange={(e) => updateRow(r.id, { comment: e.target.value }, false)} onBlur={() => persist({ rows: draft.rows } as any)} />
+                          <Input disabled={readOnly} className="h-8" value={r.comment} onChange={(e) => updateRow(r.id, { comment: e.target.value }, false)} onBlur={() => persist({ rows: draft.rows } as any)} />
                         </TableCell>
                         <TableCell>
-                          <Input className="h-8" value={r.phone} onChange={(e) => updateRow(r.id, { phone: e.target.value }, false)} onBlur={() => persist({ rows: draft.rows } as any)} />
+                          <Input disabled={readOnly} className="h-8" value={r.phone} onChange={(e) => updateRow(r.id, { phone: e.target.value }, false)} onBlur={() => persist({ rows: draft.rows } as any)} />
                         </TableCell>
                         <TableCell className="text-right whitespace-nowrap">
                           {r.is_news && (
@@ -430,13 +461,13 @@ const ZoneSheetPage = () => {
                                 <ExternalLink className="w-3.5 h-3.5 mr-1" /> Ver noticia
                               </Button>
                             ) : (
-                              <Button size="sm" className="h-8" disabled={creatingNews === r.id} onClick={() => handleCreateNews(r)}>
+                              <Button size="sm" className="h-8" disabled={readOnly || creatingNews === r.id} onClick={() => handleCreateNews(r)}>
                                 {creatingNews === r.id ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Newspaper className="w-3.5 h-3.5 mr-1" />}
                                 Crear noticia
                               </Button>
                             )
                           )}
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive ml-1" onClick={() => setRows(draft.rows.filter((x) => x.id !== r.id))}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive ml-1" disabled={readOnly} onClick={() => setRows(draft.rows.filter((x) => x.id !== r.id))}>
                             <Trash2 className="w-3.5 h-3.5" />
                           </Button>
                         </TableCell>
