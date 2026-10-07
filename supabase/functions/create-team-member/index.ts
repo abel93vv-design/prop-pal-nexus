@@ -96,14 +96,28 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: `Rol inválido. Debe ser uno de: ${VALID_ROLES.join(", ")}` }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const password = providedPassword || generatePassword();
+    let password = providedPassword || generatePassword();
 
-    const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
+    const create = (pw: string) => adminClient.auth.admin.createUser({
       email,
-      password,
+      password: pw,
       email_confirm: true,
       user_metadata: { full_name: name },
     });
+
+    let { data: authData, error: authError } = await create(password);
+
+    // If the provided password is rejected as weak/leaked, fall back to a strong generated one
+    if (authError) {
+      const m = (authError.message || "").toLowerCase();
+      const isWeak = (authError as any).code === "weak_password" || m.includes("weak") || m.includes("easy to guess");
+      if (isWeak) {
+        for (let i = 0; i < 3 && authError; i++) {
+          password = generatePassword(16);
+          ({ data: authData, error: authError } = await create(password));
+        }
+      }
+    }
 
     if (authError) {
       const msg = (authError.message || "").toLowerCase();
