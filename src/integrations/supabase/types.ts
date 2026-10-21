@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.1"
   }
   public: {
     Tables: {
@@ -645,6 +645,59 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      digest_preferences: {
+        Row: {
+          created_at: string
+          email: string
+          enabled: boolean
+          id: string
+          include_leads: boolean
+          include_zone: boolean
+          last_sent_date: string | null
+          send_hour: number
+          tenant_id: string
+          unsubscribe_token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          enabled?: boolean
+          id?: string
+          include_leads?: boolean
+          include_zone?: boolean
+          last_sent_date?: string | null
+          send_hour?: number
+          tenant_id: string
+          unsubscribe_token?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          enabled?: boolean
+          id?: string
+          include_leads?: boolean
+          include_zone?: boolean
+          last_sent_date?: string | null
+          send_hour?: number
+          tenant_id?: string
+          unsubscribe_token?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "digest_preferences_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       documents: {
         Row: {
