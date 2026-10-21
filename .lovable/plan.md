@@ -1,48 +1,52 @@
-# Avisos por email a socios (Control de leads, Hoja de zona)
+# Resumen diario por email a los socios (vía Resend)
 
 ## Viabilidad
-Sí es viable. Requisito previo: configurar un dominio de envío propio (por ejemplo `avisos.valoracasa.es`); ahora no hay ninguno. Se hace una vez desde el asistente de email y se verifica en unas horas.
+Sí es viable. Requisitos que debes aportar tú:
+- Una cuenta en **Resend** (gratis hasta 3.000 correos/mes, 100/día) que conectaremos al CRM desde la tarjeta de conexión.
+- Verificar en Resend un dominio propio para el remitente (por ejemplo `avisos.valoracasa.es`), añadiendo los registros DNS que Resend indique.
 
-Limitación importante: el servicio de email integrado es para avisos individuales provocados por algo concreto (un cambio, un guardado). No permite envíos masivos ni boletines. Por eso el diseño es "un aviso por cambio y por socio que lo ha activado", no un correo a una lista.
+## Cómo funcionará
+1. En Ajustes > Perfil, cada socio (y administradores) tiene **"Recibir resumen diario por email"**, con hora de envío (por defecto 21:00 Madrid) y qué incluir: Hoja de zona y/o Control de leads.
+2. Cada día, a la hora elegida, el sistema prepara un correo por socio con la actividad del día de su inmobiliaria. Si no hubo actividad, no se envía nada.
+3. Botón al final para abrir **Estadísticas** en el CRM con el día ya filtrado.
+4. Activable por inmobiliaria con la clave `resumen_email` en Configuraciones.
+5. Enlace para darse de baja en el propio correo (desactiva la opción del perfil).
 
-## Cómo funcionaría
-1. En Ajustes > Perfil, cada socio tiene un interruptor **"Recibir avisos por email"** y elige de qué: Control de leads, Hoja de zona (ambos por defecto activados).
-2. Cuando un asesor guarda o modifica una hoja de zona, o una ficha/día del Control de leads, el sistema envía un aviso a cada socio de esa inmobiliaria que lo tenga activado.
-3. Para no saturar: si el mismo registro se edita varias veces seguidas, se envía como máximo un aviso cada 30 minutos por registro y socio.
-4. El correo lleva un botón que abre directamente la hoja o el día en el CRM (hace falta iniciar sesión; los datos no viajan completos en el email, solo un resumen).
-5. Pie de baja obligatorio al final de cada correo; si el socio se da de baja deja de recibirlos.
-
-## Cómo sería el email
+## Cómo será el email
 ```text
-De: ValoraCasa CRM <avisos@valoracasa.es>
-Asunto: Hoja de zona actualizada · C/ Héroe de Sostoa 12 · Fernando
+De: ValoraCasa CRM <resumen@valoracasa.es>
+Asunto: Resumen del día · Huelin · martes 21/10
 
 [Logo ValoraCasa, verde corporativo]
 
-Hola Ana,
+Hola Ana, esto es lo que ha pasado hoy:
 
-Fernando ha actualizado una hoja de zona hoy, 21/10 a las 18:40.
+TOTALES DEL DÍA
+  Hojas de zona 6 · Puertas 84 · Contactados (M) 22 · Noticias 5 · Leads 3
 
-  Calle / portal:    C/ Héroe de Sostoa 12, portal 2
-  Entrada – salida:  17:30 – 18:35
-  Puertas visitadas: 14
-  Contactados (M):   5
-  Noticias:          2
-  Leads:             1
+HOJA DE ZONA POR EMPLEADO
+  Empleado   Hojas  Puertas  M   Noticias  Entrada-Salida
+  Fernando     3      41    11      3      17:30-20:10
+  Lucía        3      43    11      2      10:00-13:15
 
-  [ Ver hoja en el CRM ]
+CONTROL DE LEADS POR EMPLEADO
+  Empleado   Leads  Llamados  Contactados  NE
+  Fernando     2       5          3        1
+  Lucía        1       4          2        0
+
+CALLES TRABAJADAS
+  C/ Héroe de Sostoa 12 (Fernando) · Av. Velázquez 40 (Lucía) ...
+
+  [ Ver estadísticas completas ]
 
 ---
-Recibes este aviso porque lo activaste en tu perfil.
-(pie de baja automático)
+Recibes este resumen porque lo activaste en tu perfil. Darse de baja
 ```
-Control de leads: mismo formato con asesor, fecha y los totales del día (pedidos, llamados, contactados, NE, noticias, leads).
 
 ## Detalles técnicos
-- Configurar dominio, infraestructura de email y plantillas (`zone-sheet-updated`, `leads-updated`) con colores de marca; página de baja en el CRM.
-- Tabla `notification_preferences` (user_id, tenant_id, zone_sheets bool, control_leads bool) con RLS por usuario.
-- Disparo desde el guardado en `useZoneSheets` / `useAdvisorSheet` / `useControlLeads`: una llamada a una función de servidor que busca los socios con avisos activos del tenant y encola un envío individual por socio, con clave de idempotencia `registro + socio + franja de 30 min`.
-- Activable por inmobiliaria con la clave `avisos_email` en Configuraciones.
-
-## Alternativa
-Si preferís un **resumen diario** único en lugar de un aviso por cambio, no puede ir por el email integrado (cuenta como envío periódico de informes); habría que usar un servicio externo de email (p. ej. Resend) o descargar el PDF de Estadísticas.
+- Conectar Resend con el conector de la plataforma (clave como secreto del servidor).
+- Tabla `digest_preferences` (user_id, tenant_id, enabled, send_hour, include_zone, include_leads, unsubscribe_token) con RLS por usuario y lectura para admin del tenant.
+- Función de servidor `daily-digest`: ejecutada cada hora por tarea programada; selecciona socios cuya hora coincide, agrega `zone_sheets`, `daily_leads` y fichas de asesor del día reutilizando la lógica de `zoneAgg`, genera HTML con estilos en línea y envía por Resend. Registro `digest_log` para no repetir envío el mismo día.
+- Función `digest-unsubscribe` para el enlace de baja + página en el CRM.
+- UI en Ajustes > Perfil y preset `resumen_email` en Configuraciones.
+- Botón "Enviar prueba ahora" para administradores.
