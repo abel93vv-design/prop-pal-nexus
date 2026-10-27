@@ -404,16 +404,16 @@ const ZoneSheetPage = () => {
                 </Button>
               </CardHeader>
               <CardContent className="overflow-x-auto">
-                <Table>
+                <Table className="min-w-[1100px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-12 text-center">N</TableHead>
-                      <TableHead className="w-24">Piso</TableHead>
-                      <TableHead className="w-48">Nombre</TableHead>
-                      <TableHead className="w-28">P / M</TableHead>
-                      <TableHead className="w-36">Estado</TableHead>
-                      <TableHead>Comentario</TableHead>
-                      <TableHead className="w-36">Teléfono</TableHead>
+                      <TableHead className="min-w-[90px] w-24">Piso</TableHead>
+                      <TableHead className="min-w-[180px] w-48">Nombre</TableHead>
+                      <TableHead className="min-w-[110px] w-28">P / M</TableHead>
+                      <TableHead className="min-w-[130px] w-36">Estado</TableHead>
+                      <TableHead className="min-w-[240px]">Comentario</TableHead>
+                      <TableHead className="min-w-[130px] w-36">Teléfono</TableHead>
                       <TableHead className="w-40 text-right">Noticia</TableHead>
                     </TableRow>
                   </TableHeader>
