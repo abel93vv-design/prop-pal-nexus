@@ -404,17 +404,17 @@ const ZoneSheetPage = () => {
                 </Button>
               </CardHeader>
               <CardContent className="overflow-x-auto">
-                <Table className="min-w-[1100px]">
+                <Table className="min-w-[1200px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-12 text-center">N</TableHead>
                       <TableHead className="min-w-[90px] w-24">Piso</TableHead>
                       <TableHead className="min-w-[180px] w-48">Nombre</TableHead>
+                      <TableHead className="min-w-[130px] w-36">Teléfono</TableHead>
                       <TableHead className="min-w-[110px] w-28">P / M</TableHead>
                       <TableHead className="min-w-[130px] w-36">Estado</TableHead>
-                      <TableHead className="min-w-[240px]">Comentario</TableHead>
-                      <TableHead className="min-w-[130px] w-36">Teléfono</TableHead>
                       <TableHead className="w-40 text-right">Noticia</TableHead>
+                      <TableHead className="min-w-[320px]">Comentario</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -428,6 +428,9 @@ const ZoneSheetPage = () => {
                         </TableCell>
                         <TableCell>
                           <Input disabled={readOnly} className="h-8" value={r.name} onChange={(e) => updateRow(r.id, { name: e.target.value }, false)} onBlur={() => persist({ rows: draft.rows } as any)} />
+                        </TableCell>
+                        <TableCell>
+                          <Input disabled={readOnly} className="h-8" value={r.phone} onChange={(e) => updateRow(r.id, { phone: e.target.value }, false)} onBlur={() => persist({ rows: draft.rows } as any)} />
                         </TableCell>
                         <TableCell>
                           <Select disabled={readOnly} value={r.contact_mode || "none"} onValueChange={(v) => updateRow(r.id, { contact_mode: v === "none" ? null : (v as "P" | "M") })}>
@@ -448,12 +451,7 @@ const ZoneSheetPage = () => {
                             </SelectContent>
                           </Select>
                         </TableCell>
-                        <TableCell>
-                          <Input disabled={readOnly} className="h-8" value={r.comment} onChange={(e) => updateRow(r.id, { comment: e.target.value }, false)} onBlur={() => persist({ rows: draft.rows } as any)} />
-                        </TableCell>
-                        <TableCell>
-                          <Input disabled={readOnly} className="h-8" value={r.phone} onChange={(e) => updateRow(r.id, { phone: e.target.value }, false)} onBlur={() => persist({ rows: draft.rows } as any)} />
-                        </TableCell>
+                        
                         <TableCell className="text-right whitespace-nowrap">
                           {r.is_news && (
                             r.property_id ? (
@@ -470,6 +468,9 @@ const ZoneSheetPage = () => {
                           <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive ml-1" disabled={readOnly} onClick={() => setRows(draft.rows.filter((x) => x.id !== r.id))}>
                             <Trash2 className="w-3.5 h-3.5" />
                           </Button>
+                        </TableCell>
+                      <TableCell>
+                          <Input disabled={readOnly} className="h-8" value={r.comment} onChange={(e) => updateRow(r.id, { comment: e.target.value }, false)} onBlur={() => persist({ rows: draft.rows } as any)} />
                         </TableCell>
                       </TableRow>
                     ))}
