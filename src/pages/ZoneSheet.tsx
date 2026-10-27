@@ -470,7 +470,15 @@ const ZoneSheetPage = () => {
                           </Button>
                         </TableCell>
                       <TableCell>
-                          <Input disabled={readOnly} className="h-8" value={r.comment} onChange={(e) => updateRow(r.id, { comment: e.target.value }, false)} onBlur={() => persist({ rows: draft.rows } as any)} />
+                          <textarea
+                            disabled={readOnly}
+                            rows={1}
+                            ref={(el) => { if (el) { el.style.height = "auto"; el.style.height = `${el.scrollHeight}px`; } }}
+                            className="flex w-full min-h-8 resize-none overflow-hidden rounded-md border border-input bg-background px-3 py-1.5 text-sm leading-5 whitespace-pre-wrap break-words ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                            value={r.comment}
+                            onChange={(e) => { e.target.style.height = "auto"; e.target.style.height = `${e.target.scrollHeight}px`; updateRow(r.id, { comment: e.target.value }, false); }}
+                            onBlur={() => persist({ rows: draft.rows } as any)}
+                          />
                         </TableCell>
                       </TableRow>
                     ))}

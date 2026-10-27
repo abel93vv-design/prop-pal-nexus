@@ -1,3 +1,5 @@
 # Roadmap
 - [ ] Resumen diario por email a socios (Resend): falta conectar Resend
-- [ ] Hoja de zona móvil: columnas Piso, Nombre, Comentario más anchas
+- [x] Hoja de zona móvil: columnas más anchas
+- [x] Teléfono tras Nombre, Comentario al final y ancho
+- [x] Comentario multilínea
