@@ -76,6 +76,8 @@ export const DISTRITOS_MALAGA: Distrito[] = [
       { id: "santa-julia", name: "Santa Julia" },
       { id: "portada-alta", name: "Portada Alta" },
       { id: "la-barriguilla", name: "La Barriguilla" },
+      { id: "san-rafael", name: "San Rafael" },
+      { id: "santa-cristina", name: "Santa Cristina" },
     ],
   },
   {
